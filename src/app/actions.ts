@@ -14,6 +14,12 @@ export interface AuditData {
   wordCount: number;
   h2Count: number;
   recommendations: string[];
+  robotsStatus: "Valid" | "Missing" | "Blocking AI" | "Error";
+  robotsRawContent: string;
+}
+
+interface ScraperResponseData {
+  html?: string;
 }
 
 function calculateScore(data: {
@@ -23,6 +29,7 @@ function calculateScore(data: {
   wordCount: number;
   h2Count: number;
   schemas: string[];
+  robotsStatus: "Valid" | "Missing" | "Blocking AI" | "Error";
 }): number {
   let score = 0;
 
@@ -41,7 +48,7 @@ function calculateScore(data: {
 
   // H1 EXISTENCE
   if (data.h1 && data.h1 !== "No H1 Found") {
-    score += 15;
+    score += 10;
   }
 
   // HEADING STRUCTURE
@@ -51,7 +58,7 @@ function calculateScore(data: {
 
   // CONTENT DEPTH
   if (data.wordCount >= 500) {
-    score += 15;
+    score += 10;
   }
 
   // STRUCTURED DATA
@@ -72,39 +79,37 @@ function calculateScore(data: {
     score += 10;
   }
 
+  // ROBOTS.TXT EVALUACIJA
+  if (data.robotsStatus === "Valid") {
+    score += 10;
+  } else if (data.robotsStatus === "Blocking AI") {
+    score += 2;
+  }
+
   return Math.min(score, 100);
 }
 
 export async function analyzeUrl(formData: FormData) {
   const url = formData.get("url") as string;
 
-  const SCRAPING_API_KEY =
-    process.env.SCRAPING_API_KEY;
-
-  const GEMINI_API_KEY =
-    process.env.GEMINI_API_KEY;
-
-  // VALIDATION
+  const SCRAPING_API_KEY = process.env.SCRAPING_API_KEY;
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
   if (!url || !url.startsWith("http")) {
     return {
-      error:
-        "Please enter a valid URL (e.g. https://example.com).",
+      error: "Please enter a valid URL (e.g. https://example.com).",
     };
   }
 
   if (!SCRAPING_API_KEY || !GEMINI_API_KEY) {
     return {
-      error:
-        "Missing API keys. Check your .env.local file.",
+      error: "Missing API keys. Check your .env.local file.",
     };
   }
 
   try {
     // SSRF PROTECTION
-
     const parsedUrl = new URL(url);
-
     const hostname = parsedUrl.hostname;
 
     if (
@@ -118,79 +123,107 @@ export async function analyzeUrl(formData: FormData) {
       };
     }
 
-    // SCRAPE WEBSITE
-
-    let scrapeResponse;
+    // ==========================================
+    // ROBOTS.TXT KRAULOVANJE I ANALIZA
+    // ==========================================
+    const robotsUrl = `${parsedUrl.protocol}//${parsedUrl.hostname}/robots.txt`;
+    let robotsRawContent = "";
+    let robotsStatus: "Valid" | "Missing" | "Blocking AI" | "Error" = "Missing";
 
     try {
-      // FAST REQUEST WITHOUT JS RENDERING
+      const robotsResponse = await axios.get(robotsUrl, { timeout: 7000 });
+      if (robotsResponse.status === 200 && typeof robotsResponse.data === "string") {
+        robotsRawContent = robotsResponse.data;
+        robotsStatus = "Valid";
 
-      scrapeResponse = await axios.get(
-        "https://api.webscraping.ai/html",
-        {
+        const lowerContent = robotsRawContent.toLowerCase();
+        if (
+          lowerContent.includes("user-agent: gptbot") ||
+          lowerContent.includes("user-agent: claudebot") ||
+          (lowerContent.includes("user-agent: *") && lowerContent.includes("disallow: /"))
+        ) {
+          if (lowerContent.includes("disallow: /") || lowerContent.includes("disallow: / ")) {
+            robotsStatus = "Blocking AI";
+          }
+        }
+      }
+    } catch {
+      try {
+        const scraperRobotsResponse = await axios.get("https://api.webscraping.ai/html", {
           params: {
             api_key: SCRAPING_API_KEY,
-            url,
+            url: robotsUrl,
             proxy: "residential",
             render: "false",
           },
-          timeout: 20000,
-        }
-      );
-    } catch {
-      // FALLBACK TO JS RENDERING
+          timeout: 15000,
+        });
 
-      scrapeResponse = await axios.get(
-        "https://api.webscraping.ai/html",
-        {
-          params: {
-            api_key: SCRAPING_API_KEY,
-            url,
-            proxy: "residential",
-            render: "true",
-          },
-          timeout: 30000,
+        const htmlOrText =
+          typeof scraperRobotsResponse.data === "string"
+            ? scraperRobotsResponse.data
+            : (scraperRobotsResponse.data as ScraperResponseData)?.html || "";
+
+        if (htmlOrText && !htmlOrText.includes("<html")) {
+          robotsRawContent = htmlOrText;
+          robotsStatus = "Valid";
+        } else {
+          robotsStatus = "Missing";
         }
-      );
+      } catch {
+        robotsStatus = "Error";
+        robotsRawContent = "Could not fetch or locate robots.txt file.";
+      }
     }
 
-    // DEBUGGING
+    // ==========================================
+    // SCRAPE MAIN WEBSITE
+    // ==========================================
+    let scrapeResponse;
 
-    console.log("SCRAPE RESPONSE:");
-    console.log(scrapeResponse.data);
-
-    // IMPORTANT FIX:
-    // webscraping.ai sometimes returns:
-    // { html: "<html>..." }
+    try {
+      scrapeResponse = await axios.get("https://api.webscraping.ai/html", {
+        params: {
+          api_key: SCRAPING_API_KEY,
+          url,
+          proxy: "residential",
+          render: "false",
+        },
+        timeout: 20000,
+      });
+    } catch {
+      scrapeResponse = await axios.get("https://api.webscraping.ai/html", {
+        params: {
+          api_key: SCRAPING_API_KEY,
+          url,
+          proxy: "residential",
+          render: "true",
+        },
+        timeout: 30000,
+      });
+    }
 
     const html =
       typeof scrapeResponse.data === "string"
         ? scrapeResponse.data
-        : scrapeResponse.data?.html || "";
+        : (scrapeResponse.data as ScraperResponseData)?.html || "";
 
     if (!html) {
       return {
-        error:
-          "Failed to retrieve website HTML.",
+        error: "Failed to retrieve website HTML.",
       };
     }
-
-    // LOAD HTML
 
     const $ = cheerio.load(html);
 
     // BASIC SEO ELEMENTS
-
-    const title =
-      $("title").text().trim().substring(0, 150) ||
-      "No title found";
+    const title = $("title").text().trim().substring(0, 150) || "No title found";
 
     const metaDescription =
       $('meta[name="description"]')
         .attr("content")
         ?.trim()
-        .substring(0, 300) ||
-      "No meta description";
+        .substring(0, 300) || "No meta description";
 
     const h1 =
       $("h1")
@@ -202,7 +235,6 @@ export async function analyzeUrl(formData: FormData) {
     const h2Count = $("h2").length;
 
     // CONTENT EXTRACTION
-
     const bodyText = $("p")
       .map((_, el) => $(el).text().trim())
       .get()
@@ -210,16 +242,10 @@ export async function analyzeUrl(formData: FormData) {
       .replace(/\s+/g, " ")
       .substring(0, 4000);
 
-    const wordCount =
-      bodyText.split(/\s+/).filter(Boolean)
-        .length;
+    const wordCount = bodyText.split(/\s+/).filter(Boolean).length;
 
-    // SCHEMA EXTRACTION
-
-    const schemaScripts = $(
-      'script[type="application/ld+json"]'
-    );
-
+    // SCHEMA EXTRACTION (100% Sigurno od 'any' ključne riječi)
+    const schemaScripts = $('script[type="application/ld+json"]');
     const schemaSet = new Set<string>();
 
     schemaScripts.each((_, el) => {
@@ -230,39 +256,28 @@ export async function analyzeUrl(formData: FormData) {
       }
 
       try {
-        const parsed: unknown =
-          JSON.parse(content);
+        const parsed: unknown = JSON.parse(content);
 
-        const extractTypes = (
-          obj: unknown
-        ): void => {
+        const extractTypes = (obj: unknown): void => {
           if (!obj) return;
 
-          // ARRAY
           if (Array.isArray(obj)) {
             obj.forEach(extractTypes);
             return;
           }
 
-          // OBJECT
           if (typeof obj !== "object") {
             return;
           }
 
-          const typedObj = obj as Record<
-            string,
-            unknown
-          >;
+          const typedObj = obj as Record<string, unknown>;
 
-          // @graph SUPPORT
           if (typedObj["@graph"]) {
             extractTypes(typedObj["@graph"]);
           }
 
-          // @type SUPPORT
           if (typedObj["@type"]) {
-            const typeValue =
-              typedObj["@type"];
+            const typeValue = typedObj["@type"];
 
             if (Array.isArray(typeValue)) {
               typeValue.forEach((t) => {
@@ -270,9 +285,7 @@ export async function analyzeUrl(formData: FormData) {
                   schemaSet.add(t);
                 }
               });
-            } else if (
-              typeof typeValue === "string"
-            ) {
+            } else if (typeof typeValue === "string") {
               schemaSet.add(typeValue);
             }
           }
@@ -280,15 +293,13 @@ export async function analyzeUrl(formData: FormData) {
 
         extractTypes(parsed);
       } catch {
-        // ignore invalid schema
+        // Ignoriši neispravan JSON unutar skripte
       }
     });
 
-    const detectedSchemas =
-      Array.from(schemaSet);
+    const detectedSchemas = Array.from(schemaSet);
 
     // DETERMINISTIC SCORE
-
     const score = calculateScore({
       title,
       metaDescription,
@@ -296,13 +307,11 @@ export async function analyzeUrl(formData: FormData) {
       wordCount,
       h2Count,
       schemas: detectedSchemas,
+      robotsStatus,
     });
 
-    // AI ANALYSIS
-
-    const genAI = new GoogleGenerativeAI(
-      GEMINI_API_KEY
-    );
+    // AI ANALYSIS via Gemini
+    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash-lite",
@@ -313,11 +322,16 @@ export async function analyzeUrl(formData: FormData) {
 
     const prompt = `
 You are a Senior Answer Engine Optimisation strategist.
-
-Analyze this website data and provide a professional executive audit.
+Analyze this website data and provide a professional executive audit. Pay special attention to the robots.txt file to see if it is correctly structured and if it blocks AI crawlers (like GPTBot, ClaudeBot, etc.).
 
 WEBSITE:
 ${url}
+
+ROBOTS.TXT STATUS:
+${robotsStatus}
+
+ROBOTS.TXT CONTENT:
+${robotsRawContent || "No robots.txt content available."}
 
 TITLE:
 ${title}
@@ -346,7 +360,7 @@ ${score}/100
 Return EXACTLY in this format:
 
 ANALYSIS:
-[professional analysis]
+[professional analysis, including a sub-section explicitly evaluating the robots.txt file structure and its friendliness towards AI agents]
 
 RECOMMENDATIONS:
 - recommendation
@@ -354,42 +368,27 @@ RECOMMENDATIONS:
 - recommendation
 `;
 
-    const aiResult =
-      await model.generateContent(prompt);
-
-    const aiText =
-      aiResult.response.text();
-
-    // ANALYSIS EXTRACTION
+    const aiResult = await model.generateContent(prompt);
+    const aiText = aiResult.response.text();
 
     const analysisMatch = aiText.match(
       /ANALYSIS:\s*([\s\S]*?)RECOMMENDATIONS:/i
     );
 
-    // RECOMMENDATIONS EXTRACTION
+    const recommendationsMatch = aiText.match(
+      /RECOMMENDATIONS:\s*([\s\S]*)/i
+    );
 
-    const recommendationsMatch =
-      aiText.match(
-        /RECOMMENDATIONS:\s*([\s\S]*)/i
-      );
-
-    const aiAnalysis =
-      analysisMatch?.[1]?.trim() ||
-      "No AI analysis generated.";
+    const aiAnalysis = analysisMatch?.[1]?.trim() || "No AI analysis generated.";
 
     const recommendations =
       recommendationsMatch?.[1]
         ?.split("\n")
-        .map((line) =>
-          line.replace("-", "").trim()
-        )
+        .map((line) => line.replace("-", "").trim())
         .filter(Boolean) || [];
-
-    // FINAL RESPONSE
 
     return {
       success: true,
-
       data: {
         title,
         metaDescription,
@@ -400,14 +399,15 @@ RECOMMENDATIONS:
         wordCount,
         h2Count,
         recommendations,
+        robotsStatus,
+        robotsRawContent,
       } as AuditData,
     };
   } catch (error) {
     console.error("FULL ERROR:", error);
 
     return {
-      error:
-        "Audit failed. Please verify the URL and try again.",
+      error: "Audit failed. Please verify the URL and try again.",
     };
   }
 }
