@@ -16,6 +16,14 @@ export interface AuditData {
   recommendations: string[];
   robotsStatus: "Valid" | "Missing" | "Blocking AI" | "Error";
   robotsRawContent: string;
+  qaBlocksCount: number;
+  hasTablesOrLists: boolean;
+}
+
+export interface BrandConfig {
+  agencyName: string;
+  primaryColor: string; // Hex code, e.g., "2563eb"
+  authorName: string;
 }
 
 interface ScraperResponseData {
@@ -30,20 +38,19 @@ function calculateScore(data: {
   h2Count: number;
   schemas: string[];
   robotsStatus: "Valid" | "Missing" | "Blocking AI" | "Error";
+  qaBlocksCount: number;
+  hasTablesOrLists: boolean;
 }): number {
   let score = 0;
 
   // TITLE QUALITY
   if (data.title.length >= 30 && data.title.length <= 65) {
-    score += 15;
+    score += 10;
   }
 
-  // META DESCRIPTION QUALITY
-  if (
-    data.metaDescription.length >= 120 &&
-    data.metaDescription.length <= 160
-  ) {
-    score += 15;
+  // META DESCRIPTION QUALITY (Lowered slightly for AEO weight)
+  if (data.metaDescription.length >= 120 && data.metaDescription.length <= 160) {
+    score += 5;
   }
 
   // H1 EXISTENCE
@@ -61,29 +68,35 @@ function calculateScore(data: {
     score += 10;
   }
 
-  // STRUCTURED DATA
+  // STRUCTURED DATA (AI engines love Knowledge Graphs)
   if (data.schemas.length > 0) {
     score += 10;
   }
 
-  // FAQ OPTIMIZATION
-  if (data.schemas.includes("FAQPage")) {
+  // CRITICAL AEO SCHEMAS (FAQ, Article, Product, Organization, etc.)
+  const highValueAeoSchemas = ["FAQPage", "TechArticle", "Article", "Organization", "LocalBusiness", "Product"];
+  const hasHighValueSchema = data.schemas.some(s => highValueAeoSchemas.includes(s));
+  if (hasHighValueSchema) {
+    score += 15;
+  }
+
+  // EXPLICIT Q&A BLOCKS (Crucial for Featured Snippets / AI Citations)
+  if (data.qaBlocksCount >= 2) {
+    score += 15;
+  } else if (data.qaBlocksCount === 1) {
+    score += 7;
+  }
+
+  // SEMANTIC STRUCTURE SIGNAL (Presence of dense layout maps like lists or tables)
+  if (data.hasTablesOrLists) {
     score += 10;
   }
 
-  // TRUST / ENTITY SIGNALS
-  if (
-    data.schemas.includes("Organization") ||
-    data.schemas.includes("LocalBusiness")
-  ) {
-    score += 10;
-  }
-
-  // ROBOTS.TXT EVALUACIJA
-  if (data.robotsStatus === "Valid") {
-    score += 10;
+  // ROBOTS.TXT EVALUATION
+  if (data.robotsStatus === "Valid" || data.robotsStatus === "Missing") {
+    score += 5; 
   } else if (data.robotsStatus === "Blocking AI") {
-    score += 2;
+    score += 0; 
   }
 
   return Math.min(score, 100);
@@ -124,28 +137,35 @@ export async function analyzeUrl(formData: FormData) {
     }
 
     // ==========================================
-    // ROBOTS.TXT KRAULOVANJE I ANALIZA
+    // ROBOTS.TXT CRAWLING AND AI BOT ANALYSIS
     // ==========================================
     const robotsUrl = `${parsedUrl.protocol}//${parsedUrl.hostname}/robots.txt`;
     let robotsRawContent = "";
     let robotsStatus: "Valid" | "Missing" | "Blocking AI" | "Error" = "Missing";
 
+    const checkAiBlockers = (content: string): boolean => {
+      const lower = content.toLowerCase();
+      const aiBots = [
+        "gptbot",
+        "claudebot",
+        "perplexitybot",
+        "oai-searchbot",
+        "google-extended",
+        "anthropic-ai",
+        "cohere-ai"
+      ];
+
+      const blocksAll = lower.includes("user-agent: *") && (lower.includes("disallow: /") || lower.includes("disallow: / "));
+      const blocksSpecificAi = aiBots.some(bot => lower.includes(`user-agent: ${bot}`)) && (lower.includes("disallow: /") || lower.includes("disallow: / "));
+
+      return blocksAll || blocksSpecificAi;
+    };
+
     try {
       const robotsResponse = await axios.get(robotsUrl, { timeout: 7000 });
       if (robotsResponse.status === 200 && typeof robotsResponse.data === "string") {
         robotsRawContent = robotsResponse.data;
-        robotsStatus = "Valid";
-
-        const lowerContent = robotsRawContent.toLowerCase();
-        if (
-          lowerContent.includes("user-agent: gptbot") ||
-          lowerContent.includes("user-agent: claudebot") ||
-          (lowerContent.includes("user-agent: *") && lowerContent.includes("disallow: /"))
-        ) {
-          if (lowerContent.includes("disallow: /") || lowerContent.includes("disallow: / ")) {
-            robotsStatus = "Blocking AI";
-          }
-        }
+        robotsStatus = checkAiBlockers(robotsRawContent) ? "Blocking AI" : "Valid";
       }
     } catch {
       try {
@@ -166,7 +186,7 @@ export async function analyzeUrl(formData: FormData) {
 
         if (htmlOrText && !htmlOrText.includes("<html")) {
           robotsRawContent = htmlOrText;
-          robotsStatus = "Valid";
+          robotsStatus = checkAiBlockers(robotsRawContent) ? "Blocking AI" : "Valid";
         } else {
           robotsStatus = "Missing";
         }
@@ -218,88 +238,83 @@ export async function analyzeUrl(formData: FormData) {
 
     // BASIC SEO ELEMENTS
     const title = $("title").text().trim().substring(0, 150) || "No title found";
-
-    const metaDescription =
-      $('meta[name="description"]')
-        .attr("content")
-        ?.trim()
-        .substring(0, 300) || "No meta description";
-
-    const h1 =
-      $("h1")
-        .first()
-        .text()
-        .trim()
-        .substring(0, 150) || "No H1 Found";
-
+    const metaDescription = $('meta[name="description"]').attr("content")?.trim().substring(0, 300) || "No meta description";
+    const h1 = $("h1").first().text().trim().substring(0, 150) || "No H1 Found";
     const h2Count = $("h2").length;
 
-    // CONTENT EXTRACTION
-    const bodyText = $("p")
-      .map((_, el) => $(el).text().trim())
+    // STRUCTURAL ELEMENT DETECTION
+    const hasTablesOrLists = $("table").length > 0 || $("ul").length > 0 || $("ol").length > 0;
+
+    // ==========================================
+    // EXPLICIT Q&A BLOCK DETECTION LOGIC
+    // ==========================================
+    let qaBlocksCount = 0;
+    const questionRegex = /\b(what|how|why|who|where|when|which|is|can|should|are)\b/i;
+
+    $("h2, h3, h4, p strong").each((_, el) => {
+      const text = $(el).text().trim();
+      
+      if (text.endsWith("?") || (questionRegex.test(text) && text.length < 100)) {
+        const nextSibling = $(el).next();
+        if (nextSibling.length > 0) {
+          const siblingText = nextSibling.text().trim();
+          if (siblingText.length > 15) {
+            qaBlocksCount++;
+          }
+        }
+      }
+    });
+
+    // CONTENT EXTRACTION WITH LAYOUT CAPTURE
+    const bodyText = $("p, li, table tr, blockquote")
+      .map((_, el) => {
+        const text = $(el).text().trim();
+        return text ? `${text} ` : "";
+      })
       .get()
       .join(" ")
       .replace(/\s+/g, " ")
-      .substring(0, 4000);
+      .substring(0, 5000);
 
     const wordCount = bodyText.split(/\s+/).filter(Boolean).length;
 
-    // SCHEMA EXTRACTION (100% Sigurno od 'any' ključne riječi)
+    // SCHEMA EXTRACTION
     const schemaScripts = $('script[type="application/ld+json"]');
     const schemaSet = new Set<string>();
 
     schemaScripts.each((_, el) => {
       const content = $(el).html();
-
-      if (!content?.includes("@context")) {
-        return;
-      }
+      if (!content?.includes("@context")) return;
 
       try {
         const parsed: unknown = JSON.parse(content);
-
         const extractTypes = (obj: unknown): void => {
           if (!obj) return;
-
           if (Array.isArray(obj)) {
             obj.forEach(extractTypes);
             return;
           }
-
-          if (typeof obj !== "object") {
-            return;
-          }
+          if (typeof obj !== "object") return;
 
           const typedObj = obj as Record<string, unknown>;
-
-          if (typedObj["@graph"]) {
-            extractTypes(typedObj["@graph"]);
-          }
+          if (typedObj["@graph"]) extractTypes(typedObj["@graph"]);
 
           if (typedObj["@type"]) {
             const typeValue = typedObj["@type"];
-
             if (Array.isArray(typeValue)) {
-              typeValue.forEach((t) => {
-                if (typeof t === "string") {
-                  schemaSet.add(t);
-                }
-              });
+              typeValue.forEach((t) => { if (typeof t === "string") schemaSet.add(t); });
             } else if (typeof typeValue === "string") {
               schemaSet.add(typeValue);
             }
           }
         };
-
         extractTypes(parsed);
-      } catch {
-        // Ignoriši neispravan JSON unutar skripte
-      }
+      } catch {}
     });
 
     const detectedSchemas = Array.from(schemaSet);
 
-    // DETERMINISTIC SCORE
+    // DETERMINISTIC SCORE 
     const score = calculateScore({
       title,
       metaDescription,
@@ -308,21 +323,49 @@ export async function analyzeUrl(formData: FormData) {
       h2Count,
       schemas: detectedSchemas,
       robotsStatus,
+      qaBlocksCount,
+      hasTablesOrLists,
     });
 
-    // AI ANALYSIS via Gemini
+    // ==========================================
+    // AI ANALYSIS VIA GEMINI (STRUCTURED JSON RESPONSE)
+    // ==========================================
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+
+    type GeminiSchema = NonNullable<
+      NonNullable<Parameters<typeof genAI.getGenerativeModel>[0]["generationConfig"]>["responseSchema"]
+    >;
+
+    const aeoResponseSchema = {
+      type: "OBJECT",
+      properties: {
+        aiAnalysis: {
+          type: "STRING",
+          description: "Executive synthesis audit looking deeply at LLM crawlability, conversational alignment, semantic authority formatting, and entity parsing optimizations.",
+        },
+        recommendations: {
+          type: "ARRAY",
+          items: {
+            type: "STRING",
+          },
+          description: "List of highly specific tactical adjustments needed to rank across modern answer engines.",
+        },
+      },
+      required: ["aiAnalysis", "recommendations"],
+    };
 
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash-lite",
       generationConfig: {
-        temperature: 0.2,
+        temperature: 0.15, 
+        responseMimeType: "application/json",
+        responseSchema: aeoResponseSchema as unknown as GeminiSchema, 
       },
     });
 
     const prompt = `
-You are a Senior Answer Engine Optimisation strategist.
-Analyze this website data and provide a professional executive audit. Pay special attention to the robots.txt file to see if it is correctly structured and if it blocks AI crawlers (like GPTBot, ClaudeBot, etc.).
+You are an expert Senior Answer Engine Optimisation (AEO) strategist.
+Analyze the target website data context provided and perform a highly specific structural alignment audit. Evaluate layout architectures (tables, bullet points), question phrasing relevance, and explicit AI agent accessibility configurations across the robots file rules.
 
 WEBSITE:
 ${url}
@@ -348,44 +391,29 @@ ${h2Count}
 WORD COUNT:
 ${wordCount}
 
-DETECTED SCHEMA:
+DETECTED EXPLICIT Q&A CONTENT BLOCKS:
+${qaBlocksCount}
+
+HAS TABLE OR BULLET GRAPH STRUCTURES:
+${hasTablesOrLists}
+
+DETECTED SCHEMA ENTITIES:
 ${detectedSchemas.join(", ") || "None"}
 
-CONTENT SAMPLE:
+CONTENT MAP SAMPLE:
 ${bodyText}
 
-CURRENT SCORE:
+COMPUTED SEED OPTIMIZATION SCORE:
 ${score}/100
-
-Return EXACTLY in this format:
-
-ANALYSIS:
-[professional analysis, including a sub-section explicitly evaluating the robots.txt file structure and its friendliness towards AI agents]
-
-RECOMMENDATIONS:
-- recommendation
-- recommendation
-- recommendation
 `;
 
     const aiResult = await model.generateContent(prompt);
-    const aiText = aiResult.response.text();
-
-    const analysisMatch = aiText.match(
-      /ANALYSIS:\s*([\s\S]*?)RECOMMENDATIONS:/i
-    );
-
-    const recommendationsMatch = aiText.match(
-      /RECOMMENDATIONS:\s*([\s\S]*)/i
-    );
-
-    const aiAnalysis = analysisMatch?.[1]?.trim() || "No AI analysis generated.";
-
-    const recommendations =
-      recommendationsMatch?.[1]
-        ?.split("\n")
-        .map((line) => line.replace("-", "").trim())
-        .filter(Boolean) || [];
+    const responseText = aiResult.response.text();
+    
+    const parsedAiData = JSON.parse(responseText) as {
+      aiAnalysis: string;
+      recommendations: string[];
+    };
 
     return {
       success: true,
@@ -395,13 +423,15 @@ RECOMMENDATIONS:
         h1,
         score,
         detectedSchemas,
-        aiAnalysis,
+        aiAnalysis: parsedAiData.aiAnalysis || "No analysis provided.",
         wordCount,
         h2Count,
-        recommendations,
+        recommendations: parsedAiData.recommendations || [],
         robotsStatus,
         robotsRawContent,
-      } as AuditData,
+        qaBlocksCount,
+        hasTablesOrLists,
+      },
     };
   } catch (error) {
     console.error("FULL ERROR:", error);
