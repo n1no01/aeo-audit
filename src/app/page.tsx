@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { analyzeUrl, AuditData } from "./actions";
 import {
   AlignmentType,
@@ -29,12 +29,12 @@ export default function Home() {
     data?: AuditData;
   } | null>(null);
 
-  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [loadingIndex, setLoadingIndex] = useState(0);
 
   // ROTATING LOADING STATES
   useEffect(() => {
-    if (!loading) return;
+    if (!isPending) return;
 
     const interval = setInterval(() => {
       setLoadingIndex((prev) => {
@@ -43,7 +43,18 @@ export default function Home() {
     }, 1700);
 
     return () => clearInterval(interval);
-  }, [loading]);
+  }, [isPending]);
+
+  // HANDLER FOR FORM SUBMISSION
+  const handleAuditSubmit = (formData: FormData) => {
+    setResult(null);
+    setLoadingIndex(0);
+    
+    startTransition(async () => {
+      const res = await analyzeUrl(formData);
+      setResult(res);
+    });
+  };
 
   // DOCX EXPORT
   const downloadDocx = async () => {
@@ -207,13 +218,7 @@ export default function Home() {
 
         {/* FORM */}
         <form
-          action={async (formData) => {
-            setLoading(true);
-            setResult(null);
-            const res = await analyzeUrl(formData);
-            setResult(res);
-            setLoading(false);
-          }}
+          action={handleAuditSubmit}
           className="relative group mb-12"
         >
           <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-[32px] blur opacity-20 group-focus-within:opacity-40 transition duration-1000"></div>
@@ -228,96 +233,86 @@ export default function Home() {
             />
 
             <button
-              disabled={loading}
+              disabled={isPending}
               className="bg-slate-900 text-white px-10 py-5 rounded-[24px] font-black hover:bg-blue-600 transition-all duration-300 disabled:bg-slate-300"
             >
-              {loading ? "GENERATING AUDIT..." : "START AUDIT"}
+              {isPending ? "GENERATING AUDIT..." : "START AUDIT"}
             </button>
           </div>
         </form>
 
         {/* LOADING UI */}
-   {/* LOADING UI - KORIGOVAN I STABILAN */}
-{loading && (
-  <div className="transition-all duration-500 mb-10 opacity-100 block">
-    <div className="bg-white border border-slate-100 rounded-[40px] p-10 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.15)] overflow-hidden relative">
-      
-      {/* BACKGROUND GLOW */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-indigo-500/10 to-blue-500/5 animate-pulse"></div>
+        {isPending && (
+          <div className="transition-all duration-500 mb-10 opacity-100 block">
+            <div className="bg-white border border-slate-100 rounded-[40px] p-10 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.15)] overflow-hidden relative">
+              
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-indigo-500/10 to-blue-500/5 animate-pulse"></div>
 
-      <div className="relative z-10">
-        {/* HEADER */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <div className="text-xs font-black uppercase tracking-[0.3em] text-blue-500 mb-2">
-              Live Audit Engine
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <div className="text-xs font-black uppercase tracking-[0.3em] text-blue-500 mb-2">
+                      Live Audit Engine
+                    </div>
+                    <h2 className="text-3xl font-black tracking-tight">
+                      Running Analysis
+                    </h2>
+                  </div>
+
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full border-4 border-slate-100"></div>
+                    <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 animate-spin"></div>
+                  </div>
+                </div>
+
+                <div className="mb-8">
+                  <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full w-2/3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full animate-pulse"></div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
+                  <div className="text-xs uppercase tracking-[0.2em] font-black text-slate-400 mb-3">
+                    Current Operation
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="w-3 h-3 rounded-full bg-blue-500 animate-ping"></div>
+                    <p 
+                      key={loadingIndex} 
+                      className="text-lg font-bold text-slate-700 animate-[pulse_1.5s_infinite]"
+                    >
+                      {loadingSteps[loadingIndex]}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4 mt-8">
+                  <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                    <div className="text-xs text-slate-400 font-black uppercase mb-2">
+                      Status
+                    </div>
+                    <div className="font-bold text-slate-700">Active</div>
+                  </div>
+
+                  <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                    <div className="text-xs text-slate-400 font-black uppercase mb-2">
+                      AI Engine
+                    </div>
+                    <div className="font-bold text-slate-700">Gemini 2.5</div>
+                  </div>
+
+                  <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                    <div className="text-xs text-slate-400 font-black uppercase mb-2">
+                      Crawl Mode
+                    </div>
+                    <div className="font-bold text-slate-700">Semantic</div>
+                  </div>
+                </div>
+              </div>
             </div>
-
-            <h2 className="text-3xl font-black tracking-tight">
-              Running Analysis
-            </h2>
           </div>
-
-          {/* SPINNER */}
-          <div className="relative">
-            <div className="w-16 h-16 rounded-full border-4 border-slate-100"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 animate-spin"></div>
-          </div>
-        </div>
-
-        {/* PROGRESS BAR */}
-        <div className="mb-8">
-          <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full w-2/3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full animate-pulse"></div>
-          </div>
-        </div>
-
-        {/* CURRENT STEP */}
-        <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
-          <div className="text-xs uppercase tracking-[0.2em] font-black text-slate-400 mb-3">
-            Current Operation
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="w-3 h-3 rounded-full bg-blue-500 animate-ping"></div>
-
-            {/* Ključna izmjena: Dodan key={loadingIndex} koji prisiljava React da ponovo pokrene CSS tranziciju teksta pri svakoj promjeni koraka */}
-            <p 
-              key={loadingIndex} 
-              className="text-lg font-bold text-slate-700 animate-[pulse_1.5s_infinite]"
-            >
-              {loadingSteps[loadingIndex]}
-            </p>
-          </div>
-        </div>
-
-        {/* MINI METRICS */}
-        <div className="grid grid-cols-3 gap-4 mt-8">
-          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-            <div className="text-xs text-slate-400 font-black uppercase mb-2">
-              Status
-            </div>
-            <div className="font-bold text-slate-700">Active</div>
-          </div>
-
-          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-            <div className="text-xs text-slate-400 font-black uppercase mb-2">
-              AI Engine
-            </div>
-            <div className="font-bold text-slate-700">Gemini 2.5</div>
-          </div>
-
-          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-            <div className="text-xs text-slate-400 font-black uppercase mb-2">
-              Crawl Mode
-            </div>
-            <div className="font-bold text-slate-700">Semantic</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+        )}
 
         {/* ERROR */}
         {result?.error && (
