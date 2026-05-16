@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { analyzeUrl, AuditData } from "./actions";
+import { analyzeUrl } from "./actions";
+import Tooltip from "./components/Tooltip";
+import { AuditData, TabId, AEO_EXPLANATIONS } from "./lib/types"; 
 import {
   AlignmentType,
   Document,
@@ -22,8 +24,6 @@ const loadingSteps = [
   "Generating AI recommendations...",
   "Building executive audit...",
 ];
-
-type TabId = "metrics" | "analysis" | "recommendations" | "robots";
 
 export default function Home() {
   const [result, setResult] = useState<{
@@ -55,7 +55,15 @@ export default function Home() {
     setActiveTab("metrics"); 
     startTransition(async () => {
       const res = await analyzeUrl(formData);
-      setResult(res); 
+      
+      if ("error" in res) {
+        setResult({ error: res.error });
+      } else if (res.success && res.data) {
+        setResult({
+          success: true,
+          data: res.data as AuditData
+        });
+      }
     });
   };
 
@@ -106,6 +114,7 @@ export default function Home() {
             new Paragraph({ text: `• OpenAI GPTBot Clearance: ${aiBotsStatus?.gptBot || "Allowed"}` }),
             new Paragraph({ text: `• OpenAI SearchBot Clearance: ${aiBotsStatus?.oaiSearchBot || "Allowed"}` }),
             new Paragraph({ text: `• Perplexity AI Engine Status: ${aiBotsStatus?.perplexityBot || "Allowed"}` }),
+            new Paragraph({ text: `• Claude Bot Architecture: ${aiBotsStatus?.claudeBot || "Allowed"}` }),
             new Paragraph({ text: `• Brand Disambiguation Alignment: ${entityTrustMap?.brandDisambiguationStatus || "Optimal"}` }),
             new Paragraph({ text: `• Semantic HTML5 Main Tag: ${semanticLayoutMap?.hasMainTag ? "Valid" : "Missing"}` }),
             new Paragraph({ text: `• Heading Hierarchy Defect (Leap): ${semanticLayoutMap?.hasHeadingLeap ? "Anomaly Detected" : "Healthy Cascade"}` }),
@@ -261,7 +270,10 @@ export default function Home() {
                       
                       {/* CRAWLER MATRIX */}
                       <div className="border border-slate-200/60 rounded-3xl p-5 bg-slate-50/50 flex flex-col justify-between">
-                        <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3">AI Search Crawler Status</div>
+                        <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3 flex items-center">
+                          AI Search Crawler Status
+                          <Tooltip text={AEO_EXPLANATIONS.crawlerStatus} />
+                        </div>
                         <div className="grid grid-cols-2 gap-2 text-xs">
                           {[
                             { n: "ChatGPT", v: result.data.aiBotsStatus?.gptBot },
@@ -282,8 +294,9 @@ export default function Home() {
                       {/* BRAND DISAMBIGUATION CARD */}
                       <div className="border border-slate-200/60 rounded-3xl p-5 bg-slate-50/50 flex flex-col justify-between">
                         <div>
-                          <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2">
+                          <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center">
                             AEO Tokenizer Brand Disambiguation
+                            <Tooltip text={AEO_EXPLANATIONS.brandDisambiguation} />
                           </div>
                           
                           <div className="flex items-center gap-2 mb-4">
@@ -324,7 +337,7 @@ export default function Home() {
 
                     </div>
 
-                    {/* DUAL CARD SPLIT: ENTITY GRAPH VS NEW SEMANTIC HTML AUDIT */}
+                    {/* DUAL CARD SPLIT: ENTITY GRAPH VS SEMANTIC HTML AUDIT */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       
                       {/* ENTITY GRAPH CHECKLIST */}
@@ -332,12 +345,17 @@ export default function Home() {
                         <div>
                           <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3">Knowledge Graph & Entity Blueprint</div>
                           <div className="space-y-2">
+                            
                             <div className="flex items-center justify-between bg-white border p-2 rounded-xl text-xs font-semibold">
-                              <span className="text-slate-600 truncate pr-2">Authority Reference Outlinks (Wikipedia/Data)</span>
+                              <span className="text-slate-600 truncate pr-2 flex items-center">
+                                Authority Reference Outlinks (Wikipedia/Data)
+                                <Tooltip text={AEO_EXPLANATIONS.authorityOutlinks} />
+                              </span>
                               <span className={`text-[10px] font-black tracking-wider px-2 py-0.5 rounded-md ${result.data.entityTrustMap?.hasWikidataOrWikipedia ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-400"}`}>
                                 {result.data.entityTrustMap?.hasWikidataOrWikipedia ? "VERIFIED" : "MISSING"}
                               </span>
                             </div>
+
                             {[
                               { label: "LinkedIn Identity Profile Connection", checked: result.data.entityTrustMap?.hasLinkedIn },
                               { label: "X / Twitter Account Integration", checked: result.data.entityTrustMap?.hasXAccount },
@@ -355,35 +373,47 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {/* NOVI KLIJENTSKI ZASLON: SEMANTIC HTML & MULTIMODAL COMPLIANCE CARD */}
+                      {/* SEMANTIC HTML & MULTIMODAL COMPLIANCE CARD */}
                       <div className="border border-slate-200/60 rounded-3xl p-5 bg-slate-50/50 flex flex-col justify-between">
                         <div>
                           <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3">AI Semantic & Multimodal Blueprint</div>
                           <div className="space-y-2">
                             
                             <div className="flex items-center justify-between bg-white border p-2 rounded-xl text-xs font-semibold">
-                              <span className="text-slate-600">HTML5 Semantic &lt;main&gt; Isolation</span>
+                              <span className="text-slate-600 flex items-center">
+                                HTML5 Semantic &lt;main&gt; Isolation
+                                <Tooltip text={AEO_EXPLANATIONS.mainTag} />
+                              </span>
                               <span className={`text-[10px] font-black tracking-wider px-2 py-0.5 rounded-md ${result.data.semanticLayoutMap?.hasMainTag ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-600"}`}>
                                 {result.data.semanticLayoutMap?.hasMainTag ? "VALID" : "GENERIC DIVS"}
                               </span>
                             </div>
 
                             <div className="flex items-center justify-between bg-white border p-2 rounded-xl text-xs font-semibold">
-                              <span className="text-slate-600">HTML5 Article Core Container</span>
+                              <span className="text-slate-600 flex items-center">
+                                HTML5 Article Core Container
+                                <Tooltip text={AEO_EXPLANATIONS.articleTag} />
+                              </span>
                               <span className={`text-[10px] font-black tracking-wider px-2 py-0.5 rounded-md ${result.data.semanticLayoutMap?.hasArticleTag ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-400"}`}>
                                 {result.data.semanticLayoutMap?.hasArticleTag ? "DETECTED" : "ABSENT"}
                               </span>
                             </div>
 
                             <div className="flex items-center justify-between bg-white border p-2 rounded-xl text-xs font-semibold">
-                              <span className="text-slate-600">Heading Hierarchy Structural Cascade</span>
+                              <span className="text-slate-600 flex items-center">
+                                Heading Hierarchy Structural Cascade
+                                <Tooltip text={AEO_EXPLANATIONS.headingCascade} />
+                              </span>
                               <span className={`text-[10px] font-black tracking-wider px-2 py-0.5 rounded-md ${!result.data.semanticLayoutMap?.hasHeadingLeap ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-600"}`}>
                                 {!result.data.semanticLayoutMap?.hasHeadingLeap ? "HEALTHY" : "LEAP ANOMALY"}
                               </span>
                             </div>
 
                             <div className="flex items-center justify-between bg-white border p-2 rounded-xl text-xs font-semibold">
-                              <span className="text-slate-600">Multimodal Image Alt Coverage</span>
+                              <span className="text-slate-600 flex items-center">
+                                Multimodal Image Alt Coverage
+                                <Tooltip text={AEO_EXPLANATIONS.imageAlt} />
+                              </span>
                               <span className={`text-[10px] font-black tracking-wider px-2 py-0.5 rounded-md ${result.data.semanticLayoutMap?.missingAltCount === 0 ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-600"}`}>
                                 {result.data.semanticLayoutMap?.totalImages - result.data.semanticLayoutMap?.missingAltCount}/{result.data.semanticLayoutMap?.totalImages} ALT TAGS
                               </span>
@@ -400,12 +430,30 @@ export default function Home() {
 
                     {/* CORE SPEED METRICS ROW */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                      <MetricCard label="Word Count" value={String(result.data.wordCount)} />
-                      <MetricCard label="Conversational Q&A Loops" value={`${result.data.qaBlocksCount} Blocks`} />
+                      <div className="p-5 rounded-2xl bg-slate-50 border flex flex-col justify-between">
+                        <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center">
+                          Word Count
+                          <Tooltip text={AEO_EXPLANATIONS.wordCount} />
+                        </div>
+                        <div className="font-bold text-slate-800 text-xs sm:text-sm leading-relaxed break-words">{result.data.wordCount}</div>
+                      </div>
+
+                      <div className="p-5 rounded-2xl bg-slate-50 border flex flex-col justify-between">
+                        <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center">
+                          Conversational Q&A Loops
+                          <Tooltip text={AEO_EXPLANATIONS.qaLoops} />
+                        </div>
+                        <div className="font-bold text-slate-800 text-xs sm:text-sm leading-relaxed break-words">{result.data.qaBlocksCount} Blocks</div>
+                      </div>
+
                       <div className="p-4 rounded-2xl bg-slate-50 border text-xs font-bold flex flex-col justify-between">
-                        <span className="text-[10px] uppercase text-slate-400 tracking-wider">Semantic Layout Density</span>
+                        <span className="text-[10px] uppercase text-slate-400 tracking-wider flex items-center">
+                          Semantic Layout Density
+                          <Tooltip text={AEO_EXPLANATIONS.layoutDensity} />
+                        </span>
                         <span className={result.data.hasTablesOrLists ? "text-emerald-700" : "text-amber-700"}>{result.data.hasTablesOrLists ? "Tables / Lists Active" : "Low Density Blocks"}</span>
                       </div>
+                      
                       <div className="p-4 rounded-2xl bg-slate-50 border text-xs font-bold flex flex-col justify-between">
                         <span className="text-[10px] uppercase text-slate-400 tracking-wider">Robots.txt Architecture</span>
                         <span className="truncate text-slate-700">{result.data.robotsStatus}</span>
