@@ -1,49 +1,50 @@
-import { prisma } from "./prisma";
+import { db } from "../lib/db"; // Prilagodi putanju do tvog db.ts fajla (kod tebe je u app/lib/db)
 
-const FREE_LIMIT = 5;
+const FREE_LIMIT = 3; // Usklađeno sa biznis logikom od 3 audita dnevno
 
 export async function checkAndIncrementUsage(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
+  // 1. Pronađi korisnika preko clerkUserId umjesto id
+  const user = await db.user.findUnique({
+    where: { clerkUserId: userId },
   });
 
   if (!user) throw new Error("User not found");
 
-  const now = new Date();
-
-  // reset ako je novi dan (24h window)
-  const lastReset = user.lastReset;
-
-  const shouldReset =
-    !lastReset || now.getTime() - lastReset.getTime() > 24 * 60 * 60 * 1000;
-
-  if (shouldReset) {
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        usage: 0,
-        lastReset: now,
-      },
-    });
-
-    user.usage = 0;
-  }
-
-  // PRO user = unlimited (kasnije Stripe)
-  if (user.plan !== "free") {
+  // PRO / PREMIUM korisnici imaju neograničen pristup
+  if (user.plan === "PREMIUM") {
     return { allowed: true };
   }
 
-  // FREE LIMIT CHECK
-  if (user.usage >= FREE_LIMIT) {
+  const now = new Date();
+  const today = new Date().setHours(0, 0, 0, 0);
+  const lastAuditDate = new Date(user.lastAuditDate).setHours(0, 0, 0, 0);
+
+  let currentAuditsCount = user.auditsCount;
+
+  // 2. Reset brojača ako je počeo novi kalendarski dan
+  if (today > lastAuditDate) {
+    currentAuditsCount = 0;
+    
+    await db.user.update({
+      where: { clerkUserId: userId },
+      data: {
+        auditsCount: 0,
+        lastAuditDate: now,
+      },
+    });
+  }
+
+  // 3. Provjera limita za FREE korisnike
+  if (currentAuditsCount >= FREE_LIMIT) {
     return { allowed: false };
   }
 
-  // increment usage
-  await prisma.user.update({
-    where: { id: userId },
+  // 4. Inkrementiraj broj iskorištenih audita u Neon bazi
+  await db.user.update({
+    where: { clerkUserId: userId },
     data: {
-      usage: { increment: 1 },
+      auditsCount: { increment: 1 },
+      lastAuditDate: now,
     },
   });
 
