@@ -27,9 +27,10 @@ export async function POST() {
     await prisma.user.create({
       data: {
         id: userId,
+        clerkUserId: userId,
         email,
-        plan: "free",
-        usage: 0,
+        plan: "FREE",
+        auditsCount: 0,
       },
     });
   }
