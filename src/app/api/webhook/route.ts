@@ -4,6 +4,8 @@ import { WebhookEvent } from '@clerk/nextjs/server'
 import { db } from '../../lib/db' // Prilagodi relativnu putanju do tvog Neon db klijenta
 import { NextResponse } from 'next/server'
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   // 1. Pokupi Webhook Secret iz .env.local fajla
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET
