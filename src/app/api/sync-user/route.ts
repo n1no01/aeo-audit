@@ -2,8 +2,10 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { prisma } from "../../lib/prisma";
 
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 export async function POST() {
+  const { db } = await import("@/app/lib/db");
   const { userId } = await auth();
 
   if (!userId) {

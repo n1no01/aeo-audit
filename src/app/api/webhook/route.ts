@@ -1,12 +1,13 @@
 import { Webhook } from 'svix'
 import { headers } from 'next/headers'
 import { WebhookEvent } from '@clerk/nextjs/server'
-import { db } from '../../lib/db' // Prilagodi relativnu putanju do tvog Neon db klijenta
 import { NextResponse } from 'next/server'
 
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store"; 
 
 export async function POST(req: Request) {
+  const { db } = await import("@/app/lib/db");
   // 1. Pokupi Webhook Secret iz .env.local fajla
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET
 
