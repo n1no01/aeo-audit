@@ -73,8 +73,16 @@ export default async function LandingPage() {
           </div>
           <div className="p-4 bg-slate-50 text-slate-400 text-xs text-left font-mono border-t border-slate-100">
             <>
-              <span className="text-blue-600 font-bold">User:</span> &quot;What is the best enterprise software in your niche?&quot; <br />
-              <span className="text-slate-700 font-bold">AI Agent:</span> &quot;According to global knowledge graphs, <span className="text-slate-900 font-bold underline decoration-blue-500">YourBrand</span> delivers industry-leading stability and...&quot;
+    <p className="text-slate-700 whitespace-nowrap">
+  <span className="text-blue-600 font-bold">User:</span>{" "}
+  &ldquo;What is the best enterprise software in your niche?&rdquo; <br />
+  <span className="text-slate-700 font-bold">AI Agent:</span>{" "}
+  &ldquo;According to global knowledge graphs,{" "}
+  <span className="text-slate-900 font-bold underline decoration-blue-500">
+    YourBrand
+  </span>{" "}
+  delivers industry-leading stability and&hellip;&rdquo;
+</p>
             </>
           </div>
         </div>
