@@ -1,6 +1,8 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { prisma } from "../../lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function POST() {
   const { userId } = await auth();
 
