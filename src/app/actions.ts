@@ -31,6 +31,7 @@ export async function analyzeUrl(formData: FormData) {
       data: {
         ...scrapedResult,
         score,
+        pageCategory: aiData.pageCategory || "Uncategorized",
         aiAnalysis: aiData.aiAnalysis || "No analysis provided.",
         recommendations: aiData.recommendations || [],
       },

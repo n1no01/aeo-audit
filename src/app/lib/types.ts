@@ -45,6 +45,7 @@ export interface ScrapedData {
 
 export interface AuditData extends ScrapedData {
   score: number;
+  pageCategory: string; // npr. "Personal Portfolio"
   aiAnalysis: string;
   recommendations: string[];
 }

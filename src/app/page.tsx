@@ -72,12 +72,12 @@ export default function Home() {
 
     const {
       score,
+      pageCategory,
       aiAnalysis,
       recommendations,
       title,
       metaDescription,
       h1,
-      wordCount,
       robotsStatus,
       aiBotsStatus,
       entityTrustMap,
@@ -95,7 +95,14 @@ export default function Home() {
               children: [
                 new Paragraph({
                   alignment: AlignmentType.RIGHT,
-                  children: [new TextRun({ text: `Prepared by: ${agencyName} | Strategic Intelligence`, size: 16, color: "94a3b8", italics: true })],
+                  children: [
+                    new TextRun({ 
+                      text: `Prepared by: ${agencyName} | Strategic Intelligence`, 
+                      size: 16, 
+                      color: "94a3b8", 
+                      italics: true 
+                    })
+                  ],
                 }),
               ],
             }),
@@ -103,6 +110,7 @@ export default function Home() {
           children: [
             new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 200, after: 100 }, children: [new TextRun({ text: agencyName.toUpperCase(), bold: true, size: 18, color: cleanHexColor })] }),
             new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 400 }, children: [new TextRun({ text: "ANSWER ENGINE OPTIMIZATION AUDIT", bold: true, size: 32, color: "0f172a" })] }),
+            new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 400 }, children: [new TextRun({ text: `Detected Category / Niche: ${pageCategory || "General Website"}`.toUpperCase(), bold: true, size: 14, color: "64748b" })] }),
             new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 600 }, children: [new TextRun({ text: `Overall Visibility Score: ${score}/100`, bold: true, size: 26, color: cleanHexColor })] }),
             
             new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 200, after: 200 }, children: [new TextRun({ text: "Executive Summary", color: "0f172a", bold: true, size: 24 })] }),
@@ -118,7 +126,7 @@ export default function Home() {
             new Paragraph({ text: `• Brand Disambiguation Alignment: ${entityTrustMap?.brandDisambiguationStatus || "Optimal"}` }),
             new Paragraph({ text: `• Semantic HTML5 Main Tag: ${semanticLayoutMap?.hasMainTag ? "Valid" : "Missing"}` }),
             new Paragraph({ text: `• Heading Hierarchy Defect (Leap): ${semanticLayoutMap?.hasHeadingLeap ? "Anomaly Detected" : "Healthy Cascade"}` }),
-            new Paragraph({ text: `• Multimodal Image Alt Coverage: ${semanticLayoutMap?.totalImages - semanticLayoutMap?.missingAltCount}/${semanticLayoutMap?.totalImages} Images Configured` }),
+            new Paragraph({ text: `• Multimodal Image Alt Coverage: ${semanticLayoutMap ? semanticLayoutMap.totalImages - semanticLayoutMap.missingAltCount : 0}/${semanticLayoutMap ? semanticLayoutMap.totalImages : 0} Images Configured` }),
 
             new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "Prioritized Tactical Optimization Playbook", color: "0f172a", bold: true, size: 24 })] }),
             ...recommendations.map((item) => new Paragraph({ bullet: { level: 0 }, spacing: { after: 100 }, children: [new TextRun({ text: item })] })),
@@ -223,6 +231,8 @@ export default function Home() {
             </button>
 
             <div className="bg-white rounded-[24px] md:rounded-[48px] overflow-hidden border border-slate-100 shadow-2xl">
+              
+              {/* HEADER SA DINAMIČKIM BEDŽOM ZA NIŠU */}
               <div className="bg-slate-900 text-white p-6 sm:p-8 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
                 <div className="flex items-center gap-6 sm:gap-8">
                   <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-[20px] bg-white text-slate-900 flex flex-col items-center justify-center shrink-0 shadow-lg">
@@ -230,6 +240,13 @@ export default function Home() {
                     <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mt-1">Score</span>
                   </div>
                   <div>
+                    {result.data.pageCategory && (
+                      <div className="inline-flex items-center px-2.5 py-1 mb-2 rounded-md bg-blue-500/10 border border-blue-500/20">
+                        <span className="text-[10px] font-black tracking-wider uppercase text-blue-400">
+                          Niche: {result.data.pageCategory}
+                        </span>
+                      </div>
+                    )}
                     <h2 className="text-2xl sm:text-3xl font-black tracking-tight">AEO Performance Audit</h2>
                     <p className="text-slate-400 mt-2 text-xs sm:text-sm truncate max-w-xs sm:max-w-md">{result.data.title}</p>
                   </div>
@@ -247,7 +264,7 @@ export default function Home() {
                     { id: "metrics", label: "Core Metrics" },
                     { id: "analysis", label: "AI Semantic Insights" },
                     { id: "recommendations", label: "Strategic Actions" },
-                    { id: "robots", label: "Raw Directives (Robots.txt)" },
+                    { id: "robots", label: "Robots.txt" },
                   ] as const 
                 ).map((tab) => (
                   <button 
@@ -316,7 +333,7 @@ export default function Home() {
 
                           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Identified Identity Strings:</div>
                           <div className="flex flex-wrap gap-1.5">
-                            {result.data.entityTrustMap?.detectedBrandVariants?.length > 0 ? (
+                            {result.data.entityTrustMap && result.data.entityTrustMap.detectedBrandVariants.length > 0 ? (
                               result.data.entityTrustMap.detectedBrandVariants.map((v, i) => (
                                 <span key={i} className="bg-white border border-slate-200/80 px-2 py-1 rounded-lg text-[11px] font-bold text-slate-600">
                                   {v}
@@ -414,8 +431,8 @@ export default function Home() {
                                 Multimodal Image Alt Coverage
                                 <Tooltip text={AEO_EXPLANATIONS.imageAlt} />
                               </span>
-                              <span className={`text-[10px] font-black tracking-wider px-2 py-0.5 rounded-md ${result.data.semanticLayoutMap?.missingAltCount === 0 ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-600"}`}>
-                                {result.data.semanticLayoutMap?.totalImages - result.data.semanticLayoutMap?.missingAltCount}/{result.data.semanticLayoutMap?.totalImages} ALT TAGS
+                              <span className={`text-[10px] font-black tracking-wider px-2 py-0.5 rounded-md ${result.data.semanticLayoutMap && result.data.semanticLayoutMap.missingAltCount === 0 ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-600"}`}>
+                                {result.data.semanticLayoutMap ? result.data.semanticLayoutMap.totalImages - result.data.semanticLayoutMap.missingAltCount : 0}/{result.data.semanticLayoutMap ? result.data.semanticLayoutMap.totalImages : 0} ALT TAGS
                               </span>
                             </div>
 
