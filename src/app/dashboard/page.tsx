@@ -183,7 +183,7 @@ export default function Home() {
                 name="url"
                 type="text" 
                 required
-                placeholder="domain.com or https://example.com/page"
+                placeholder="Enter a domain or specific URL to audit"
                 className="flex-1 px-4 sm:px-6 py-4 bg-slate-50 border border-slate-200/60 rounded-[16px] sm:rounded-[20px] outline-none font-semibold text-slate-700 focus:border-blue-500 focus:bg-white transition"
               />
               <button disabled={isPending} className="bg-slate-900 text-white px-8 sm:px-10 py-4 rounded-[16px] sm:rounded-[20px] font-black hover:bg-blue-600 transition disabled:bg-slate-300 shrink-0">
