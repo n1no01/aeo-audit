@@ -6,11 +6,19 @@ datasource db {
   provider = "postgresql"
 }
 
+// Definišemo ENUM za planove pretplate
+enum Plan {
+  FREE
+  PREMIUM
+}
+
 model User {
-  id        String @id
-  email     String @unique
-  plan      String @default("free")
-  usage     Int    @default(0)
-  lastReset DateTime?
-  createdAt DateTime @default(now())
+  id              String   @id @default(cuid())
+  clerkUserId     String   @unique                  // ID koji dobijamo od Clerka
+  email           String   @unique
+  plan            Plan     @default(FREE)           // Podrazumijevano svi kreću od FREE
+  auditsCount     Int      @default(0)              // Brojač iskorištenih audita za taj dan
+  lastAuditDate   DateTime @default(now())          // Vrijeme zadnjeg izvršenog audita
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

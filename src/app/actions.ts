@@ -6,6 +6,7 @@ import { calculateScore } from "./lib/scorer";
 import { generateAiAnalysis } from "./lib/gemini";
 import { ScrapedData } from "./lib/types";
 
+
 export async function analyzeUrl(formData: FormData) {
   const rawUrlInput = formData.get("url") as string;
   const url = formatUrl(rawUrlInput);
