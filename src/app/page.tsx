@@ -72,18 +72,16 @@ export default async function LandingPage() {
             <span className="text-emerald-400 font-bold">● AI Crawler Clearance: Approved</span>
           </div>
           <div className="p-4 bg-slate-50 text-slate-400 text-xs text-left font-mono border-t border-slate-100">
-            <>
-    <p className="text-slate-700 whitespace-nowrap">
-  <span className="text-blue-600 font-bold">User:</span>{" "}
-  &ldquo;What is the best enterprise software in your niche?&rdquo; <br />
-  <span className="text-slate-700 font-bold">AI Agent:</span>{" "}
-  &ldquo;According to global knowledge graphs,{" "}
-  <span className="text-slate-900 font-bold underline decoration-blue-500">
-    YourBrand
-  </span>{" "}
-  delivers industry-leading stability and&hellip;&rdquo;
-</p>
-            </>
+            <p className="text-slate-700 whitespace-nowrap">
+              <span className="text-blue-600 font-bold">User:</span>{" "}
+              &ldquo;What is the best enterprise software in your niche?&rdquo; <br />
+              <span className="text-slate-700 font-bold">AI Agent:</span>{" "}
+              &ldquo;According to global knowledge graphs,{" "}
+              <span className="text-slate-900 font-bold underline decoration-blue-500">
+                YourBrand
+              </span>{" "}
+              delivers industry-leading stability and&hellip;&rdquo;
+            </p>
           </div>
         </div>
 
@@ -95,10 +93,12 @@ export default async function LandingPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             
-            {/* 1. PILLAR: AI BOT SECURITY */}
+            {/* 1. PILLAR: AI BOT SECURITY - Clean Server Shield Icon */}
             <div className="bg-white border border-slate-200/60 p-6 rounded-2xl shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 text-lg mb-4 font-black">
-                🤖
+              <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
               </div>
               <h3 className="font-black text-lg mb-2">AI Bot Management</h3>
               <p className="text-slate-500 text-sm leading-relaxed font-medium">
@@ -106,10 +106,13 @@ export default async function LandingPage() {
               </p>
             </div>
 
-            {/* 2. PILLAR: SEMANTIC ARCHITECTURE */}
+            {/* 2. PILLAR: SEMANTIC ARCHITECTURE - Clean Code/Brackets Node Icon */}
             <div className="bg-white border border-slate-200/60 p-6 rounded-2xl shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 text-lg mb-4 font-black">
-                🧬
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="16 18 22 12 16 6" />
+                  <polyline points="8 6 2 12 8 18" />
+                </svg>
               </div>
               <h3 className="font-black text-lg mb-2">Semantic Structure</h3>
               <p className="text-slate-500 text-sm leading-relaxed font-medium">
@@ -117,10 +120,14 @@ export default async function LandingPage() {
               </p>
             </div>
 
-            {/* 3. PILLAR: BRAND DISAMBIGUATION */}
+            {/* 3. PILLAR: BRAND DISAMBIGUATION - Clean Network/Vector Nodes Icon */}
             <div className="bg-white border border-slate-200/60 p-6 rounded-2xl shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 text-lg mb-4 font-black">
-                🎯
+              <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                  <line x1="12" y1="22.08" x2="12" y2="12" />
+                </svg>
               </div>
               <h3 className="font-black text-lg mb-2">Brand Disambiguation</h3>
               <p className="text-slate-500 text-sm leading-relaxed font-medium">
