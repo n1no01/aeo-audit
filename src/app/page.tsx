@@ -15,9 +15,11 @@ export default async function LandingPage() {
       
       {/* NAVBAR - FIXED AT THE TOP */}
       <nav className="w-full max-w-5xl mx-auto p-6 flex justify-between items-center bg-transparent">
-        <div className="text-2xl font-black tracking-tight italic">
-          AEO<span className="text-blue-600">Pulse</span> Pro
-        </div>
+       <Link href={userId ? "/dashboard" : "/"} className="group cursor-pointer select-none">
+  <div className="text-2xl font-black tracking-tight italic">
+    AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200">Pulse</span> Pro
+  </div>
+</Link>
         <div className="flex items-center gap-6">
           <Link href="/how-it-works" className="text-sm font-bold text-slate-600 hover:text-slate-900 transition">
             How It Works
