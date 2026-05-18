@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
@@ -18,6 +19,9 @@ export default async function LandingPage() {
           AEO<span className="text-blue-600">Pulse</span> Pro
         </div>
         <div className="flex items-center gap-6">
+          <Link href="/how-it-works" className="text-sm font-bold text-slate-600 hover:text-slate-900 transition">
+            How It Works
+          </Link>
           <Link href="/pricing" className="text-sm font-bold text-slate-600 hover:text-slate-900 transition">
             Pricing
           </Link>
@@ -32,7 +36,6 @@ export default async function LandingPage() {
 
       {/* HERO SECTION */}
       <main className="max-w-5xl mx-auto px-6 py-12 flex-1 flex flex-col items-center">
-        
         {/* Tool Category Badge */}
         <div className="inline-block px-4 py-2 mb-6 rounded-full bg-blue-50 border border-blue-100 text-center">
           <span className="text-[10px] font-black tracking-[0.3em] uppercase text-blue-600">

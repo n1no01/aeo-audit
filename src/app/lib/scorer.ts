@@ -9,8 +9,16 @@ export function calculateScore(data: Omit<ScrapedData, "bodyText">): number {
   if (data.h1 && data.h1 !== "No H1 Found") score += 10;
 
   // 2. Sadržaj i Formati (Max 25 bodova)
-  if (data.wordCount >= 500) score += 10;
-  if (data.hasTablesOrLists) score += 5;
+  // Smanjen uticaj wordCount-a jer dužina ne utiče na AI citiranje
+  if (data.wordCount >= 500) {
+    score += 5; // Smanjeno sa 10 na 5
+  } else if (data.wordCount >= 200) {
+    score += 2;
+  }
+  
+  // Povećan uticaj tabela i listi (Listicles čine 43.8% svih ChatGPT citata!)
+  if (data.hasTablesOrLists) score += 10; // Povećano sa 5 na 10
+
   if (data.qaBlocksCount >= 2) {
     score += 10;
   } else if (data.qaBlocksCount === 1) {
@@ -18,7 +26,11 @@ export function calculateScore(data: Omit<ScrapedData, "bodyText">): number {
   }
 
   // 3. Robots & Crawlability (Max 15 bodova)
-  if (data.robotsStatus === "Valid" || data.robotsStatus === "Missing") score += 15; 
+  if (data.robotsStatus === "Valid" || data.robotsStatus === "Missing") {
+    score += 15; 
+  } else if (data.robotsStatus === "Blocking AI") {
+    score -= 25; 
+  }
 
   // 4. Strukturirani Podaci & Šeme (Max 15 bodova)
   if (data.detectedSchemas.length > 0) score += 5;
@@ -48,5 +60,6 @@ export function calculateScore(data: Omit<ScrapedData, "bodyText">): number {
     score += 3;
   }
 
-  return Math.min(score, 100);
+  // Osiguravamo da zbog penalizacije skor ne ode ispod 0, niti preko 100
+  return Math.max(0, Math.min(score, 100));
 }

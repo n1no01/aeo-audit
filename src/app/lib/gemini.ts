@@ -6,14 +6,24 @@ export async function generateAiAnalysis(
   score: number,
   url: string,
   geminiApiKey: string
-): Promise<{ score: number; pageCategory: string; aiAnalysis: string; recommendations: string[] }> {
+): Promise<{ 
+  score: number; 
+  pageCategory: string; 
+  aiAnalysis: string; 
+  recommendations: string[];
+  // NOVE METRIKE UKLJUČENE U RETURN TIP:
+  bluffScore: number;
+  atomicStructureScore: number;
+  entityDensityScore: number;
+  sentenceSimplicityScore: number;
+}> {
   const genAI = new GoogleGenerativeAI(geminiApiKey);
 
   type GeminiSchema = NonNullable<
     NonNullable<Parameters<typeof genAI.getGenerativeModel>[0]["generationConfig"]>["responseSchema"]
   >;
 
-  // PROŠIRENA ŠEMA SA POLJEM 'pageCategory'
+  // PROŠIRENA ŠEMA SA 4 NOVA AEO STUBA PISANJA
   const aeoResponseSchema = {
     type: "OBJECT",
     properties: {
@@ -29,13 +39,38 @@ export async function generateAiAnalysis(
         type: "STRING",
         description: "Executive synthesis audit looking deeply at LLM crawlability, semantic HTML structures, heading cascade rules, multimodal image alt tags, and graph optimizations.",
       },
+      bluffScore: { 
+        type: "INTEGER", 
+        description: "Score 1-10. Assesses if sections start with a direct answer (Bottom Line Up Front) instead of burying points in backstory." 
+      },
+      atomicStructureScore: { 
+        type: "INTEGER", 
+        description: "Score 1-10. Assesses if H2/H3 sections make complete sense when read entirely out of context (ready for LLM chunking)." 
+      },
+      entityDensityScore: { 
+        type: "INTEGER", 
+        description: "Score 1-10. Assesses how rich the content is with specific entities (brands, concrete concepts) vs generic filler language." 
+      },
+      sentenceSimplicityScore: { 
+        type: "INTEGER", 
+        description: "Score 1-10. Assesses if sentences are short, declarative, and easy for an LLM to parse (one idea per sentence)." 
+      },
       recommendations: {
         type: "ARRAY",
         items: { type: "STRING" },
         description: "List of 5 highly specific, tactical adjustments needed to rank across modern answer engines, strictly tailored to the detected pageCategory.",
       },
     },
-    required: ["score", "pageCategory", "aiAnalysis", "recommendations"],
+    required: [
+      "score", 
+      "pageCategory", 
+      "aiAnalysis", 
+      "bluffScore", 
+      "atomicStructureScore", 
+      "entityDensityScore", 
+      "sentenceSimplicityScore", 
+      "recommendations"
+    ],
   };
 
   const model = genAI.getGenerativeModel({
@@ -47,7 +82,7 @@ export async function generateAiAnalysis(
     },
   });
 
-  // UNAPRIJEĐENI PROMPT SVJESTAN KONTEKSTA I NIŠE SAJTA
+  // DO PUNJENI PROMPT SA 4 AEO STUBA IZ AHREFS STUDIJE
   const prompt = `
 You are an expert Senior Answer Engine Optimisation (AEO) strategist.
 Analyze the target website data context provided and perform a highly specific structural alignment audit tailored strictly to the website's industry and business model.
@@ -82,14 +117,15 @@ ${data.bodyText}
 COMPUTED SEED OPTIMIZATION SCORE: ${score}/100
 
 INSTRUCTIONS:
-1. First, evaluate the context and determine the exact "pageCategory" (e.g., "Personal Portfolio", "Local Business", "E-commerce", "SaaS Platform", "Health & Medical Blog", "Niche Content Blog").
+1. Evaluate the context and determine the exact "pageCategory".
 2. Refine and confirm the final "score" based on how well this page adheres to its specific category standards.
-3. Write an authoritative 3-paragraph "aiAnalysis" focusing on how conversational AI models (ChatGPT, Perplexity, Gemini) tokenize and perceive this specific brand entity.
-4. Generate exactly 5 prioritized, tactical "recommendations". These MUST be hyper-targeted to the detected pageCategory:
-   - If Local Business: Focus heavily on NAP consistency, structured local schemas, and geo-signals.
-   - If Personal Portfolio: Focus on personal branding tokens, authorship signals, and connecting social entities (GitHub, LinkedIn).
-   - If E-commerce: Focus on product data matrices, pricing tables, transactional semantic hooks, and Product schemas.
-   - If Health/Blog: Focus strictly on E-E-A-T principles, peer-reviewed outlinks, and trusted factual citations.
+3. Rigidly score the content sample from 1 to 10 against the 4 core pillars of AEO writing:
+   - bluffScore (Bottom Line Up Front): Do sections give direct answers immediately, or is the core point buried in introductory paragraphs?
+   - atomicStructureScore: Can sections survive independently if chunked into vector databases by an LLM?
+   - entityDensityScore: Does it use precise entities (brands, concrete concepts) instead of vague/generic filler wording?
+   - sentenceSimplicityScore: Are sentences short, declarative, following a simple Subject-Verb-Object structure (one idea per sentence)?
+4. Write an authoritative 3-paragraph "aiAnalysis" focusing on how conversational AI models (ChatGPT, Perplexity, Gemini) tokenize and perceive this specific brand entity.
+5. Generate exactly 5 prioritized, tactical "recommendations" hyper-targeted to the detected pageCategory.
 `;
 
   const aiResult = await model.generateContent(prompt);

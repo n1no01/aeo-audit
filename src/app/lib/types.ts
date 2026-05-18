@@ -48,6 +48,11 @@ export interface AuditData extends ScrapedData {
   pageCategory: string; // npr. "Personal Portfolio"
   aiAnalysis: string;
   recommendations: string[];
+  bluffScore: number;
+  atomicStructureScore: number;
+  entityDensityScore: number;
+  sentenceSimplicityScore: number;
+  hasListsOrTables: boolean;
 }
 
 export type TabId = "metrics" | "analysis" | "recommendations" | "robots";

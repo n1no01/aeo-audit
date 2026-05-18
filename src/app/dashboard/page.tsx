@@ -5,7 +5,7 @@ import { analyzeUrl } from "../actions";
 import Tooltip from "../components/Tooltip";
 import { AuditData, TabId, AEO_EXPLANATIONS } from "../lib/types"; 
 import Link from "next/link";
-import { UserButton } from "@clerk/nextjs"; // Dodat Clerk import za Sign Out
+import { UserButton } from "@clerk/nextjs";
 import {
   AlignmentType,
   Document,
@@ -84,6 +84,10 @@ export default function Home() {
       aiBotsStatus,
       entityTrustMap,
       semanticLayoutMap,
+      bluffScore,
+      atomicStructureScore,
+      entityDensityScore,
+      sentenceSimplicityScore,
     } = result.data;
 
     const cleanHexColor = brandColor.replace("#", "").trim();
@@ -120,6 +124,12 @@ export default function Home() {
             new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: "Meta Description: ", bold: true }), new TextRun({ text: metaDescription })] }),
             new Paragraph({ spacing: { after: 400 }, children: [new TextRun({ text: "Primary H1 Anchor: ", bold: true }), new TextRun({ text: h1 })] }),
 
+            new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "AEO Content Core Pillars Score", color: "0f172a", bold: true, size: 24 })] }),
+            new Paragraph({ text: `• BLUFF Alignment (Bottom Line Up Front): ${bluffScore || 5}/10` }),
+            new Paragraph({ text: `• LLM Chunking Readiness (Atomic Structure): ${atomicStructureScore || 5}/10` }),
+            new Paragraph({ text: `• Entity Density (vs Generic Fluff): ${entityDensityScore || 5}/10` }),
+            new Paragraph({ text: `• Syntactic Simplicity (Declarative Writing): ${sentenceSimplicityScore || 5}/10` }),
+
             new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "AI Crawler Access & Entity Token Map", color: "0f172a", bold: true, size: 24 })] }),
             new Paragraph({ text: `• OpenAI GPTBot Clearance: ${aiBotsStatus?.gptBot || "Allowed"}` }),
             new Paragraph({ text: `• OpenAI SearchBot Clearance: ${aiBotsStatus?.oaiSearchBot || "Allowed"}` }),
@@ -144,23 +154,28 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#f8fafc] p-4 sm:p-8 md:p-12 text-slate-900">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white">
       
-      {/* APP NAVBAR ZA LOGGED-IN KORISNIKE (SADRŽI SIGN OUT PARAMETAR) */}
-      <nav className="max-w-5xl mx-auto w-full mb-10 p-4 bg-white border border-slate-200/60 rounded-2xl flex justify-between items-center shadow-sm">
-        <div className="text-xl font-black tracking-tight italic">
-          AEO<span className="text-blue-600">Pulse</span> Pro <span className="text-xs font-bold text-slate-400 not-italic ml-2">/ Dashboard</span>
+      {/* NAVBAR */}
+      <nav className="w-full max-w-6xl mx-auto p-6 flex justify-between items-center bg-transparent">
+        <div className="text-2xl font-black tracking-tight italic">
+          AEO<span className="text-blue-600">Pulse</span> Pro
         </div>
-        <div className="flex items-center gap-4">
-          <Link href="/pricing" className="text-sm font-bold text-slate-600 hover:text-slate-900 transition">
-      Pricing
-    </Link>
-          <span className="text-xs font-bold text-slate-500 hidden sm:inline">Active Session</span>
+        <div className="flex items-center gap-6">
+          <Link href="/how-it-works" className="text-sm font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer">
+            How It Works
+          </Link>
+          <Link href="/pricing" className="text-sm font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer">
+            Pricing
+          </Link>
+          <div className="h-4 w-px bg-slate-200 hidden sm:block" />
+          <span className="text-xs font-bold text-slate-400 hidden sm:inline">Active Session</span>
           <UserButton /> 
         </div>
       </nav>
 
-      <div className="max-w-5xl mx-auto">
+      {/* MAIN CONTENT WRAPPER */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 md:px-12 flex-1 w-full">
         
         {/* HEADER */}
         <header className="text-center mb-12 md:mb-16">
@@ -249,7 +264,6 @@ export default function Home() {
 
             <div className="bg-white rounded-[24px] md:rounded-[48px] overflow-hidden border border-slate-100 shadow-2xl">
               
-              {/* HEADER SA DINAMIČKIM BEDŽOM ZA NIŠU */}
               <div className="bg-slate-900 text-white p-6 sm:p-8 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
                 <div className="flex items-center gap-6 sm:gap-8">
                   <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-[20px] bg-white text-slate-900 flex flex-col items-center justify-center shrink-0 shadow-lg">
@@ -274,7 +288,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* TABS HEADER */}
               <div className="flex flex-wrap border-b border-slate-100 bg-slate-50/50 p-2 gap-1 sm:gap-2">
                 {(
                   [
@@ -294,15 +307,12 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* TAB CONTENT */}
               <div className="p-6 sm:p-8 md:p-12">
                 {activeTab === "metrics" && (
                   <div className="space-y-8 animate-in fade-in duration-300">
                     
-                    {/* TOP DUAL TECHNICAL ROW */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       
-                      {/* CRAWLER MATRIX */}
                       <div className="border border-slate-200/60 rounded-3xl p-5 bg-slate-50/50 flex flex-col justify-between">
                         <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3 flex items-center">
                           AI Search Crawler Status
@@ -325,7 +335,6 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {/* BRAND DISAMBIGUATION CARD */}
                       <div className="border border-slate-200/60 rounded-3xl p-5 bg-slate-50/50 flex flex-col justify-between">
                         <div>
                           <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center">
@@ -371,10 +380,8 @@ export default function Home() {
 
                     </div>
 
-                    {/* DUAL CARD SPLIT: ENTITY GRAPH VS SEMANTIC HTML AUDIT */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       
-                      {/* ENTITY GRAPH CHECKLIST */}
                       <div className="border border-slate-200/60 rounded-3xl p-5 bg-slate-50/50 flex flex-col justify-between">
                         <div>
                           <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3">Knowledge Graph & Entity Blueprint</div>
@@ -407,7 +414,6 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {/* SEMANTIC HTML & MULTIMODAL COMPLIANCE CARD */}
                       <div className="border border-slate-200/60 rounded-3xl p-5 bg-slate-50/50 flex flex-col justify-between">
                         <div>
                           <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3">AI Semantic & Multimodal Blueprint</div>
@@ -462,7 +468,6 @@ export default function Home() {
 
                     </div>
 
-                    {/* CORE SPEED METRICS ROW */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="p-5 rounded-2xl bg-slate-50 border flex flex-col justify-between">
                         <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center">
@@ -508,9 +513,71 @@ export default function Home() {
                 )}
 
                 {activeTab === "analysis" && (
-                  <div className="space-y-6 animate-in fade-in duration-300">
-                    <div className="flex items-center gap-3 mb-2"><div className="w-2 h-6 bg-blue-600 rounded-full" /><h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Executive LLM Diagnostics</h3></div>
-                    <div className="bg-slate-50 rounded-[16px] p-5 border text-sm leading-relaxed text-slate-700 whitespace-pre-line font-medium">{result.data.aiAnalysis}</div>
+                  <div className="space-y-8 animate-in fade-in duration-300">
+                    
+                    <div>
+                      <div className="flex items-center gap-3 mb-5">
+                        <div className="w-2 h-6 bg-blue-600 rounded-full" />
+                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">LLM Reading Competency (AEO Content Pillars)</h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-3xl border border-slate-200/60">
+                        
+                        <div className="bg-white p-4 rounded-2xl border">
+                          <div className="flex justify-between items-center mb-1.5">
+                            <span className="text-xs font-black text-slate-700 uppercase tracking-wide">BLUFF Alignment</span>
+                            <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">{result.data.bluffScore || 5}/10</span>
+                          </div>
+                          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-2">
+                            <div className="bg-blue-600 h-full rounded-full transition-all duration-500" style={{ width: `${(result.data.bluffScore || 5) * 10}%` }} />
+                          </div>
+                          <p className="text-[10px] font-medium text-slate-400 leading-snug">Delivers critical answers upfront on headings instead of burying them deep into backstory paragraphs.</p>
+                        </div>
+
+                        <div className="bg-white p-4 rounded-2xl border">
+                          <div className="flex justify-between items-center mb-1.5">
+                            <span className="text-xs font-black text-slate-700 uppercase tracking-wide">LLM Chunking Readiness</span>
+                            <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">{result.data.atomicStructureScore || 5}/10</span>
+                          </div>
+                          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-2">
+                            <div className="bg-blue-600 h-full rounded-full transition-all duration-500" style={{ width: `${(result.data.atomicStructureScore || 5) * 10}%` }} />
+                          </div>
+                          <p className="text-[10px] font-medium text-slate-400 leading-snug">Checks if your H2/H3 text modules are self-contained and make complete sense when extracted independently.</p>
+                        </div>
+
+                        <div className="bg-white p-4 rounded-2xl border">
+                          <div className="flex justify-between items-center mb-1.5">
+                            <span className="text-xs font-black text-slate-700 uppercase tracking-wide">Semantic Entity Density</span>
+                            <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">{result.data.entityDensityScore || 5}/10</span>
+                          </div>
+                          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-2">
+                            <div className="bg-blue-600 h-full rounded-full transition-all duration-500" style={{ width: `${(result.data.entityDensityScore || 5) * 10}%` }} />
+                          </div>
+                          <p className="text-[10px] font-medium text-slate-400 leading-snug">Evaluates the injection rate of concrete terms, brand tokens, and clear relational entities against generic wording.</p>
+                        </div>
+
+                        <div className="bg-white p-4 rounded-2xl border">
+                          <div className="flex justify-between items-center mb-1.5">
+                            <span className="text-xs font-black text-slate-700 uppercase tracking-wide">Syntactic Simplicity</span>
+                            <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">{result.data.sentenceSimplicityScore || 5}/10</span>
+                          </div>
+                          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-2">
+                            <div className="bg-blue-600 h-full rounded-full transition-all duration-500" style={{ width: `${(result.data.sentenceSimplicityScore || 5) * 10}%` }} />
+                          </div>
+                          <p className="text-[10px] font-medium text-slate-400 leading-snug">Measures sentence structural speed. Favors declarative Subject-Verb-Object models carrying exactly one idea.</p>
+                        </div>
+
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-2 h-6 bg-blue-600 rounded-full" />
+                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Executive LLM Diagnostics</h3>
+                      </div>
+                      <div className="bg-slate-50 rounded-[16px] p-5 border text-sm leading-relaxed text-slate-700 whitespace-pre-line font-medium shadow-inner">{result.data.aiAnalysis}</div>
+                    </div>
+
                   </div>
                 )}
 
@@ -540,7 +607,13 @@ export default function Home() {
           </div>
         )}
       </div>
-    </main>
+
+      {/* FOOTER */}
+      <footer className="border-t border-slate-200/50 py-6 text-center text-xs font-bold text-slate-400 bg-white w-full mt-12">
+        &copy; {new Date().getFullYear()} AEO Pulse Pro. All rights reserved.
+      </footer>
+
+    </div>
   );
 }
 

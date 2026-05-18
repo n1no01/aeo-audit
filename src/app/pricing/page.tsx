@@ -12,6 +12,7 @@ export default async function PricingPage() {
         <div className="text-2xl font-black tracking-tight italic">
           AEO<span className="text-blue-600">Pulse</span> Pro
         </div>
+        
         <div className="flex items-center">
           <Link href={userId ? "/dashboard" : "/"} className="text-sm font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer">
             {userId ? "Back to Dashboard →" : "Back Home →"}
