@@ -7,15 +7,23 @@ export default async function PricingPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white">
       
-      {/* NAVBAR */}
-      <nav className="w-full max-w-6xl mx-auto p-6 flex justify-between items-center bg-transparent">
+       {/* NAVBAR - FIXED AT THE TOP */}
+      <nav className="w-full max-w-5xl mx-auto p-6 flex justify-between items-center bg-transparent">
         <div className="text-2xl font-black tracking-tight italic">
           AEO<span className="text-blue-600">Pulse</span> Pro
         </div>
-        
-        <div className="flex items-center">
-          <Link href={userId ? "/dashboard" : "/"} className="text-sm font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer">
-            {userId ? "Back to Dashboard →" : "Back Home →"}
+        <div className="flex items-center gap-6">
+          <Link href="/how-it-works" className="text-sm font-bold text-slate-600 hover:text-slate-900 transition">
+            How It Works
+          </Link>
+          <Link href="/pricing" className="text-sm font-bold text-slate-600 hover:text-slate-900 transition">
+            Pricing
+          </Link>
+          <Link href="/sign-in" className="text-sm font-bold text-slate-600 hover:text-slate-900 transition">
+            Sign In
+          </Link>
+          <Link href="/sign-up" className="bg-slate-900 text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-blue-600 transition shadow-sm">
+            Get Started
           </Link>
         </div>
       </nav>
