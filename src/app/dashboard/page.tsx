@@ -156,18 +156,18 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white">
       
-      {/* NAVBAR */}
-      <nav className="w-full max-w-6xl mx-auto p-6 flex justify-between items-center bg-transparent">
+      {/* NAVBAR - RESPONSIVE */}
+      <nav className="w-full max-w-6xl mx-auto p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-transparent">
         <Link href="/" className="group cursor-pointer select-none">
-  <div className="text-2xl font-black tracking-tight italic">
-    AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200">Pulse</span> Pro
-  </div>
-</Link>
-        <div className="flex items-center gap-6">
-          <Link href="/how-it-works" className="text-sm font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer">
+          <div className="text-2xl font-black tracking-tight italic">
+            AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200">Pulse</span> Pro
+          </div>
+        </Link>
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+          <Link href="/how-it-works" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer">
             How It Works
           </Link>
-          <Link href="/pricing" className="text-sm font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer">
+          <Link href="/pricing" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer">
             Pricing
           </Link>
           <div className="h-4 w-px bg-slate-200 hidden sm:block" />
@@ -180,14 +180,16 @@ export default function Home() {
       <div className="max-w-5xl mx-auto px-4 sm:px-8 md:px-12 flex-1 w-full">
         
         {/* HEADER */}
-        <header className="text-center mb-12 md:mb-16">
-          <div className="inline-block px-4 py-2 mb-5 rounded-full bg-blue-50 border border-blue-100">
-            <span className="text-[10px] font-black tracking-[0.3em] uppercase text-blue-600">AI Answer Engine Optimization</span>
+        <header className="text-center mb-10 sm:mb-14 md:mb-16 px-2">
+          <div className="inline-block px-4 py-2 mb-5 rounded-full bg-blue-50 border border-blue-100 max-w-full">
+            <span className="text-[9px] sm:text-[10px] font-black tracking-[0.2em] sm:tracking-[0.3em] uppercase text-blue-600 block truncate">
+              AI Answer Engine Optimization
+            </span>
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight italic">
             AEO<span className="text-blue-600">Pulse</span> Pro
           </h1>
-          <p className="text-slate-500 mt-5 text-base sm:text-lg max-w-2xl mx-auto">
+          <p className="text-slate-500 mt-4 sm:mt-5 text-sm sm:text-lg max-w-2xl mx-auto font-medium">
             Enterprise-grade Answer Engine Optimization auditing platform powered by AI semantic analysis.
           </p>
         </header>
@@ -201,9 +203,9 @@ export default function Home() {
                 type="text" 
                 required
                 placeholder="Enter a domain or specific URL to audit"
-                className="flex-1 px-4 sm:px-6 py-4 bg-slate-50 border border-slate-200/60 rounded-[16px] sm:rounded-[20px] outline-none font-semibold text-slate-700 focus:border-blue-500 focus:bg-white transition"
+                className="flex-1 px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50 border border-slate-200/60 rounded-[16px] sm:rounded-[20px] outline-none font-semibold text-sm sm:text-base text-slate-700 focus:border-blue-500 focus:bg-white transition"
               />
-              <button disabled={isPending} className="bg-slate-900 text-white px-8 sm:px-10 py-4 rounded-[16px] sm:rounded-[20px] font-black hover:bg-blue-600 transition disabled:bg-slate-300 shrink-0">
+              <button disabled={isPending} className="bg-slate-900 text-white px-6 sm:px-10 py-3.5 sm:py-4 rounded-[16px] sm:rounded-[20px] text-sm sm:text-base font-black hover:bg-blue-600 transition disabled:bg-slate-300 shrink-0">
                 {isPending ? "GENERATING AUDIT..." : "ANALYZE AI VISIBILITY"}
               </button>
             </div>
@@ -224,7 +226,7 @@ export default function Home() {
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Accent Color</label>
                   <div className="flex gap-2">
-                    <input type="color" value={`#${brandColor.replace("#", "")}`} onChange={(e) => setBrandColor(e.target.value.replace("#", ""))} className="w-8 h-8 rounded-lg border cursor-pointer" />
+                    <input type="color" value={`#${brandColor.replace("#", "")}`} onChange={(e) => setBrandColor(e.target.value.replace("#", ""))} className="w-8 h-8 rounded-lg border cursor-pointer shrink-0" />
                     <input type="text" value={brandColor} onChange={(e) => setBrandColor(e.target.value.replace("#", ""))} className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none flex-1" />
                   </div>
                 </div>
@@ -240,57 +242,59 @@ export default function Home() {
         {/* LOADING SCREEN */}
         {isPending && (
           <div className="mb-10 block">
-            <div className="bg-white border border-slate-100 rounded-[24px] sm:rounded-[40px] p-6 sm:p-10 shadow-xl relative overflow-hidden">
+            <div className="bg-white border border-slate-100 rounded-[24px] sm:rounded-[40px] p-5 sm:p-10 shadow-xl relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-indigo-500/10 to-blue-500/5 animate-pulse" />
-              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
+              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
                 <div>
-                  <div className="text-xs font-black uppercase tracking-[0.3em] text-blue-500 mb-2">Live Audit Engine</div>
-                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Running Analysis</h2>
+                  <div className="text-xs font-black uppercase tracking-[0.3em] text-blue-500 mb-1.5">Live Audit Engine</div>
+                  <h2 className="text-xl sm:text-3xl font-black tracking-tight">Running Analysis</h2>
                 </div>
-                <div className="relative w-14 h-14 shrink-0"><div className="absolute inset-0 rounded-full border-4 border-slate-100" /><div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 animate-spin" /></div>
+                <div className="relative w-12 h-12 sm:w-14 sm:h-14 shrink-0"><div className="absolute inset-0 rounded-full border-4 border-slate-100" /><div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 animate-spin" /></div>
               </div>
-              <div className="h-3 bg-slate-100 rounded-full overflow-hidden mb-8"><div className="h-full w-2/3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full animate-pulse" /></div>
-              <div className="bg-slate-50 rounded-2xl p-5 border"><div className="text-xs uppercase tracking-[0.2em] font-black text-slate-400 mb-3">Current Operation</div><p className="text-base font-bold text-slate-700 animate-pulse">{loadingSteps[loadingIndex]}</p></div>
+              <div className="h-2.5 sm:h-3 bg-slate-100 rounded-full overflow-hidden mb-6 sm:mb-8"><div className="h-full w-2/3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full animate-pulse" /></div>
+              <div className="bg-slate-50 rounded-2xl p-4 sm:p-5 border"><div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 sm:mb-3">Current Operation</div><p className="text-sm sm:text-base font-bold text-slate-700 animate-pulse">{loadingSteps[loadingIndex]}</p></div>
             </div>
           </div>
         )}
 
-        {result?.error && <div className="bg-rose-50 border border-rose-200 text-rose-600 rounded-[20px] p-6 font-bold text-center">{result.error}</div>}
+        {result?.error && <div className="bg-rose-50 border border-rose-200 text-rose-600 rounded-[20px] p-5 sm:p-6 font-bold text-center text-sm sm:text-base">{result.error}</div>}
 
         {/* RESULTS */}
         {result?.data && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-700">
-            <button onClick={downloadDocx} className="w-full bg-slate-900 text-white hover:bg-blue-600 py-4 sm:py-5 rounded-[16px] sm:rounded-[24px] font-black tracking-wider transition shadow-lg shadow-blue-900/10">
+          <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-700">
+            <button onClick={downloadDocx} className="w-full bg-slate-900 text-white hover:bg-blue-600 py-4 sm:py-5 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg shadow-blue-900/10">
               GENERATE WHITE-LABEL EXPORT (.DOCX)
             </button>
 
             <div className="bg-white rounded-[24px] md:rounded-[48px] overflow-hidden border border-slate-100 shadow-2xl">
               
-              <div className="bg-slate-900 text-white p-6 sm:p-8 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-                <div className="flex items-center gap-6 sm:gap-8">
-                  <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-[20px] bg-white text-slate-900 flex flex-col items-center justify-center shrink-0 shadow-lg">
-                    <span className="text-4xl sm:text-5xl font-black">{result.data.score}</span>
-                    <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mt-1">Score</span>
+              {/* AUDIT TOP BAR - RESPONSIVE SPLIT */}
+              <div className="bg-slate-900 text-white p-5 sm:p-8 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 md:gap-8">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 md:gap-8 w-full md:w-auto">
+                  <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-[16px] sm:rounded-[20px] bg-white text-slate-900 flex flex-col items-center justify-center shrink-0 shadow-lg mx-auto sm:mx-0">
+                    <span className="text-3xl sm:text-5xl font-black">{result.data.score}</span>
+                    <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-slate-400 font-bold mt-0.5 sm:mt-1">Score</span>
                   </div>
-                  <div>
+                  <div className="text-center sm:text-left w-full sm:w-auto overflow-hidden">
                     {result.data.pageCategory && (
                       <div className="inline-flex items-center px-2.5 py-1 mb-2 rounded-md bg-blue-500/10 border border-blue-500/20">
-                        <span className="text-[10px] font-black tracking-wider uppercase text-blue-400">
+                        <span className="text-[9px] sm:text-[10px] font-black tracking-wider uppercase text-blue-400">
                           Niche: {result.data.pageCategory}
                         </span>
                       </div>
                     )}
-                    <h2 className="text-2xl sm:text-3xl font-black tracking-tight">AEO Performance Audit</h2>
-                    <p className="text-slate-400 mt-2 text-xs sm:text-sm truncate max-w-xs sm:max-w-md">{result.data.title}</p>
+                    <h2 className="text-xl sm:text-3xl font-black tracking-tight">AEO Performance Audit</h2>
+                    <p className="text-slate-400 mt-1.5 text-xs sm:text-sm truncate max-w-full">{result.data.title}</p>
                   </div>
                 </div>
-                <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl px-6 py-4 w-full md:w-auto text-center">
-                  <div className="text-[10px] uppercase tracking-widest text-blue-400 font-black mb-1">OPTIMIZATION STATE</div>
-                  <div className="text-xl sm:text-2xl font-black italic uppercase text-white">{result.data.score >= 75 ? "Strong" : result.data.score >= 50 ? "Moderate" : "Weak"}</div>
+                <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl px-4 py-3 sm:px-6 sm:py-4 w-full md:w-auto text-center">
+                  <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-blue-400 font-black mb-0.5 sm:mb-1">OPTIMIZATION STATE</div>
+                  <div className="text-lg sm:text-2xl font-black italic uppercase text-white">{result.data.score >= 75 ? "Strong" : result.data.score >= 50 ? "Moderate" : "Weak"}</div>
                 </div>
               </div>
 
-              <div className="flex flex-wrap border-b border-slate-100 bg-slate-50/50 p-2 gap-1 sm:gap-2">
+              {/* TABS HEADER - Wrap friendly for mobile */}
+              <div className="flex flex-wrap border-b border-slate-100 bg-slate-50/50 p-1.5 sm:p-2 gap-1">
                 {(
                   [
                     { id: "metrics", label: "Core Metrics" },
@@ -302,25 +306,28 @@ export default function Home() {
                   <button 
                     key={tab.id} 
                     onClick={() => setActiveTab(tab.id)} 
-                    className={`flex-1 md:flex-none px-4 sm:px-6 py-3 font-black uppercase tracking-wider rounded-xl transition ${activeTab === tab.id ? "bg-white text-blue-600 shadow-sm border" : "text-slate-400 hover:text-slate-600"}`}
+                    className={`flex-1 md:flex-none px-3 sm:px-6 py-2.5 sm:py-3 text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-xl transition ${activeTab === tab.id ? "bg-white text-blue-600 shadow-sm border border-slate-200/60" : "text-slate-400 hover:text-slate-600"}`}
                   >
                     {tab.label}
                   </button>
                 ))}
               </div>
 
-              <div className="p-6 sm:p-8 md:p-12">
+              {/* TAB CONTENT PANELS */}
+              <div className="p-4 sm:p-8 md:p-12">
                 {activeTab === "metrics" && (
-                  <div className="space-y-8 animate-in fade-in duration-300">
+                  <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* TOP TECHNICAL GRIDS */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                       
-                      <div className="border border-slate-200/60 rounded-3xl p-5 bg-slate-50/50 flex flex-col justify-between">
+                      {/* CRAWLER MATRIX */}
+                      <div className="border border-slate-200/60 rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-slate-50/50 flex flex-col justify-between">
                         <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3 flex items-center">
                           AI Search Crawler Status
                           <Tooltip text={AEO_EXPLANATIONS.crawlerStatus} />
                         </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                           {[
                             { n: "ChatGPT", v: result.data.aiBotsStatus?.gptBot },
                             { n: "OpenAI Search", v: result.data.aiBotsStatus?.oaiSearchBot },
@@ -329,7 +336,7 @@ export default function Home() {
                             { n: "Gemini Ext.", v: result.data.aiBotsStatus?.googleExtended },
                             { n: "Cohere AI", v: result.data.aiBotsStatus?.cohereAi },
                           ].map((b, idx) => (
-                            <div key={idx} className="bg-white border p-2 rounded-xl flex items-center justify-between">
+                            <div key={idx} className="bg-white border border-slate-100 p-2 rounded-xl flex items-center justify-between">
                               <span className="font-bold text-slate-600 truncate mr-1">{b.n}</span>
                               <span className={`w-2 h-2 rounded-full shrink-0 ${b.v === "Allowed" ? "bg-emerald-500" : "bg-amber-400"}`} />
                             </div>
@@ -337,7 +344,8 @@ export default function Home() {
                         </div>
                       </div>
 
-                      <div className="border border-slate-200/60 rounded-3xl p-5 bg-slate-50/50 flex flex-col justify-between">
+                      {/* BRAND DISAMBIGUATION */}
+                      <div className="border border-slate-200/60 rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-slate-50/50 flex flex-col justify-between">
                         <div>
                           <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center">
                             AEO Tokenizer Brand Disambiguation
@@ -373,7 +381,7 @@ export default function Home() {
                           </div>
                         </div>
                         
-                        <p className="text-[10px] font-medium text-slate-400 mt-3 leading-tight">
+                        <p className="text-[10px] font-medium text-slate-400 mt-4 leading-tight">
                           {result.data.entityTrustMap?.brandDisambiguationStatus === "Optimal" && "LLMs can accurately map your company name across global knowledge graphs without identity clashes."}
                           {result.data.entityTrustMap?.brandDisambiguationStatus === "Inconsistent" && "Warning: Multiple structural variations confuse AI text tokenizers. Standardize names in your Schema and Copyright text."}
                           {result.data.entityTrustMap?.brandDisambiguationStatus === "Critical Missing" && "Critical: AI crawlers cannot extract a singular brand entity name anchor. Citing chance is highly restricted."}
@@ -382,14 +390,16 @@ export default function Home() {
 
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* DUAL BLOCKS ROW */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                       
-                      <div className="border border-slate-200/60 rounded-3xl p-5 bg-slate-50/50 flex flex-col justify-between">
+                      {/* KNOWLEDGE GRAPH */}
+                      <div className="border border-slate-200/60 rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-slate-50/50 flex flex-col justify-between">
                         <div>
                           <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3">Knowledge Graph & Entity Blueprint</div>
                           <div className="space-y-2">
                             
-                            <div className="flex items-center justify-between bg-white border p-2 rounded-xl text-xs font-semibold">
+                            <div className="flex items-center justify-between bg-white border border-slate-100 p-2 rounded-xl text-xs font-semibold">
                               <span className="text-slate-600 truncate pr-2 flex items-center">
                                 Authority Reference Outlinks (Wikipedia/Data)
                                 <Tooltip text={AEO_EXPLANATIONS.authorityOutlinks} />
@@ -405,7 +415,7 @@ export default function Home() {
                               { label: "Facebook Page Account Integration", checked: result.data.entityTrustMap?.hasFacebookAccount },
                               { label: "NAP Local Coordinates Validation", checked: result.data.entityTrustMap?.hasPhysicalSignals },
                             ].map((item, index) => (
-                              <div key={index} className="flex items-center justify-between bg-white border p-2 rounded-xl text-xs font-semibold">
+                              <div key={index} className="flex items-center justify-between bg-white border border-slate-100 p-2 rounded-xl text-xs font-semibold">
                                 <span className="text-slate-600 truncate pr-2">{item.label}</span>
                                 <span className={`text-[10px] font-black tracking-wider px-2 py-0.5 rounded-md ${item.checked ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-400"}`}>
                                   {item.checked ? "VERIFIED" : "MISSING"}
@@ -416,12 +426,13 @@ export default function Home() {
                         </div>
                       </div>
 
-                      <div className="border border-slate-200/60 rounded-3xl p-5 bg-slate-50/50 flex flex-col justify-between">
+                      {/* SEMANTIC & MULTIMODAL */}
+                      <div className="border border-slate-200/60 rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-slate-50/50 flex flex-col justify-between">
                         <div>
                           <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3">AI Semantic & Multimodal Blueprint</div>
                           <div className="space-y-2">
                             
-                            <div className="flex items-center justify-between bg-white border p-2 rounded-xl text-xs font-semibold">
+                            <div className="flex items-center justify-between bg-white border border-slate-100 p-2 rounded-xl text-xs font-semibold">
                               <span className="text-slate-600 flex items-center">
                                 HTML5 Semantic &lt;main&gt; Isolation
                                 <Tooltip text={AEO_EXPLANATIONS.mainTag} />
@@ -431,7 +442,7 @@ export default function Home() {
                               </span>
                             </div>
 
-                            <div className="flex items-center justify-between bg-white border p-2 rounded-xl text-xs font-semibold">
+                            <div className="flex items-center justify-between bg-white border border-slate-100 p-2 rounded-xl text-xs font-semibold">
                               <span className="text-slate-600 flex items-center">
                                 HTML5 Article Core Container
                                 <Tooltip text={AEO_EXPLANATIONS.articleTag} />
@@ -441,7 +452,7 @@ export default function Home() {
                               </span>
                             </div>
 
-                            <div className="flex items-center justify-between bg-white border p-2 rounded-xl text-xs font-semibold">
+                            <div className="flex items-center justify-between bg-white border border-slate-100 p-2 rounded-xl text-xs font-semibold">
                               <span className="text-slate-600 flex items-center">
                                 Heading Hierarchy Structural Cascade
                                 <Tooltip text={AEO_EXPLANATIONS.headingCascade} />
@@ -451,7 +462,7 @@ export default function Home() {
                               </span>
                             </div>
 
-                            <div className="flex items-center justify-between bg-white border p-2 rounded-xl text-xs font-semibold">
+                            <div className="flex items-center justify-between bg-white border border-slate-100 p-2 rounded-xl text-xs font-semibold">
                               <span className="text-slate-600 flex items-center">
                                 Multimodal Image Alt Coverage
                                 <Tooltip text={AEO_EXPLANATIONS.imageAlt} />
@@ -463,24 +474,25 @@ export default function Home() {
 
                           </div>
                         </div>
-                        <p className="text-[10px] font-medium text-slate-400 mt-2 leading-tight">
+                        <p className="text-[10px] font-medium text-slate-400 mt-3 leading-tight">
                           Multimodal models (GPT-4o/Gemini) use structural HTML tags and image descriptions to extract data context directly for rich chat snippets.
                         </p>
                       </div>
 
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="p-5 rounded-2xl bg-slate-50 border flex flex-col justify-between">
-                        <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center">
+                    {/* SPEED METRICS GRID - 2 columns on mobile, 4 on desktop */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                      <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border flex flex-col justify-between">
+                        <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center">
                           Word Count
                           <Tooltip text={AEO_EXPLANATIONS.wordCount} />
                         </div>
                         <div className="font-bold text-slate-800 text-xs sm:text-sm leading-relaxed break-words">{result.data.wordCount}</div>
                       </div>
 
-                      <div className="p-5 rounded-2xl bg-slate-50 border flex flex-col justify-between">
-                        <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center">
+                      <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border flex flex-col justify-between">
+                        <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center">
                           Conversational Q&A Loops
                           <Tooltip text={AEO_EXPLANATIONS.qaLoops} />
                         </div>
@@ -488,26 +500,27 @@ export default function Home() {
                       </div>
 
                       <div className="p-4 rounded-2xl bg-slate-50 border text-xs font-bold flex flex-col justify-between">
-                        <span className="text-[10px] uppercase text-slate-400 tracking-wider flex items-center">
+                        <span className="text-[9px] sm:text-[10px] uppercase text-slate-400 tracking-wider flex items-center mb-1">
                           Semantic Layout Density
                           <Tooltip text={AEO_EXPLANATIONS.layoutDensity} />
                         </span>
-                        <span className={result.data.hasTablesOrLists ? "text-emerald-700" : "text-amber-700"}>{result.data.hasTablesOrLists ? "Tables / Lists Active" : "Low Density Blocks"}</span>
+                        <span className={result.data.hasTablesOrLists ? "text-emerald-700 truncate" : "text-amber-700 truncate"}>{result.data.hasTablesOrLists ? "Tables / Lists Active" : "Low Density Blocks"}</span>
                       </div>
                       
                       <div className="p-4 rounded-2xl bg-slate-50 border text-xs font-bold flex flex-col justify-between">
-                        <span className="text-[10px] uppercase text-slate-400 tracking-wider">Robots.txt Architecture</span>
+                        <span className="text-[9px] sm:text-[10px] uppercase text-slate-400 tracking-wider mb-1">Robots.txt Architecture</span>
                         <span className="truncate text-slate-700">{result.data.robotsStatus}</span>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* METADATA SUMMARY */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                       <MetricCard label="Meta Title" value={result.data.title} />
                       <MetricCard label="H1 Header" value={result.data.h1} />
                       <MetricCard label="Meta Description" value={result.data.metaDescription} />
-                      <div className="p-6 rounded-3xl bg-slate-50 border">
+                      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-50 border">
                         <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3">Detected Schema Entities</div>
-                        <div className="flex flex-wrap gap-1.5">{result.data.detectedSchemas.length > 0 ? result.data.detectedSchemas.map((s, i) => <span key={i} className="bg-white border text-slate-700 text-xs px-2.5 py-1 rounded-lg font-bold shadow-sm">{s}</span>) : <span className="text-slate-400 text-xs italic">No items parsed.</span>}</div>
+                        <div className="flex flex-wrap gap-1.5">{result.data.detectedSchemas.length > 0 ? result.data.detectedSchemas.map((s, i) => <span key={i} className="bg-white border text-slate-700 text-[11px] px-2.5 py-1 rounded-lg font-bold shadow-sm">{s}</span>) : <span className="text-slate-400 text-xs italic">No items parsed.</span>}</div>
                       </div>
                     </div>
 
@@ -515,17 +528,19 @@ export default function Home() {
                 )}
 
                 {activeTab === "analysis" && (
-                  <div className="space-y-8 animate-in fade-in duration-300">
+                  <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
                     
+                    {/* 4 CORE AEO PILLARS - Progres barovi */}
                     <div>
-                      <div className="flex items-center gap-3 mb-5">
+                      <div className="flex items-center gap-3 mb-4 sm:mb-5">
                         <div className="w-2 h-6 bg-blue-600 rounded-full" />
                         <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">LLM Reading Competency (AEO Content Pillars)</h3>
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-3xl border border-slate-200/60">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 bg-slate-50 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/60">
                         
-                        <div className="bg-white p-4 rounded-2xl border">
+                        {/* 1. BLUFF */}
+                        <div className="bg-white p-4 rounded-xl sm:rounded-2xl border border-slate-100">
                           <div className="flex justify-between items-center mb-1.5">
                             <span className="text-xs font-black text-slate-700 uppercase tracking-wide">BLUFF Alignment</span>
                             <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">{result.data.bluffScore || 5}/10</span>
@@ -536,7 +551,8 @@ export default function Home() {
                           <p className="text-[10px] font-medium text-slate-400 leading-snug">Delivers critical answers upfront on headings instead of burying them deep into backstory paragraphs.</p>
                         </div>
 
-                        <div className="bg-white p-4 rounded-2xl border">
+                        {/* 2. ATOMIC */}
+                        <div className="bg-white p-4 rounded-xl sm:rounded-2xl border border-slate-100">
                           <div className="flex justify-between items-center mb-1.5">
                             <span className="text-xs font-black text-slate-700 uppercase tracking-wide">LLM Chunking Readiness</span>
                             <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">{result.data.atomicStructureScore || 5}/10</span>
@@ -547,7 +563,8 @@ export default function Home() {
                           <p className="text-[10px] font-medium text-slate-400 leading-snug">Checks if your H2/H3 text modules are self-contained and make complete sense when extracted independently.</p>
                         </div>
 
-                        <div className="bg-white p-4 rounded-2xl border">
+                        {/* 3. ENTITY DENSITY */}
+                        <div className="bg-white p-4 rounded-xl sm:rounded-2xl border border-slate-100">
                           <div className="flex justify-between items-center mb-1.5">
                             <span className="text-xs font-black text-slate-700 uppercase tracking-wide">Semantic Entity Density</span>
                             <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">{result.data.entityDensityScore || 5}/10</span>
@@ -558,7 +575,8 @@ export default function Home() {
                           <p className="text-[10px] font-medium text-slate-400 leading-snug">Evaluates the injection rate of concrete terms, brand tokens, and clear relational entities against generic wording.</p>
                         </div>
 
-                        <div className="bg-white p-4 rounded-2xl border">
+                        {/* 4. SIMPLICITY */}
+                        <div className="bg-white p-4 rounded-xl sm:rounded-2xl border border-slate-100">
                           <div className="flex justify-between items-center mb-1.5">
                             <span className="text-xs font-black text-slate-700 uppercase tracking-wide">Syntactic Simplicity</span>
                             <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">{result.data.sentenceSimplicityScore || 5}/10</span>
@@ -572,12 +590,13 @@ export default function Home() {
                       </div>
                     </div>
 
+                    {/* AI TEXT MODULE */}
                     <div className="space-y-4">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-2 h-6 bg-blue-600 rounded-full" />
                         <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Executive LLM Diagnostics</h3>
                       </div>
-                      <div className="bg-slate-50 rounded-[16px] p-5 border text-sm leading-relaxed text-slate-700 whitespace-pre-line font-medium shadow-inner">{result.data.aiAnalysis}</div>
+                      <div className="bg-slate-50 rounded-[16px] p-4 sm:p-5 border text-sm leading-relaxed text-slate-700 whitespace-pre-line font-medium shadow-inner">{result.data.aiAnalysis}</div>
                     </div>
 
                   </div>
@@ -586,9 +605,9 @@ export default function Home() {
                 {activeTab === "recommendations" && (
                   <div className="space-y-6 animate-in fade-in duration-300">
                     <div className="flex items-center gap-3 mb-2"><div className="w-2 h-6 bg-blue-600 rounded-full" /><h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Prioritized Optimization Playbook</h3></div>
-                    <div className="space-y-4">
+                    <div className="space-y-3 sm:space-y-4">
                       {result.data.recommendations.map((item, idx) => (
-                        <div key={idx} className="bg-blue-50/60 border border-blue-100 rounded-2xl p-4 font-bold text-slate-800 text-sm flex items-start gap-4">
+                        <div key={idx} className="bg-blue-50/60 border border-blue-100 rounded-2xl p-4 font-bold text-slate-800 text-sm flex items-start gap-3 sm:gap-4">
                           <span className="bg-blue-600 text-white rounded-xl w-7 h-7 flex items-center justify-center text-xs font-black shrink-0 mt-0.5">{idx + 1}</span>
                           <div className="leading-relaxed">{item}</div>
                         </div>
@@ -600,7 +619,7 @@ export default function Home() {
                 {activeTab === "robots" && (
                   <div className="space-y-6 animate-in fade-in duration-300">
                     <div className="flex items-center gap-3 mb-2"><div className="w-2 h-6 bg-slate-700 rounded-full" /><h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Raw Crawl Directives Content Mapping</h3></div>
-                    <div className="bg-slate-900 text-slate-300 rounded-2xl p-5 font-mono text-xs shadow-inner overflow-x-auto whitespace-pre leading-relaxed">{result.data.robotsRawContent || "No crawling instructions discovered during standard sweeps."}</div>
+                    <div className="bg-slate-900 text-slate-300 rounded-2xl p-4 sm:p-5 font-mono text-[11px] sm:text-xs shadow-inner overflow-x-auto whitespace-pre leading-relaxed">{result.data.robotsRawContent || "No crawling instructions discovered during standard sweeps."}</div>
                   </div>
                 )}
 
@@ -610,9 +629,18 @@ export default function Home() {
         )}
       </div>
 
-      {/* FOOTER */}
-      <footer className="border-t border-slate-200/50 py-6 text-center text-xs font-bold text-slate-400 bg-white w-full mt-12">
-        &copy; {new Date().getFullYear()} AEO Pulse Pro. All rights reserved.
+      {/* FOOTER - Responsively padded */}
+      <footer className="border-t border-slate-200/50 py-6 text-center text-xs font-bold text-slate-400 bg-white w-full px-4 leading-relaxed mt-12">
+        <div>&copy; 2026 AEO Pulse Pro. All rights reserved.</div>
+        <div className="mt-1 text-slate-400/80">
+          📬 For enterprise inquiries or support:{" "}
+          <a 
+            href="mailto:hello@aeopulse.pro?subject=AEO Pulse Pro Inquiry" 
+            className="text-blue-600/80 hover:text-blue-600 transition-colors underline decoration-blue-500/20 hover:decoration-blue-500"
+          >
+            hello@aeopulse.pro
+          </a>
+        </div>
       </footer>
 
     </div>
@@ -621,8 +649,8 @@ export default function Home() {
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="p-5 rounded-2xl bg-slate-50 border flex flex-col justify-between">
-      <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2">{label}</div>
+    <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border flex flex-col justify-between">
+      <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2">{label}</div>
       <div className="font-bold text-slate-800 text-xs sm:text-sm leading-relaxed break-words">{value}</div>
     </div>
   );
