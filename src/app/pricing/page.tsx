@@ -11,7 +11,7 @@ export default async function PricingPage() {
       <nav className="w-full max-w-5xl mx-auto p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-transparent">
         <Link href={userId ? "/dashboard" : "/"} className="group cursor-pointer select-none">
           <div className="text-2xl font-black tracking-tight italic">
-            AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200">Pulse</span> Pro
+            AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200">Audit</span> Pro
           </div>
         </Link>
         
@@ -147,14 +147,14 @@ export default async function PricingPage() {
 
       {/* FOOTER - Responsively padded */}
       <footer className="border-t border-slate-200/50 py-6 text-center text-xs font-bold text-slate-400 bg-white w-full px-4 leading-relaxed mt-12">
-        <div>&copy; 2026 AEO Pulse Pro. All rights reserved.</div>
+        <div>&copy; 2026 AEO Audit Pro. All rights reserved.</div>
         <div className="mt-1 text-slate-400/80">
           📬 For enterprise inquiries or support:{" "}
           <a 
-            href="mailto:hello@aeopulse.pro?subject=AEO Pulse Pro Inquiry" 
+            href="mailto:hello@aeoaudit.pro?subject=AEO Audit Pro Inquiry" 
             className="text-blue-600/80 hover:text-blue-600 transition-colors underline decoration-blue-500/20 hover:decoration-blue-500"
           >
-            hello@aeopulse.pro
+            hello@aeoaudit.pro
           </a>
         </div>
       </footer>

@@ -39,7 +39,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>("metrics");
 
   const [showBranding, setShowBranding] = useState(false);
-  const [agencyName, setAgencyName] = useState("AEO Pulse Pro");
+  const [agencyName, setAgencyName] = useState("AEO Audit Pro");
   const [brandColor, setBrandColor] = useState("2563eb"); 
   const [authorName, setAuthorName] = useState("Senior AEO Strategist");
 
@@ -143,7 +143,7 @@ export default function Home() {
             new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "Prioritized Tactical Optimization Playbook", color: "0f172a", bold: true, size: 24 })] }),
             ...recommendations.map((item) => new Paragraph({ bullet: { level: 0 }, spacing: { after: 100 }, children: [new TextRun({ text: item })] })),
 
-            new Paragraph({ spacing: { before: 800 }, alignment: AlignmentType.CENTER, children: [new TextRun({ text: `Audit compiled organically by ${authorName}. Powered by AEO Pulse Framework.`, size: 14, color: "64748b", italics: true })] }),
+            new Paragraph({ spacing: { before: 800 }, alignment: AlignmentType.CENTER, children: [new TextRun({ text: `Audit compiled organically by ${authorName}. Powered by AEO Audit Framework.`, size: 14, color: "64748b", italics: true })] }),
           ],
         },
       ],
@@ -160,7 +160,7 @@ export default function Home() {
       <nav className="w-full max-w-6xl mx-auto p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-transparent">
         <Link href="/" className="group cursor-pointer select-none">
           <div className="text-2xl font-black tracking-tight italic">
-            AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200">Pulse</span> Pro
+            AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200">Audit</span> Pro
           </div>
         </Link>
         <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
@@ -187,7 +187,7 @@ export default function Home() {
             </span>
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight italic">
-            AEO<span className="text-blue-600">Pulse</span> Pro
+            AEO<span className="text-blue-600">Audit</span> Pro
           </h1>
           <p className="text-slate-500 mt-4 sm:mt-5 text-sm sm:text-lg max-w-2xl mx-auto font-medium">
             Enterprise-grade Answer Engine Optimization auditing platform powered by AI semantic analysis.
@@ -631,14 +631,14 @@ export default function Home() {
 
       {/* FOOTER - Responsively padded */}
       <footer className="border-t border-slate-200/50 py-6 text-center text-xs font-bold text-slate-400 bg-white w-full px-4 leading-relaxed mt-12">
-        <div>&copy; 2026 AEO Pulse Pro. All rights reserved.</div>
+        <div>&copy; 2026 AEO Audit Pro. All rights reserved.</div>
         <div className="mt-1 text-slate-400/80">
           📬 For enterprise inquiries or support:{" "}
           <a 
-            href="mailto:hello@aeopulse.pro?subject=AEO Pulse Pro Inquiry" 
+            href="mailto:hello@aeoaudit.pro?subject=AEO Audit Pro Inquiry" 
             className="text-blue-600/80 hover:text-blue-600 transition-colors underline decoration-blue-500/20 hover:decoration-blue-500"
           >
-            hello@aeopulse.pro
+            hello@aeoaudit.pro
           </a>
         </div>
       </footer>

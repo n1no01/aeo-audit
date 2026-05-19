@@ -1,8 +1,8 @@
-# AEO Pulse Pro 🚀
+# AEO Audit Pro 🚀
 
 **Next-Gen Search Engine Optimization & Strategic Audit Tool**
 
-AEO Pulse Pro is a high-fidelity SaaS application designed to analyze website visibility for Answer Engines (Perplexity, ChatGPT, Gemini, and more). While traditional SEO focuses on blue links, AEO Pulse Pro focuses on becoming the **definitive source** for AI-driven answers[cite: 1, 2].
+AEO Audit Pro is a high-fidelity SaaS application designed to analyze website visibility for Answer Engines (Perplexity, ChatGPT, Gemini, and more). While traditional SEO focuses on blue links, AEO Audit Pro focuses on becoming the **definitive source** for AI-driven answers[cite: 1, 2].
 
 ---
 

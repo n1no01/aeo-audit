@@ -17,7 +17,7 @@ export default async function LandingPage() {
       <nav className="w-full max-w-5xl mx-auto p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-transparent">
         <Link href={userId ? "/dashboard" : "/"} className="group cursor-pointer select-none">
           <div className="text-2xl font-black tracking-tight italic">
-            AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200">Pulse</span> Pro
+            AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200">Audit</span> Pro
           </div>
         </Link>
         
@@ -55,7 +55,7 @@ export default async function LandingPage() {
         
         {/* Subheadline defining the core problem and solution */}
         <p className="text-slate-500 text-sm sm:text-base md:text-xl text-center max-w-3xl mb-10 font-medium leading-relaxed px-2">
-          Traditional SEO is no longer enough. <strong className="font-bold text-slate-800">AEO Pulse Pro</strong> audits your website’s semantic structure, parses AI crawler directives, and optimizes your data architecture so AI engines cite you as the primary source.
+          Traditional SEO is no longer enough. <strong className="font-bold text-slate-800">AEO Audit Pro</strong> audits your website’s semantic structure, parses AI crawler directives, and optimizes your data architecture so AI engines cite you as the primary source.
         </p>
 
         {/* Call to Action Buttons - Stacked on mobile, row on sm screens */}
@@ -75,7 +75,7 @@ export default async function LandingPage() {
               <span className="w-3 h-3 rounded-full bg-rose-500" />
               <span className="w-3 h-3 rounded-full bg-amber-400" />
               <span className="w-3 h-3 rounded-full bg-emerald-500" />
-              <span className="text-slate-500 ml-1 sm:ml-2 truncate max-w-[180px] sm:max-w-none">aeopulse.com/dashboard</span>
+              <span className="text-slate-500 ml-1 sm:ml-2 truncate max-w-[180px] sm:max-w-none">aeoaudit.com/dashboard</span>
             </div>
             <span className="text-emerald-400 font-bold text-[11px] sm:text-xs">● AI Crawler Clearance: Approved</span>
           </div>
@@ -150,14 +150,14 @@ export default async function LandingPage() {
 
       {/* FOOTER - Responsively padded */}
       <footer className="border-t border-slate-200/50 py-6 text-center text-xs font-bold text-slate-400 bg-white w-full px-4 leading-relaxed">
-        <div>&copy; 2026 AEO Pulse Pro. All rights reserved.</div>
+        <div>&copy; 2026 AEO Audit Pro. All rights reserved.</div>
         <div className="mt-1 text-slate-400/80">
           📬 For enterprise inquiries or support:{" "}
           <a 
-            href="mailto:hello@aeopulse.pro?subject=AEO Pulse Pro Inquiry" 
+            href="mailto:hello@aeoaudit.pro?subject=AEO Audit Pro Inquiry" 
             className="text-blue-600/80 hover:text-blue-600 transition-colors underline decoration-blue-500/20 hover:decoration-blue-500"
           >
-            hello@aeopulse.pro
+            hello@aeoaudit.pro
           </a>
         </div>
       </footer>

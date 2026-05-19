@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'AEO Pulse Pro | Answer Engine Optimization Auditing',
+  title: 'AEO Audit Pro | Answer Engine Optimization Auditing',
   description: 'Enterprise-grade Answer Engine Optimization auditing platform powered by AI semantic analysis.',
 }
 
