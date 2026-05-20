@@ -5,8 +5,8 @@ export default async function PricingPage() {
   const { userId } = await auth();
 
 // 1. Pravi i ispravni Lemon Squeezy linkovi za tvoj checkout
-const BASE_STARTER_URL = "https://aeoauditpro.lemonsqueezy.com/checkout?variant=1681365&embed=1";
-const BASE_PRO_URL = "https://aeoauditpro.lemonsqueezy.com/checkout?variant=1681413&embed=1";
+const BASE_STARTER_URL = "https://aeoauditpro.lemonsqueezy.com/checkout/buy/74f95cf6-5d0b-43e9-ae57-955fc34e053d?enabled=1681365";
+const BASE_PRO_URL = "https://aeoauditpro.lemonsqueezy.com/checkout/buy/2d741065-0590-4991-93e3-c13af9e72a38?enabled=1681413";
 
   // 2. Dinamičko generisanje linkova na serveru ovisno o tome da li je korisnik ulogovan
   let starterFinalUrl = "/sign-up?redirect_url=/pricing";
