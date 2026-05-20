@@ -33,7 +33,7 @@ export default async function PricingPage() {
       </nav>
 
       {/* PRICING CONTENT SECTION */}
-      <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 flex-1 flex flex-col justify-center items-center">
+      <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12 flex-1 flex flex-col justify-center items-center">
         
         {/* HEADLINE & SUBHEADLINE */}
         <div className="text-center mb-12 sm:mb-16 px-2">
@@ -41,15 +41,15 @@ export default async function PricingPage() {
             Simple, Transparent <span className="text-blue-600">Pricing</span>
           </h1>
           <p className="text-slate-500 text-sm sm:text-lg max-w-xl mx-auto font-medium leading-relaxed">
-            Choose the perfect plan for your needs and unlock advanced semantic diagnostics for AI search engines.
+            Empower your agency to run advanced semantic diagnostics and sell high-ticket AEO Audits in 30 seconds.
           </p>
         </div>
 
-        {/* PRICING CARDS GRID - Stacks on mobile, 3 columns on desktop */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch w-full px-2 sm:px-0">
+        {/* PRICING CARDS GRID - Consistent light styling across all 4 tiers */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 xl:gap-8 max-w-7xl mx-auto items-stretch w-full px-2 sm:px-0">
           
           {/* 1. FREE PLAN */}
-          <div className="bg-white border border-slate-200 rounded-[24px] p-6 sm:p-8 shadow-xl shadow-blue-900/5 flex flex-col justify-between relative overflow-hidden">
+          <div className="bg-white border border-slate-200 rounded-[24px] p-6 shadow-xl shadow-blue-900/5 flex flex-col justify-between relative overflow-hidden">
             <div>
               <h3 className="text-xl font-black tracking-tight mb-1">Free Tier</h3>
               <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-6">Basic Test Check</p>
@@ -72,20 +72,20 @@ export default async function PricingPage() {
             </div>
             
             <div className="mt-8">
-              <Link href={userId ? "/dashboard" : "/sign-up"} className="block w-full bg-slate-100 text-slate-700 text-center py-3 rounded-xl font-bold hover:bg-slate-200 transition text-sm cursor-pointer">
+              <Link href={userId ? "/dashboard" : "/sign-up"} className="block w-full bg-blue-600 text-white text-center py-3 rounded-xl font-black tracking-wide hover:bg-slate-900 transition text-sm cursor-pointer shadow-md shadow-blue-600/10">
                 {userId ? "Your Starter Credit" : "Get Started"}
               </Link>
             </div>
           </div>
 
           {/* 2. STARTER PLAN */}
-          <div className="bg-white border border-slate-200 rounded-[24px] p-6 sm:p-8 shadow-xl shadow-blue-900/5 flex flex-col justify-between relative overflow-hidden">
+          <div className="bg-white border border-slate-200 rounded-[24px] p-6 shadow-xl shadow-blue-900/5 flex flex-col justify-between relative overflow-hidden">
             <div>
               <h3 className="text-xl font-black tracking-tight mb-1">Starter</h3>
               <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-6">For Solopreneurs & Bloggers</p>
               
               <div className="flex items-baseline mb-2">
-                <span className="text-4xl font-black tracking-tight">$19</span>
+                <span className="text-4xl font-black tracking-tight">$49</span>
                 <span className="text-slate-400 font-bold text-sm ml-2">/ month</span>
               </div>
               <p className="text-blue-600 text-xs font-black tracking-wide mb-6 uppercase">
@@ -93,7 +93,7 @@ export default async function PricingPage() {
               </p>
 
               <ul className="space-y-3 text-sm font-medium text-slate-600 border-t border-slate-100 pt-6">
-                <li className="flex items-center gap-2">✔ <strong className="font-bold">Everything in Free</strong></li>
+                <li className="flex items-center gap-2">✔ <strong className="font-bold text-slate-900">Everything in Free</strong></li>
                 <li className="flex items-center gap-2">✔ Run audits on any domain</li>
                 <li className="flex items-center gap-2">✔ Advanced Semantic Diagnostics</li>
                 <li className="text-slate-300 line-through">❌ White-Label Agency Branding</li>
@@ -102,23 +102,23 @@ export default async function PricingPage() {
             </div>
             
             <div className="mt-8">
-              <button className="w-full bg-slate-900 text-white text-center py-3 rounded-xl font-black tracking-wide hover:bg-blue-600 transition text-sm cursor-pointer shadow-md">
+              <button className="w-full bg-blue-600 text-white text-center py-3 rounded-xl font-black tracking-wide hover:bg-slate-900 transition text-sm cursor-pointer shadow-md shadow-blue-600/10">
                 CHOOSE STARTER
               </button>
             </div>
           </div>
 
           {/* 3. PRO / AGENCY PLAN (POPULAR) */}
-          <div className="bg-white border-2 border-blue-600 rounded-[24px] p-6 sm:p-8 shadow-2xl shadow-blue-900/10 flex flex-col justify-between relative overflow-hidden mt-2 md:mt-0">
+          <div className="bg-white border-2 border-blue-600 rounded-[24px] p-6 shadow-2xl shadow-blue-900/10 flex flex-col justify-between relative overflow-hidden mt-0">
             <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-bl-xl">
               POPULAR
             </div>
             <div>
-              <h3 className="text-xl font-black tracking-tight mb-1 text-slate-900">Pro / Agency</h3>
+              <h3 className="text-xl font-black tracking-tight mb-1 text-slate-900">Agency Pro</h3>
               <p className="text-blue-600 text-xs font-bold uppercase tracking-wider mb-6">Full White-Label Toolkit</p>
               
               <div className="flex items-baseline mb-2">
-                <span className="text-4xl font-black tracking-tight text-slate-900">$49</span>
+                <span className="text-4xl font-black tracking-tight text-slate-900">$149</span>
                 <span className="text-slate-400 font-bold text-sm ml-2">/ month</span>
               </div>
               <p className="text-blue-600 text-xs font-black tracking-wide mb-6 uppercase">
@@ -126,7 +126,7 @@ export default async function PricingPage() {
               </p>
 
               <ul className="space-y-3 text-sm font-medium text-slate-600 border-t border-slate-100 pt-6">
-                <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Everything in Starter</strong></li>
+                <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold text-slate-900">Everything in Starter</strong></li>
                 <li className="flex items-center gap-2">✔ Full White-Label Agency Branding</li>
                 <li className="flex items-center gap-2">✔ Custom Brand Color Selection</li>
                 <li className="flex items-center gap-2">✔ Unlimited White-Label Exports (.DOCX)</li>
@@ -138,6 +138,38 @@ export default async function PricingPage() {
               <button className="w-full bg-blue-600 text-white text-center py-3 rounded-xl font-black tracking-wide hover:bg-slate-900 transition text-sm cursor-pointer shadow-lg shadow-blue-600/20">
                 UPGRADE TO PRO
               </button>
+            </div>
+          </div>
+
+          {/* 4. ENTERPRISE PLAN (Consistent light design with uniform buttons) */}
+          <div className="bg-white border border-slate-200 rounded-[24px] p-6 shadow-xl shadow-blue-900/5 flex flex-col justify-between relative overflow-hidden">
+            <div>
+              <h3 className="text-xl font-black tracking-tight mb-1 text-slate-900">Enterprise</h3>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-6">For High-Volume Teams</p>
+              
+              <div className="flex items-baseline mb-2">
+                <span className="text-4xl font-black tracking-tight text-slate-900">Custom</span>
+              </div>
+              <p className="text-blue-600 text-xs font-black tracking-wide mb-6 uppercase">
+                ⚡ 1000+ audits / month
+              </p>
+
+              <ul className="space-y-3 text-sm font-medium text-slate-600 border-t border-slate-100 pt-6">
+                <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold text-slate-900">Everything in Agency Pro</strong></li>
+                <li className="flex items-center gap-2">✔ Dedicated Database Allotment</li>
+                <li className="flex items-center gap-2">✔ Custom API Scraper Access</li>
+                <li className="flex items-center gap-2">✔ Bulk Report Document Building</li>
+                <li className="flex items-center gap-2">✔ SLA Support & Invoice Billing</li>
+              </ul>
+            </div>
+            
+            <div className="mt-8">
+              <a 
+                href="mailto:hello@aeoaudit.pro?subject=Enterprise Custom Package Inquiry" 
+                className="block w-full bg-blue-600 text-white text-center py-3 rounded-xl font-black tracking-wide hover:bg-slate-900 transition text-sm cursor-pointer shadow-lg shadow-blue-600/20"
+              >
+                CONTACT SALES
+              </a>
             </div>
           </div>
 
