@@ -202,12 +202,17 @@ export default function Home() {
               </span>
               <div className="flex flex-col items-start gap-0.5">
                 <span className="text-[10px] text-slate-700 font-black">
-                  {userStats.used}/{userStats.limit} Used
+                  {userStats.used ?? 0}/{userStats.limit || (userStats.plan === "FREE" ? 1 : userStats.plan === "STARTER" ? 50 : 200)} Used
                 </span>
                 <div className="w-16 bg-slate-200 h-1 rounded-full overflow-hidden">
                   <div 
-                    className={`h-full rounded-full ${userStats.used >= userStats.limit ? "bg-rose-500" : "bg-blue-600"}`}
-                    style={{ width: `${Math.min((userStats.used / userStats.limit) * 100, 100)}%` }}
+                    className={`h-full rounded-full ${ (userStats.used ?? 0) >= (userStats.limit || 1) ? "bg-rose-500" : "bg-blue-600" }`}
+                    style={{ 
+                      width: `${Math.min(
+                        ((userStats.used ?? 0) / (userStats.limit || (userStats.plan === "FREE" ? 1 : userStats.plan === "STARTER" ? 50 : 200))) * 100, 
+                        100
+                      )}%` 
+                    }}
                   />
                 </div>
               </div>
