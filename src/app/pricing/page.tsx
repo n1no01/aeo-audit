@@ -4,9 +4,20 @@ import { auth } from "@clerk/nextjs/server";
 export default async function PricingPage() {
   const { userId } = await auth();
 
-  // 💡 Ovdje unesi svoje prave Lemon Squeezy testne linkove kada kreiraš proizvode
-  const LEMON_SQUEEZY_STARTER_URL = "https://aeoauditpro.lemonsqueezy.com/checkout/buy/starter-id?embed=1";
-  const LEMON_SQUEEZY_PRO_URL = "https://aeoauditpro.lemonsqueezy.com/checkout/buy/pro-id?embed=1";
+  // 1. Tvoje osnovne baze za Lemon Squeezy linkove
+  // ⚠️ ZAMIJENI "starter-id" i "pro-id" sa pravim brojevima varijanti sa dashboarda
+  const BASE_STARTER_URL = "https://aeoauditpro.lemonsqueezy.com/checkout/buy/74f95cf6-5d0b-43e9-ae57-955fc34e053d?enabled=1681365";
+  const BASE_PRO_URL = "https://aeoauditpro.lemonsqueezy.com/checkout/buy/2d741065-0590-4991-93e3-c13af9e72a38?enabled=1681413";
+
+  // 2. Dinamičko generisanje linkova na serveru ovisno o tome da li je korisnik ulogovan
+  let starterFinalUrl = "/sign-up?redirect_url=/pricing";
+  let proFinalUrl = "/sign-up?redirect_url=/pricing";
+
+  if (userId) {
+    // Ako je ulogovan, dodajemo passthrough parametar koji naš webhook hvata pod custom_data.user_id
+    starterFinalUrl = `${BASE_STARTER_URL}&checkout[custom][user_id]=${userId}`;
+    proFinalUrl = `${BASE_PRO_URL}&checkout[custom][user_id]=${userId}`;
+  }
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white">
@@ -111,7 +122,7 @@ export default async function PricingPage() {
             
             <div className="mt-8">
               <Link 
-                href={userId ? LEMON_SQUEEZY_STARTER_URL : "/sign-up?redirect_url=/pricing"} 
+                href={starterFinalUrl} 
                 className="block w-full bg-blue-600 text-white text-center py-3 rounded-xl font-black tracking-wide hover:bg-slate-900 transition text-sm cursor-pointer shadow-md"
               >
                 CHOOSE STARTER
@@ -146,7 +157,7 @@ export default async function PricingPage() {
             
             <div className="mt-8">
               <Link 
-                href={userId ? LEMON_SQUEEZY_PRO_URL : "/sign-up?redirect_url=/pricing"} 
+                href={proFinalUrl} 
                 className="block w-full bg-blue-600 text-white text-center py-3 rounded-xl font-black tracking-wide hover:bg-slate-900 transition text-sm cursor-pointer shadow-lg"
               >
                 UPGRADE TO PRO
@@ -155,28 +166,25 @@ export default async function PricingPage() {
           </div>
 
           {/* 4. ENTERPRISE PLAN */}
-         {/* 4. ENTERPRISE PLAN */}
-<div className="bg-white border border-slate-200 rounded-[24px] p-6 shadow-xl shadow-blue-900/5 flex flex-col justify-between relative overflow-hidden">
-  <div>
-    <h3 className="text-xl font-black tracking-tight mb-1 text-slate-900">Enterprise</h3>
-    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-6">For High-Volume Teams</p>
-    
-    <div className="flex items-baseline mb-2">
-      <span className="text-4xl font-black tracking-tight text-slate-900">Custom</span>
-    </div>
-    <p className="text-blue-600 text-xs font-black tracking-wide mb-6 uppercase">
-      ⚡ 1000+ audits / month
-    </p>
+          <div className="bg-white border border-slate-200 rounded-[24px] p-6 shadow-xl shadow-blue-900/5 flex flex-col justify-between relative overflow-hidden">
+            <div>
+              <h3 className="text-xl font-black tracking-tight mb-1 text-slate-900">Enterprise</h3>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-6">For High-Volume Teams</p>
+              
+              <div className="flex items-baseline mb-2">
+                <span className="text-4xl font-black tracking-tight text-slate-900">Custom</span>
+              </div>
+              <p className="text-blue-600 text-xs font-black tracking-wide mb-6 uppercase">
+                ⚡ 1000+ audits / month
+              </p>
 
-    <ul className="space-y-3 text-sm font-medium text-slate-600 border-t border-slate-100 pt-6">
-      <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Full White-Label Toolkit</strong></li>
-      <li className="flex items-center gap-2">✔ Advanced Semantic Diagnostics</li>
-      <li className="flex items-center gap-2">✔ Unlimited .DOCX Document Exports</li>
-      <li className="flex items-center gap-2">✔ Custom Brand Color Selection</li>
-
-
-    </ul>
-  </div>
+              <ul className="space-y-3 text-sm font-medium text-slate-600 border-t border-slate-100 pt-6">
+                <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Full White-Label Toolkit</strong></li>
+                <li className="flex items-center gap-2">✔ Advanced Semantic Diagnostics</li>
+                <li className="flex items-center gap-2">✔ Unlimited .DOCX Document Exports</li>
+                <li className="flex items-center gap-2">✔ Custom Brand Color Selection</li>
+              </ul>
+            </div>
             
             <div className="mt-8">
               <a 
