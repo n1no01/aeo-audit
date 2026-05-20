@@ -94,7 +94,7 @@ export default async function PricingPage() {
               <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-6">For Solopreneurs & Bloggers</p>
               
               <div className="flex items-baseline mb-2">
-                <span className="text-4xl font-black tracking-tight">$49</span>
+                <span className="text-4xl font-black tracking-tight">$59</span>
                 <span className="text-slate-400 font-bold text-sm ml-2">/ month</span>
               </div>
               <p className="text-blue-600 text-xs font-black tracking-wide mb-6 uppercase">
@@ -129,7 +129,7 @@ export default async function PricingPage() {
               <p className="text-blue-600 text-xs font-bold uppercase tracking-wider mb-6">High Volume Agency</p>
               
               <div className="flex items-baseline mb-2">
-                <span className="text-4xl font-black tracking-tight text-slate-900">$149</span>
+                <span className="text-4xl font-black tracking-tight text-slate-900">$159</span>
                 <span className="text-slate-400 font-bold text-sm ml-2">/ month</span>
               </div>
               <p className="text-blue-600 text-xs font-black tracking-wide mb-6 uppercase">
