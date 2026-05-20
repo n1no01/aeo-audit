@@ -668,16 +668,35 @@ export default function Home() {
       </div>
 
       {/* FOOTER */}
-      <footer className="border-t border-slate-200/50 py-6 text-center text-xs font-bold text-slate-400 bg-white w-full px-4 leading-relaxed mt-12">
+      {/* FOOTER */}
+      <footer className="border-t border-slate-200/50 py-6 text-center text-xs font-bold text-slate-400 bg-white w-full px-4 leading-relaxed mt-12 flex flex-col items-center">
         <div>&copy; 2026 AEO Audit Pro. All rights reserved.</div>
+        
         <div className="mt-1 text-slate-400/80">
           📬 For enterprise inquiries or support:{" "}
           <a 
             href="mailto:hello@aeoaudit-pro.com?subject=AEO Audit Pro Inquiry" 
-            className="text-blue-600/80 hover:text-blue-600 transition-colors underline decoration-blue-500/20 hover:decoration-blue-500"
+            className="text-blue-600/80 hover:text-blue-600 transition-colors underline decoration-blue-500/20"
           >
             hello@aeoaudit-pro.com
           </a>
+        </div>
+
+        {/* DODAN JUSTIFY-CENTER ZA SAVRŠENO CENTRIRANJE LINKOVA */}
+        <div className="flex items-center justify-center gap-4 mt-2 text-[11px] text-slate-400 font-medium w-full">
+          <Link 
+            href="/privacy" 
+            className="hover:text-slate-900 underline decoration-slate-200 hover:decoration-blue-500 transition-colors duration-200"
+          >
+            Privacy Policy
+          </Link>
+          <span className="text-slate-200">|</span>
+          <Link 
+            href="/terms" 
+            className="hover:text-slate-900 underline decoration-slate-200 hover:decoration-blue-500 transition-colors duration-200"
+          >
+            Terms of Service
+          </Link>
         </div>
       </footer>
 

@@ -198,9 +198,11 @@ const BASE_PRO_URL = "https://aeoauditpro.lemonsqueezy.com/checkout/buy/2d741065
         </div>
       </main>
 
+
       {/* FOOTER */}
-      <footer className="border-t border-slate-200/50 py-6 text-center text-xs font-bold text-slate-400 bg-white w-full px-4 leading-relaxed mt-12">
+      <footer className="border-t border-slate-200/50 py-6 text-center text-xs font-bold text-slate-400 bg-white w-full px-4 leading-relaxed mt-12 flex flex-col items-center">
         <div>&copy; 2026 AEO Audit Pro. All rights reserved.</div>
+        
         <div className="mt-1 text-slate-400/80">
           📬 For enterprise inquiries or support:{" "}
           <a 
@@ -209,6 +211,23 @@ const BASE_PRO_URL = "https://aeoauditpro.lemonsqueezy.com/checkout/buy/2d741065
           >
             hello@aeoaudit-pro.com
           </a>
+        </div>
+
+        {/* DODAN JUSTIFY-CENTER ZA SAVRŠENO CENTRIRANJE LINKOVA */}
+        <div className="flex items-center justify-center gap-4 mt-2 text-[11px] text-slate-400 font-medium w-full">
+          <Link 
+            href="/privacy" 
+            className="hover:text-slate-900 underline decoration-slate-200 hover:decoration-blue-500 transition-colors duration-200"
+          >
+            Privacy Policy
+          </Link>
+          <span className="text-slate-200">|</span>
+          <Link 
+            href="/terms" 
+            className="hover:text-slate-900 underline decoration-slate-200 hover:decoration-blue-500 transition-colors duration-200"
+          >
+            Terms of Service
+          </Link>
         </div>
       </footer>
 

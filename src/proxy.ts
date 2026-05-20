@@ -5,6 +5,8 @@ const isPublicRoute = createRouteMatcher([
   '/', 
   '/pricing',
   '/how-it-works',
+  '/privacy',
+  '/terms',
   '/sign-in(.*)', 
   '/sign-up(.*)', 
   '/api/webhook(.*)' // Obavezno za Stripe kasniji webhook
