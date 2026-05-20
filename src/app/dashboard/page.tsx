@@ -668,10 +668,10 @@ export default function Home() {
         <div className="mt-1 text-slate-400/80">
           📬 For enterprise inquiries or support:{" "}
           <a 
-            href="mailto:hello@aeoaudit.pro?subject=AEO Audit Pro Inquiry" 
+            href="mailto:hello@aeoaudit-pro.com?subject=AEO Audit Pro Inquiry" 
             className="text-blue-600/80 hover:text-blue-600 transition-colors underline decoration-blue-500/20 hover:decoration-blue-500"
           >
-            hello@aeoaudit.pro
+            hello@aeoaudit-pro.com
           </a>
         </div>
       </footer>
