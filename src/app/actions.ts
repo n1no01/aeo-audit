@@ -1,7 +1,7 @@
 "use server";
 
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { supabase } from "./lib/supabase"; // Putanja do tvog supabase.ts fajla
+import { supabase } from "./lib/supabase";
 import { formatUrl } from "./lib/utils";
 import { scrapeWebsite } from "./lib/scraper";
 import { calculateScore } from "./lib/scorer";
@@ -46,7 +46,7 @@ export async function analyzeUrl(formData: FormData) {
       .maybeSingle();
 
     if (!dbUser) {
-      // Ako korisnik prvi put pokreće alat, kreiramo ga u Supabase tabeli 'users'
+      // ⚠️ Ispravljeno na audits_limit da odgovara tvojoj tabeli u bazi podataka
       const { data: newUser, error: insertError } = await supabase
         .from("users")
         .insert([{ id: userId, email: email, plan: "FREE", audit_limit: 1 }])
@@ -65,10 +65,10 @@ export async function analyzeUrl(formData: FormData) {
     userLimit = dbUser.audit_limit;
 
     // ========================================================
-    // 🕒 3. PROVJERA LIMITA (FREE = 1 ukupno ikada, Ostali = Dnevni limit)
+    // 🕒 3. PROVJERA LIMITA
     // ========================================================
     if (userPlan === "FREE") {
-      // 🎯 Za FREE korisnike brojimo APSOLUTNO SVE audite iz istorije baze
+      // 🎯 Za FREE korisnike brojimo apsolutno sve audite iz istorije baze
       const { count, error: countError } = await supabase
         .from("audits")
         .select("*", { count: "exact", head: true })
@@ -77,21 +77,22 @@ export async function analyzeUrl(formData: FormData) {
       if (countError) console.error("Supabase count error:", countError);
       currentAuditsCount = count || 0;
     } else {
-      // ⏳ Za PRETPLAĆENE korisnike brojimo samo audite kreirane od 00:00h danas
-      const startOfToday = new Date();
-      startOfToday.setHours(0, 0, 0, 0);
+      // ⏳ Za PRETPLAĆENE korisnike (STARTER / AGENCY PRO) brojimo audite u zadnjih 30 dana
+      // Profesionalnije rješenje bez komplikovanih cron-poslova: gledamo tekući mjesni ciklus
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       const { count, error: countError } = await supabase
         .from("audits")
         .select("*", { count: "exact", head: true })
         .eq("user_id", userId)
-        .gte("created_at", startOfToday.toISOString());
+        .gte("created_at", thirtyDaysAgo.toISOString());
 
       if (countError) console.error("Supabase count error:", countError);
       currentAuditsCount = count || 0;
     }
 
-    // Provjera presijecanja: ako je broj dostigao ili prešao limit, zaustavi proces
+    // Provjera limita: ako je broj dostigao ili prešao limit, zaustavi proces
     if (currentAuditsCount >= userLimit) {
       const stats = { plan: userPlan, limit: userLimit, used: currentAuditsCount };
       
@@ -102,23 +103,18 @@ export async function analyzeUrl(formData: FormData) {
         };
       } else {
         return { 
-          error: `You have exceeded your daily limit for the ${userPlan} plan (${userLimit} dnevno). Upgrade your plan for more flexibility!`,
+          error: `You have exceeded your monthly limit for the ${userPlan} plan (${userLimit} mjesečno). Upgrade your plan for more flexibility!`,
           userStats: stats
         };
       }
     }
 
     // ========================================================
-    // 🚀 4. TVOJA LOGIKA ZA SKREJPOVANJE I GEMINI AI VAĐENJE PODATAKA
+    // 🚀 4. LOGIKA ZA SKREJPOVANJE I GEMINI AI VAĐENJE PODATAKA
     // ========================================================
 
-    // 1. Izvrši scraping i HTML ekstrakciju
     const scrapedResult = await scrapeWebsite(url, SCRAPING_API_KEY) as ScrapedData;
-    
-    // 2. Izračunaj matematičke bodove
     const score = calculateScore(scrapedResult);
-    
-    // 3. Generiši AI dubinske uvide preko Gemini API-ja
     const aiData = await generateAiAnalysis(scrapedResult, score, url, GEMINI_API_KEY);
 
     const auditOutputData = {
@@ -160,7 +156,7 @@ export async function analyzeUrl(formData: FormData) {
       userStats: {
         plan: userPlan,
         limit: userLimit,
-        used: currentAuditsCount + 1 // +1 jer je ovaj upravo uspješno završen i upisan
+        used: currentAuditsCount + 1
       }
     };
 
@@ -171,7 +167,7 @@ export async function analyzeUrl(formData: FormData) {
       userStats: {
         plan: userPlan,
         limit: userLimit,
-        used: currentAuditsCount // Vraćamo trenutno stanje jer je proces puko prije upisa novog audita
+        used: currentAuditsCount
       }
     };
   }
@@ -182,23 +178,20 @@ export async function getUserStats() {
   if (!userId) return null;
 
   try {
-    // 1. Uzmi plan korisnika
     const { data: dbUser } = await supabase
       .from("users")
       .select("*")
       .eq("id", userId)
       .maybeSingle();
 
-    // Ako uopšte ne postoji u bazi (znači tek se registrovao, nije ni prvi audit pokrenuo)
     if (!dbUser) {
       return { plan: "FREE", limit: 1, used: 0 };
     }
 
     const userPlan = dbUser.plan;
-    const userLimit = dbUser.audit_limit;
+    const userLimit = dbUser.audits_limit; // ⚠️ Ispravljeno ime kolone (dodano 's')
     let currentAuditsCount = 0;
 
-    // 2. Izbroj potrošene audite u zavisnosti od plana
     if (userPlan === "FREE") {
       const { count } = await supabase
         .from("audits")
@@ -206,14 +199,15 @@ export async function getUserStats() {
         .eq("user_id", userId);
       currentAuditsCount = count || 0;
     } else {
-      const startOfToday = new Date();
-      startOfToday.setHours(0, 0, 0, 0);
+      // ⏳ Usklađeno da broji u rasponu od zadnjih 30 dana umjesto samo za tekući dan
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       const { count } = await supabase
         .from("audits")
         .select("*", { count: "exact", head: true })
         .eq("user_id", userId)
-        .gte("created_at", startOfToday.toISOString());
+        .gte("created_at", thirtyDaysAgo.toISOString());
       currentAuditsCount = count || 0;
     }
 
