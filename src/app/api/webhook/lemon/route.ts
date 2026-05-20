@@ -54,12 +54,12 @@ export async function POST(req: Request) {
         const selectedPlan = PLAN_CONFIG[variantId as keyof typeof PLAN_CONFIG];
 
         if (selectedPlan) {
-          // Ažuriranje tvoje 'users' tabele uz usklađeno ime kolone (audits_limit)
+          // Ažuriranje tvoje 'users' tabele uz usklađeno ime kolone (audit_limit)
           const { error } = await supabase
             .from('users') 
             .update({ 
               plan: selectedPlan.name,          // Upisuje "STARTER" ili "AGENCY PRO"
-              audits_limit: selectedPlan.limit, // Postavlja fiksno na 50 ili 200
+              audit_limit: selectedPlan.limit, // Postavlja fiksno na 50 ili 200
             })
             .eq('id', userId); 
 
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
         .from('users')
         .update({ 
           plan: 'FREE',        // Vraćamo naziv plana na FREE
-          audits_limit: 1,     // Tvoj podrazumijevani besplatni limit
+          audit_limit: 1,     // Tvoj podrazumijevani besplatni limit
         })
         .eq('id', userId);
 
