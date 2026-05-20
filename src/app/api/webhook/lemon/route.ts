@@ -2,14 +2,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 
-// Inicijalizacija Supabase klijenta sa Service Role ključem (Admin prava)
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 // Mapiranje Lemon Squeezy Variant ID-eva na tvoje planove i tačne limite
-// ⚠️ Ovdje upiši prave ID-eve varijanti iz Lemon Squeezy-ja (zamijeni '111111' i '222222')
 const PLAN_CONFIG = {
   '1681365': { name: 'STARTER', limit: 50 },
   '1681413': { name: 'AGENCY PRO', limit: 200 },
@@ -17,6 +10,12 @@ const PLAN_CONFIG = {
 
 export async function POST(req: Request) {
   try {
+    // 💡 Inicijalizacija unutar funkcije pomoću ANON ključa - sprječava pucanje Vercel build-a!
+    const supabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_ANON_KEY!
+    );
+
     // 1. Pokupi sirovi tekst (raw body) i potpis iz Lemon Squeezy zahtjeva
     const rawBody = await req.text();
     const signature = req.headers.get('x-signature') || '';
@@ -55,12 +54,12 @@ export async function POST(req: Request) {
         const selectedPlan = PLAN_CONFIG[variantId as keyof typeof PLAN_CONFIG];
 
         if (selectedPlan) {
-          // Ažuriranje tvoje 'users' tabele sa tačnim nazivima kolona
+          // Ažuriranje tvoje 'users' tabele uz usklađeno ime kolone (audits_limit)
           const { error } = await supabase
             .from('users') 
             .update({ 
               plan: selectedPlan.name,          // Upisuje "STARTER" ili "AGENCY PRO"
-              audit_limit: selectedPlan.limit, // Postavlja fiksno na 50 ili 200
+              audits_limit: selectedPlan.limit, // Postavlja fiksno na 50 ili 200
             })
             .eq('id', userId); 
 
@@ -80,8 +79,8 @@ export async function POST(req: Request) {
       const { error } = await supabase
         .from('users')
         .update({ 
-          plan: 'FREE',          // Vraćamo naziv plana na FREE
-          audit_limit: 1,       // Tvoj podrazumijevani besplatni limit (rekao si da je 1)
+          plan: 'FREE',        // Vraćamo naziv plana na FREE
+          audits_limit: 1,     // Tvoj podrazumijevani besplatni limit
         })
         .eq('id', userId);
 
