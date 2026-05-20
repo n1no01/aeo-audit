@@ -46,17 +46,19 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
     robotsStatus = isAnyBlocked ? "Blocking AI" : "Valid";
   };
 
+  // 1. Pokušaj bazični Axios za robots.txt (0 kredita)
   try {
-    const robotsResponse = await axios.get(robotsUrl, { timeout: 7000 });
+    const robotsResponse = await axios.get(robotsUrl, { timeout: 5000 });
     if (robotsResponse.status === 200 && typeof robotsResponse.data === "string") {
       robotsRawContent = robotsResponse.data;
       parseRobotsConfig(robotsRawContent);
     }
   } catch {
+    // 2. Fallback: Pokušaj najjeftiniji API poziv bez proksija (1 kredit) umjesto odmah na 5 kredita
     try {
       const scraperRobotsResponse = await axios.get("https://api.webscraping.ai/html", {
-        params: { api_key: scrapingApiKey, url: robotsUrl, proxy: "residential", render: "false" },
-        timeout: 15000,
+        params: { api_key: scrapingApiKey, url: robotsUrl, render: "false" },
+        timeout: 10000,
       });
       const htmlOrText = typeof scraperRobotsResponse.data === "string" 
         ? scraperRobotsResponse.data 
@@ -69,25 +71,50 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
         robotsStatus = "Missing";
       }
     } catch {
-      robotsStatus = "Error";
-      robotsRawContent = "Could not fetch or locate robots.txt file.";
+      // 3. Zadnji pokušaj za robots: Ako je sajt baš zaključan, upali Residential (5 kredita)
+      try {
+        const ultraRobotsResponse = await axios.get("https://api.webscraping.ai/html", {
+          params: { api_key: scrapingApiKey, url: robotsUrl, proxy: "residential", render: "false" },
+          timeout: 12000,
+        });
+        const finalHtmlOrText = typeof ultraRobotsResponse.data === "string" ? ultraRobotsResponse.data : "";
+        if (finalHtmlOrText && !finalHtmlOrText.includes("<html")) {
+          robotsRawContent = finalHtmlOrText;
+          parseRobotsConfig(finalHtmlOrText);
+        } else {
+          robotsStatus = "Missing";
+        }
+      } catch {
+        robotsStatus = "Error";
+        robotsRawContent = "Could not fetch or locate robots.txt file.";
+      }
     }
   }
 
   // ==========================================
-  // MAIN HTML CRAWL
+  // MAIN HTML CRAWL (OPTIMIZOVAN TRISLOJNI MEHANIZAM)
   // ==========================================
   let scrapeResponse;
   try {
+    // TIER 1: Najbrža i najjeftinija opcija (Basic - Bez JS, Bez Residential) -> 💸 TROŠI: 1 KREDIT
     scrapeResponse = await axios.get("https://api.webscraping.ai/html", {
-      params: { api_key: scrapingApiKey, url, proxy: "residential", render: "false" },
-      timeout: 20000,
+      params: { api_key: scrapingApiKey, url, render: "false" },
+      timeout: 12000,
     });
   } catch {
-    scrapeResponse = await axios.get("https://api.webscraping.ai/html", {
-      params: { api_key: scrapingApiKey, url, proxy: "residential", render: "true" },
-      timeout: 30000,
-    });
+    try {
+      // TIER 2: Ako Basic baci grešku, palimo težu artiljeriju (Residential bez JS) -> 💸 TROŠI: 5 KREDITA
+      scrapeResponse = await axios.get("https://api.webscraping.ai/html", {
+        params: { api_key: scrapingApiKey, url, proxy: "residential", render: "false" },
+        timeout: 18000,
+      });
+    } catch {
+      // TIER 3: Zadnja linija odbrane za najteže JS/SPA aplikacije (Residential + JS) -> 💸 TROŠI: 10 KREDITA
+      scrapeResponse = await axios.get("https://api.webscraping.ai/html", {
+        params: { api_key: scrapingApiKey, url, proxy: "residential", render: "true" },
+        timeout: 30000,
+      });
+    }
   }
 
   const html = typeof scrapeResponse.data === "string" ? scrapeResponse.data : (scrapeResponse.data as ScraperResponseData)?.html || "";
@@ -219,7 +246,6 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
   // ==========================================
   let qaBlocksCount = 0;
   
-  // 1. Taktika: JSON-LD Schema (Zadržavamo jer je tehnički standard bez obzira na platformu)
   schemaScripts.each((_, el) => {
     const content = $(el).html();
     if (!content) return;
@@ -240,24 +266,17 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
     } catch {}
   });
 
-  // 2. Taktika: Univerzalna semantička analiza parova (Wix, Framer, WordPress, Custom Code)
   if (qaBlocksCount === 0) {
     const textNodes: { text: string; element: ReturnType<typeof $> }[] = [];
     $("h1, h2, h3, h4, h5, h6, p, div, li, summary, [aria-expanded], [aria-controls]").each((_, el) => {
-      // Uzimamo samo direktni tekst elementa (izbjegavamo dupliranje unutar dubokih div kontejnera)
       const text = $(el).clone().children().remove().end().text().trim();
-      
-      // Filtriramo bazični šum na stranici
       if (text.length > 5 && text.length < 160) {
         textNodes.push({ text, element: $(el) });
       }
     });
 
-    // Prolazimo kroz sakupljene tekstualne čvorove i upoređujemo ih
     for (let i = 0; i < textNodes.length - 1; i++) {
       const currentText = textNodes[i].text;
-      
-      // Pokazatelj Pitanja (Univerzalna heuristika za sve svjetske platforme i jezike)
       const isQuestionStyle = 
         currentText.endsWith("?") || 
         textNodes[i].element.is("h1, h2, h3, h4, h5, h6, summary") ||
@@ -268,8 +287,6 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
       if (isQuestionStyle) {
         const nextNode = textNodes[i + 1];
         const nextText = nextNode.text;
-
-        // Pokazatelj Odgovora: mora biti razumno dugačak tekstualni blok, a ne novi naslov ili pitanje
         const isAnswerStyle = 
           nextText.length > 20 && 
           !nextText.endsWith("?") && 
@@ -277,7 +294,7 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
 
         if (isAnswerStyle) {
           qaBlocksCount++;
-          i++; // Preskačemo sljedeći čvor jer je uspješno uparen kao odgovor
+          i++; 
         }
       }
     }
