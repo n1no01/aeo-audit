@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { analyzeUrl } from "../actions";
+import { analyzeUrl, getUserStats } from "../actions";
 import Tooltip from "../components/Tooltip";
 import { AuditData, TabId, AEO_EXPLANATIONS } from "../lib/types"; 
 import Link from "next/link";
@@ -27,6 +27,12 @@ const loadingSteps = [
   "Building executive audit...",
 ];
 
+interface UserStats {
+  plan: string;
+  limit: number;
+  used: number;
+}
+
 export default function Home() {
   const [result, setResult] = useState<{
     success?: boolean;
@@ -34,6 +40,7 @@ export default function Home() {
     data?: AuditData;
   } | null>(null);
 
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isPending, startTransition] = useTransition();
   const [loadingIndex, setLoadingIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<TabId>("metrics");
@@ -42,6 +49,15 @@ export default function Home() {
   const [agencyName, setAgencyName] = useState("AEO Audit Pro");
   const [brandColor, setBrandColor] = useState("2563eb"); 
   const [authorName, setAuthorName] = useState("Senior AEO Strategist");
+
+  // 🔄 Učitaj statse ODMAH čim se stranica otvori i korisnik uloguje
+  useEffect(() => {
+    async function loadStats() {
+      const stats = await getUserStats();
+      if (stats) setUserStats(stats);
+    }
+    loadStats();
+  }, []);
 
   useEffect(() => {
     if (!isPending) return;
@@ -58,6 +74,10 @@ export default function Home() {
     startTransition(async () => {
       const res = await analyzeUrl(formData);
       
+      if (res && "userStats" in res) {
+        setUserStats(res.userStats as UserStats);
+      }
+
       if ("error" in res) {
         setResult({ error: res.error });
       } else if (res.success && res.data) {
@@ -156,8 +176,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white">
       
-      {/* NAVBAR - RESPONSIVE */}
-      <nav className="w-full max-w-6xl mx-auto p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-transparent">
+      {/* NAVBAR */}
+      <nav className="w-full max-w-6xl mx-auto p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-transparent border-b border-slate-200/40 sm:border-none">
         <Link href="/" className="group cursor-pointer select-none">
           <div className="text-2xl font-black tracking-tight italic">
             AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200">Audit</span> Pro
@@ -171,13 +191,35 @@ export default function Home() {
             Pricing
           </Link>
           <div className="h-4 w-px bg-slate-200 hidden sm:block" />
-          <span className="text-xs font-bold text-slate-400 hidden sm:inline">Active Session</span>
+          
+          {/* 💎 KORISNIČKI STATS WIDGET UGRAĐEN U NAVBAR */}
+          {userStats && (
+            <div className="flex items-center gap-2.5 bg-slate-100 border border-slate-200/50 rounded-xl px-3 py-1.5 text-[11px] font-bold text-slate-600 shadow-sm animate-in fade-in duration-200">
+              <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                userStats.plan === "FREE" ? "bg-slate-200 text-slate-700" : "bg-blue-600 text-white"
+              }`}>
+                {userStats.plan}
+              </span>
+              <div className="flex flex-col items-start gap-0.5">
+                <span className="text-[10px] text-slate-700 font-black">
+                  {userStats.used}/{userStats.limit} Used
+                </span>
+                <div className="w-16 bg-slate-200 h-1 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full ${userStats.used >= userStats.limit ? "bg-rose-500" : "bg-blue-600"}`}
+                    style={{ width: `${Math.min((userStats.used / userStats.limit) * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           <UserButton /> 
         </div>
       </nav>
 
       {/* MAIN CONTENT WRAPPER */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-8 md:px-12 flex-1 w-full">
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 md:px-12 flex-1 w-full mt-6">
         
         {/* HEADER */}
         <header className="text-center mb-10 sm:mb-14 md:mb-16 px-2">
@@ -268,7 +310,7 @@ export default function Home() {
 
             <div className="bg-white rounded-[24px] md:rounded-[48px] overflow-hidden border border-slate-100 shadow-2xl">
               
-              {/* AUDIT TOP BAR - RESPONSIVE SPLIT */}
+              {/* AUDIT TOP BAR */}
               <div className="bg-slate-900 text-white p-5 sm:p-8 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 md:gap-8">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 md:gap-8 w-full md:w-auto">
                   <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-[16px] sm:rounded-[20px] bg-white text-slate-900 flex flex-col items-center justify-center shrink-0 shadow-lg mx-auto sm:mx-0">
@@ -293,7 +335,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* TABS HEADER - Wrap friendly for mobile */}
+              {/* TABS HEADER */}
               <div className="flex flex-wrap border-b border-slate-100 bg-slate-50/50 p-1.5 sm:p-2 gap-1">
                 {(
                   [
@@ -318,9 +360,7 @@ export default function Home() {
                 {activeTab === "metrics" && (
                   <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
                     
-                    {/* TOP TECHNICAL GRIDS */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                      
                       {/* CRAWLER MATRIX */}
                       <div className="border border-slate-200/60 rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-slate-50/50 flex flex-col justify-between">
                         <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3 flex items-center">
@@ -387,18 +427,14 @@ export default function Home() {
                           {result.data.entityTrustMap?.brandDisambiguationStatus === "Critical Missing" && "Critical: AI crawlers cannot extract a singular brand entity name anchor. Citing chance is highly restricted."}
                         </p>
                       </div>
-
                     </div>
 
-                    {/* DUAL BLOCKS ROW */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                      
                       {/* KNOWLEDGE GRAPH */}
                       <div className="border border-slate-200/60 rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-slate-50/50 flex flex-col justify-between">
                         <div>
                           <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3">Knowledge Graph & Entity Blueprint</div>
                           <div className="space-y-2">
-                            
                             <div className="flex items-center justify-between bg-white border border-slate-100 p-2 rounded-xl text-xs font-semibold">
                               <span className="text-slate-600 truncate pr-2 flex items-center">
                                 Authority Reference Outlinks (Wikipedia/Data)
@@ -431,7 +467,6 @@ export default function Home() {
                         <div>
                           <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3">AI Semantic & Multimodal Blueprint</div>
                           <div className="space-y-2">
-                            
                             <div className="flex items-center justify-between bg-white border border-slate-100 p-2 rounded-xl text-xs font-semibold">
                               <span className="text-slate-600 flex items-center">
                                 HTML5 Semantic &lt;main&gt; Isolation
@@ -471,17 +506,15 @@ export default function Home() {
                                 {result.data.semanticLayoutMap ? result.data.semanticLayoutMap.totalImages - result.data.semanticLayoutMap.missingAltCount : 0}/{result.data.semanticLayoutMap ? result.data.semanticLayoutMap.totalImages : 0} ALT TAGS
                               </span>
                             </div>
-
                           </div>
                         </div>
                         <p className="text-[10px] font-medium text-slate-400 mt-3 leading-tight">
                           Multimodal models (GPT-4o/Gemini) use structural HTML tags and image descriptions to extract data context directly for rich chat snippets.
                         </p>
                       </div>
-
                     </div>
 
-                    {/* SPEED METRICS GRID - 2 columns on mobile, 4 on desktop */}
+                    {/* SPEED METRICS GRID */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                       <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border flex flex-col justify-between">
                         <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center">
@@ -530,7 +563,7 @@ export default function Home() {
                 {activeTab === "analysis" && (
                   <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
                     
-                    {/* 4 CORE AEO PILLARS - Progres barovi */}
+                    {/* 4 CORE AEO PILLARS */}
                     <div>
                       <div className="flex items-center gap-3 mb-4 sm:mb-5">
                         <div className="w-2 h-6 bg-blue-600 rounded-full" />
@@ -629,7 +662,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* FOOTER - Responsively padded */}
+      {/* FOOTER */}
       <footer className="border-t border-slate-200/50 py-6 text-center text-xs font-bold text-slate-400 bg-white w-full px-4 leading-relaxed mt-12">
         <div>&copy; 2026 AEO Audit Pro. All rights reserved.</div>
         <div className="mt-1 text-slate-400/80">
