@@ -92,7 +92,7 @@ const BASE_PRO_URL = "https://aeoauditpro.lemonsqueezy.com/checkout/buy/2d741065
             
             <div className="mt-8">
               <Link href={userId ? "/dashboard" : "/sign-up"} className="block w-full bg-slate-900 text-white text-center py-3 rounded-xl font-black tracking-wide hover:bg-blue-600 transition text-sm cursor-pointer shadow-md">
-                {userId ? "Your Starter Credit" : "Get Started"}
+                {userId ? "Go to Dashboard" : "Get Started"}
               </Link>
             </div>
           </div>
