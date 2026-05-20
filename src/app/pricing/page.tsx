@@ -4,9 +4,9 @@ import { auth } from "@clerk/nextjs/server";
 export default async function PricingPage() {
   const { userId } = await auth();
 
-  // 1. Očišćeni i 100% ispravni Lemon Squeezy linkovi sa pravim numeričkim ID-evima varijanti
-  const BASE_STARTER_URL = "https://aeoauditpro.lemonsqueezy.com/checkout/buy/1681365?embed=1";
-  const BASE_PRO_URL = "https://aeoauditpro.lemonsqueezy.com/checkout/buy/1681413?embed=1";
+// 1. Pravi i ispravni Lemon Squeezy linkovi za tvoj checkout
+const BASE_STARTER_URL = "https://aeoauditpro.lemonsqueezy.com/checkout?variant=1681365&embed=1";
+const BASE_PRO_URL = "https://aeoauditpro.lemonsqueezy.com/checkout?variant=1681413&embed=1";
 
   // 2. Dinamičko generisanje linkova na serveru ovisno o tome da li je korisnik ulogovan
   let starterFinalUrl = "/sign-up?redirect_url=/pricing";
