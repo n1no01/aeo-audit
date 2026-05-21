@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 
-// Mapiranje Lemon Squeezy Variant ID-eva na tvoje planove i tačne limite
 const PLAN_CONFIG = {
   '1681365': { name: 'STARTER', limit: 50 },
   '1681413': { name: 'AGENCY PRO', limit: 200 },
@@ -10,18 +9,16 @@ const PLAN_CONFIG = {
 
 export async function POST(req: Request) {
   try {
-    // 💡 Inicijalizacija unutar funkcije pomoću ANON ključa - sprječava pucanje Vercel build-a!
+    // 💡 KORISTI SERVICE_ROLE_KEY: Webhook dolazi izvana i mora zaobići RLS da bi ažurirao bazu!
     const supabase = createClient(
       process.env.SUPABASE_URL!,
-      process.env.SUPABASE_ANON_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY! // Promijenjeno sa ANON na SERVICE_ROLE
     );
 
-    // 1. Pokupi sirovi tekst (raw body) i potpis iz Lemon Squeezy zahtjeva
     const rawBody = await req.text();
     const signature = req.headers.get('x-signature') || '';
     const secret = process.env.LEMON_SQUEEZY_WEBHOOK_SECRET || '';
 
-    // 2. Sigurnosna provjera: Generiši naš potpis pomoću secreta i uporedi ga sa njihovim
     const hmac = crypto.createHmac('sha256', secret);
     const digest = hmac.update(rawBody).digest('hex');
 
@@ -30,7 +27,6 @@ export async function POST(req: Request) {
       return new NextResponse('Invalid signature', { status: 401 });
     }
 
-    // 3. Parsiranje podataka i izvlačenje Clerk userId-ja
     const data = JSON.parse(rawBody);
     const eventName = data.meta.event_name;
     const customData = data.meta.custom_data || {};
@@ -43,23 +39,29 @@ export async function POST(req: Request) {
 
     console.log(`🔔 Primljen Lemon Squeezy Webhook: ${eventName} za korisnika ${userId}`);
 
-    // 4. Obrada događaja
-    
-    // SLUČAJ A: Korisnik je kupio ili obnovio pretplatu
-    if (eventName === 'subscription_created' || eventName === 'subscription_updated') {
-      const variantId = String(data.data.attributes.variant_id);
-      const status = data.data.attributes.status; // npr. "active"
+    const attributes = data.data.attributes;
+    const variantId = String(attributes.variant_id);
+    const status = attributes.status; // active, cancelled, expired, unpaused, past_due
 
-      if (status === 'active') {
+    // ------------------------------------------------------------------------
+    // SLUČAJ A: Korisnik je kupio, obnovio, ili uradio Upgrade/Downgrade
+    // ------------------------------------------------------------------------
+    if (eventName === 'subscription_created' || eventName === 'subscription_updated') {
+      
+      // Korisnik je platio i pretplata je u redu (ili je otkazao ali plaćeni period još traje)
+      if (status === 'active' || status === 'cancelled') {
         const selectedPlan = PLAN_CONFIG[variantId as keyof typeof PLAN_CONFIG];
 
         if (selectedPlan) {
-          // Ažuriranje tvoje 'users' tabele uz usklađeno ime kolone (audit_limit)
+          // Izvlačimo tačan datum kada se plaćeni ciklus završava (Lemon Squeezy šalje ISO string)
+          const currentPeriodEnd = attributes.renews_at || attributes.ends_at;
+
           const { error } = await supabase
             .from('users') 
             .update({ 
-              plan: selectedPlan.name,          // Upisuje "STARTER" ili "AGENCY PRO"
-              audit_limit: selectedPlan.limit, // Postavlja fiksno na 50 ili 200
+              plan: selectedPlan.name,          // "STARTER" ili "AGENCY PRO"
+              audit_limit: selectedPlan.limit,  // Fiksni mjesečni limit (50 ili 200)
+              // Ovdje možeš dodati i: ends_at: currentPeriodEnd (ako želiš pratiti rok u bazi)
             })
             .eq('id', userId); 
 
@@ -67,19 +69,30 @@ export async function POST(req: Request) {
             console.error('❌ Greška prilikom ažuriranja baze u Supabase:', error);
             throw error;
           }
-          console.log(`🚀 Korisnik ${userId} uspješno prebačen na plan: ${selectedPlan.name} (Limit: ${selectedPlan.limit})`);
+          console.log(`🚀 Korisnik ${userId} uspješno postavljen na plan: ${selectedPlan.name} (Status: ${status})`);
         } else {
           console.error(`⚠️ Primljen nepoznat Variant ID: ${variantId}. Provjeri PLAN_CONFIG.`);
         }
       }
+      
+      // Pod-slučaj: Kartica je odbijena, privremeno suspenduj prava dok ne prođe naplata
+      if (status === 'past_due') {
+        await supabase
+          .from('users')
+          .update({ plan: 'PAST_DUE', audit_limit: 0 })
+          .eq('id', userId);
+        console.log(`⚠️ Pretplata za ${userId} je PAST_DUE (kartica odbijena). Pristup blokiran.`);
+      }
     }
 
-    // SLUČAJ B: Korisnik je otkazao pretplatu ili mu je istekla
-    if (eventName === 'subscription_cancelled' || eventName === 'subscription_expired') {
+    // ------------------------------------------------------------------------
+    // SLUČAJ B: Pretplata je ZVANIČNO ISTEKLA (Kraj plaćenog perioda ili propale naplate)
+    // ------------------------------------------------------------------------
+    if (eventName === 'subscription_expired') {
       const { error } = await supabase
         .from('users')
         .update({ 
-          plan: 'FREE',        // Vraćamo naziv plana na FREE
+          plan: 'FREE',       // Tek sada ga stvarno vraćamo na besplatni paket
           audit_limit: 1,     // Tvoj podrazumijevani besplatni limit
         })
         .eq('id', userId);
@@ -88,7 +101,7 @@ export async function POST(req: Request) {
         console.error('❌ Greška prilikom vraćanja korisnika na FREE plan:', error);
         throw error;
       }
-      console.log(`ℹ️ Pretplata prekinuta. Korisnik ${userId} je vraćen na FREE plan.`);
+      console.log(`ℹ️ Pretplata zvanično ISTEKLA. Korisnik ${userId} je vraćen na FREE plan.`);
     }
 
     return NextResponse.json({ message: 'Webhook processed successfully' }, { status: 200 });

@@ -30,10 +30,9 @@ export async function analyzeUrl(formData: FormData) {
 
   const email = clerkUser.emailAddresses[0]?.emailAddress;
 
-  // Definišemo varijable van try bloka kako bi bile dostupne i u catch bloku za userStats
   let userPlan = "FREE";
   let userLimit = 1;
-  let currentAuditsCount = 0;
+  let currentUsedAudits = 0;
 
   try {
     // ========================================================
@@ -46,10 +45,10 @@ export async function analyzeUrl(formData: FormData) {
       .maybeSingle();
 
     if (!dbUser) {
-      // ⚠️ Ispravljeno na audits_limit da odgovara tvojoj tabeli u bazi podataka
+      // Ako ne postoji, pravimo ga i uvodimo 'used_audits' kolonu koja kreće od 0
       const { data: newUser, error: insertError } = await supabase
         .from("users")
-        .insert([{ id: userId, email: email, plan: "FREE", audit_limit: 1 }])
+        .insert([{ id: userId, email: email, plan: "FREE", audit_limit: 1, used_audits: 0 }])
         .select()
         .single();
       
@@ -63,38 +62,14 @@ export async function analyzeUrl(formData: FormData) {
 
     userPlan = dbUser.plan;
     userLimit = dbUser.audit_limit;
+    // 🧠 Umjesto brojanja redova, direktno vučemo tačno stanje iz kolone koju kontroliše Webhook!
+    currentUsedAudits = dbUser.used_audits || 0; 
 
     // ========================================================
     // 🕒 3. PROVJERA LIMITA
     // ========================================================
-    if (userPlan === "FREE") {
-      // 🎯 Za FREE korisnike brojimo apsolutno sve audite iz istorije baze
-      const { count, error: countError } = await supabase
-        .from("audits")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", userId);
-
-      if (countError) console.error("Supabase count error:", countError);
-      currentAuditsCount = count || 0;
-    } else {
-      // ⏳ Za PRETPLAĆENE korisnike (STARTER / AGENCY PRO) brojimo audite u zadnjih 30 dana
-      // Profesionalnije rješenje bez komplikovanih cron-poslova: gledamo tekući mjesni ciklus
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-      const { count, error: countError } = await supabase
-        .from("audits")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .gte("created_at", thirtyDaysAgo.toISOString());
-
-      if (countError) console.error("Supabase count error:", countError);
-      currentAuditsCount = count || 0;
-    }
-
-    // Provjera limita: ako je broj dostigao ili prešao limit, zaustavi proces
-    if (currentAuditsCount >= userLimit) {
-      const stats = { plan: userPlan, limit: userLimit, used: currentAuditsCount };
+    if (currentUsedAudits >= userLimit) {
+      const stats = { plan: userPlan, limit: userLimit, used: currentUsedAudits };
       
       if (userPlan === "FREE") {
         return { 
@@ -103,7 +78,7 @@ export async function analyzeUrl(formData: FormData) {
         };
       } else {
         return { 
-          error: `You have exceeded your monthly limit for the ${userPlan} plan (${userLimit} mjesečno). Upgrade your plan for more flexibility!`,
+          error: `You have exceeded your monthly limit for the ${userPlan} plan (${userLimit} monthly). Upgrade your plan for more flexibility!`,
           userStats: stats
         };
       }
@@ -112,7 +87,6 @@ export async function analyzeUrl(formData: FormData) {
     // ========================================================
     // 🚀 4. LOGIKA ZA SKREJPOVANJE I GEMINI AI VAĐENJE PODATAKA
     // ========================================================
-
     const scrapedResult = await scrapeWebsite(url, SCRAPING_API_KEY) as ScrapedData;
     const score = calculateScore(scrapedResult);
     const aiData = await generateAiAnalysis(scrapedResult, score, url, GEMINI_API_KEY);
@@ -130,8 +104,10 @@ export async function analyzeUrl(formData: FormData) {
     };
 
     // ========================================================
-    // 💾 5. UPIS REZULTATA AUDITA U SUPABASE 'AUDITS' TABELU
+    // 💾 5. UPIS REZULTATA AUDITA I INKREMENTACIJA KREDITA
     // ========================================================
+    
+    // A. Sačuvaj izvještaj u tabelu 'audits'
     const { error: auditInsertError } = await supabase
       .from("audits")
       .insert([
@@ -146,9 +122,16 @@ export async function analyzeUrl(formData: FormData) {
       console.error("Supabase audit insert error:", auditInsertError);
       return { 
         error: "Failed to save audit results to database.",
-        userStats: { plan: userPlan, limit: userLimit, used: currentAuditsCount }
+        userStats: { plan: userPlan, limit: userLimit, used: currentUsedAudits }
       };
     }
+
+    // B. Uvećaj used_audits za 1 u tabeli 'users'
+    const nextUsedCount = currentUsedAudits + 1;
+    await supabase
+      .from("users")
+      .update({ used_audits: nextUsedCount })
+      .eq("id", userId);
 
     return {
       success: true,
@@ -156,7 +139,7 @@ export async function analyzeUrl(formData: FormData) {
       userStats: {
         plan: userPlan,
         limit: userLimit,
-        used: currentAuditsCount + 1
+        used: nextUsedCount
       }
     };
 
@@ -167,7 +150,7 @@ export async function analyzeUrl(formData: FormData) {
       userStats: {
         plan: userPlan,
         limit: userLimit,
-        used: currentAuditsCount
+        used: currentUsedAudits
       }
     };
   }
@@ -188,33 +171,10 @@ export async function getUserStats() {
       return { plan: "FREE", limit: 1, used: 0 };
     }
 
-    const userPlan = dbUser.plan;
-    const userLimit = dbUser.audits_limit; // ⚠️ Ispravljeno ime kolone (dodano 's')
-    let currentAuditsCount = 0;
-
-    if (userPlan === "FREE") {
-      const { count } = await supabase
-        .from("audits")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", userId);
-      currentAuditsCount = count || 0;
-    } else {
-      // ⏳ Usklađeno da broji u rasponu od zadnjih 30 dana umjesto samo za tekući dan
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-      const { count } = await supabase
-        .from("audits")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .gte("created_at", thirtyDaysAgo.toISOString());
-      currentAuditsCount = count || 0;
-    }
-
     return {
-      plan: userPlan,
-      limit: userLimit,
-      used: currentAuditsCount
+      plan: dbUser.plan,
+      limit: dbUser.audit_limit, 
+      used: dbUser.used_audits || 0 // Jednostavno čitamo iz spremne kolone
     };
   } catch (error) {
     console.error("Error fetching user stats:", error);
