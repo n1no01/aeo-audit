@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { analyzeUrl, getUserStats } from "../actions";
 import Tooltip from "../components/Tooltip";
+
 import { AuditData, TabId, AEO_EXPLANATIONS } from "../lib/types"; 
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
@@ -50,6 +51,10 @@ export default function Home() {
   const [brandColor, setBrandColor] = useState("2563eb"); 
   const [authorName, setAuthorName] = useState("Senior AEO Strategist");
 
+  // 🔗 Držanje ID-ja trenutno učitanog izvještaja i stanja kopiranja
+  const [currentAuditId, setCurrentAuditId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
   // 🔄 Učitaj statse ODMAH čim se stranica otvori i korisnik uloguje
   useEffect(() => {
     async function loadStats() {
@@ -70,6 +75,7 @@ export default function Home() {
   const handleAuditSubmit = (formData: FormData) => {
     setResult(null);
     setLoadingIndex(0);
+    setCurrentAuditId(null);
     setActiveTab("metrics"); 
     startTransition(async () => {
       const res = await analyzeUrl(formData);
@@ -81,12 +87,31 @@ export default function Home() {
       if ("error" in res) {
         setResult({ error: res.error });
       } else if (res.success && res.data) {
+        // Hvatamo proslijeđeni ID iz baze za kreiranje Share linka
+        if (res.auditId) {
+          setCurrentAuditId(res.auditId);
+        }
         setResult({
           success: true,
           data: res.data as AuditData
         });
       }
     });
+  };
+
+  // 📋 Funkcija za kopiranje pametnog share linka na klijentski clipboard
+  const copyShareLink = async () => {
+    if (!currentAuditId) return;
+
+    const shareUrl = `${window.location.origin}/share/${currentAuditId}`;
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy share link:", err);
+    }
   };
 
   const downloadDocx = async () => {
@@ -174,7 +199,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white print:hidden">
       
       {/* NAVBAR */}
       <nav className="w-full max-w-6xl mx-auto p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-transparent border-b border-slate-200/40 sm:border-none">
@@ -309,9 +334,35 @@ export default function Home() {
         {/* RESULTS */}
         {result?.data && (
           <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-700">
-            <button onClick={downloadDocx} className="w-full bg-slate-900 text-white hover:bg-blue-600 py-4 sm:py-5 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg shadow-blue-900/10">
-              GENERATE WHITE-LABEL EXPORT (.DOCX)
-            </button>
+            
+            {/* 🛠️ SPREMNI GRID SA TRI MATIČNE EXPORT I SHARE OPCIJE */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <button 
+                onClick={downloadDocx} 
+                className="w-full bg-slate-900 text-white hover:bg-blue-600 py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg shadow-blue-900/10"
+              >
+                DOWNLOAD WORD (.DOCX)
+              </button>
+              
+              <button 
+                onClick={() => window.print()} 
+                className="w-full bg-slate-900 text-white hover:bg-blue-600 py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg shadow-blue-900/10"
+              >
+                EXPORT TO PDF (.PDF)
+              </button>
+
+              <button 
+                onClick={copyShareLink}
+                disabled={!currentAuditId}
+                className={`w-full py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg border ${
+                  copied 
+                    ? "bg-emerald-500 text-white border-emerald-500" 
+                    : "bg-blue-600 text-white hover:bg-blue-700 border-blue-600 shadow-blue-900/10 disabled:bg-slate-200 disabled:border-slate-200 disabled:text-slate-400"
+                }`}
+              >
+                {copied ? "🔗 LINK COPIED!" : "🔗 COPY SHARE LINK"}
+              </button>
+            </div>
 
             <div className="bg-white rounded-[24px] md:rounded-[48px] overflow-hidden border border-slate-100 shadow-2xl">
               
@@ -602,13 +653,15 @@ export default function Home() {
                         </div>
 
                         {/* 3. ENTITY DENSITY */}
-                        <div className="bg-white p-4 rounded-xl sm:rounded-2xl border border-slate-100">
-                          <div className="flex justify-between items-center mb-1.5">
-                            <span className="text-xs font-black text-slate-700 uppercase tracking-wide">Semantic Entity Density</span>
-                            <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">{result.data.entityDensityScore || 5}/10</span>
-                          </div>
-                          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-2">
-                            <div className="bg-blue-600 h-full rounded-full transition-all duration-500" style={{ width: `${(result.data.entityDensityScore || 5) * 10}%` }} />
+                        <div className="bg-white p-4 rounded-xl sm:rounded-2xl border border-slate-100 flex flex-col justify-between">
+                          <div>
+                            <div className="flex justify-between items-center mb-1.5">
+                              <span className="text-xs font-black text-slate-700 uppercase tracking-wide">Semantic Entity Density</span>
+                              <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">{result.data.entityDensityScore || 5}/10</span>
+                            </div>
+                            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-2">
+                              <div className="bg-blue-600 h-full rounded-full transition-all duration-500" style={{ width: `${(result.data.entityDensityScore || 5) * 10}%` }} />
+                            </div>
                           </div>
                           <p className="text-[10px] font-medium text-slate-400 leading-snug">Evaluates the injection rate of concrete terms, brand tokens, and clear relational entities against generic wording.</p>
                         </div>
@@ -667,7 +720,8 @@ export default function Home() {
         )}
       </div>
 
-      {/* FOOTER */}
+     
+
       {/* FOOTER */}
       <footer className="border-t border-slate-200/50 py-6 text-center text-xs font-bold text-slate-400 bg-white w-full px-4 leading-relaxed mt-12 flex flex-col items-center">
         <div>&copy; 2026 AEO Audit Pro. All rights reserved.</div>
@@ -682,7 +736,6 @@ export default function Home() {
           </a>
         </div>
 
-        {/* DODAN JUSTIFY-CENTER ZA SAVRŠENO CENTRIRANJE LINKOVA */}
         <div className="flex items-center justify-center gap-4 mt-2 text-[11px] text-slate-400 font-medium w-full">
           <Link 
             href="/privacy" 
