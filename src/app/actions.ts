@@ -231,3 +231,47 @@ export async function getSharedAudit(shareToken: string) {
     return { error: "An error occurred while retrieving the shared report." };
   }
 }
+
+interface DBHistoryItem {
+  id: number;
+  website_url: string;
+  created_at: string;
+  share_token: string;
+  result_data: Record<string, unknown>; // Sigurna zamjena za 'any' u objektima
+}
+
+// 📜 SERVER AKCIJA ZA DOHVATANJE ISTORIJE - SADA SA OPTIMIZOVANIM LIMITOM
+export async function getUserAuditHistory(limit?: number): Promise<{ 
+  success?: boolean; 
+  error?: string; 
+  history?: DBHistoryItem[]; 
+}> {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized access." };
+
+  try {
+    let query = supabase
+      .from("audits")
+      .select("id, website_url, created_at, share_token, result_data")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    // ⚡ Ako je proslijeđen limit, ograniči broj redova
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Error fetching audit history:", error.message);
+      return { error: "Failed to load audit history." };
+    }
+
+    const typedHistory = (data as unknown as DBHistoryItem[]) || [];
+    return { success: true, history: typedHistory };
+  } catch (error) {
+    console.error("Critical error in getUserAuditHistory:", error);
+    return { error: "An unexpected error occurred." };
+  }
+}

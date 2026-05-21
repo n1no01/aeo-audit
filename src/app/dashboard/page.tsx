@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { analyzeUrl, getUserStats } from "../actions";
+import { analyzeUrl, getUserStats, getUserAuditHistory } from "../actions";
 import Tooltip from "../components/Tooltip";
-
 import { AuditData, TabId, AEO_EXPLANATIONS } from "../lib/types"; 
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
@@ -34,6 +33,14 @@ interface UserStats {
   used: number;
 }
 
+interface AuditHistoryItem {
+  id: number;
+  website_url: string;
+  created_at: string;
+  share_token: string;
+  result_data: AuditData;
+}
+
 export default function Home() {
   const [result, setResult] = useState<{
     success?: boolean;
@@ -51,17 +58,41 @@ export default function Home() {
   const [brandColor, setBrandColor] = useState("2563eb"); 
   const [authorName, setAuthorName] = useState("Senior AEO Strategist");
 
-  // 🔗 Držanje ID-ja trenutno učitanog izvještaja i stanja kopiranja
+  // 🔗 Držanje UUID share_tokena trenutno učitanog izvještaja i stanja kopiranja
   const [currentAuditId, setCurrentAuditId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // 🔄 Učitaj statse ODMAH čim se stranica otvori i korisnik uloguje
+  // 📜 Stanja za dinamičko učitavanje i paginaciju istorije logova
+  const [history, setHistory] = useState<AuditHistoryItem[]>([]);
+  const [hasMoreHistory, setHasMoreHistory] = useState(false);
+  const [isLoadingAllHistory, setIsLoadingAllHistory] = useState(false);
+
+  // 🔄 Učitaj statse i prva 5 audita ODMAH čim se stranica otvori
   useEffect(() => {
-    async function loadStats() {
+    async function loadInitialData() {
       const stats = await getUserStats();
       if (stats) setUserStats(stats);
+
+      // Tražimo samo 5 najnovijih audita za instant učitavanje ⚡
+      const historyRes = await getUserAuditHistory(5);
+      if (historyRes?.success && historyRes.history) {
+        const formattedHistory: AuditHistoryItem[] = historyRes.history.map((item) => ({
+          id: item.id,
+          website_url: item.website_url,
+          created_at: item.created_at,
+          share_token: item.share_token,
+          result_data: item.result_data as unknown as AuditData,
+        }));
+
+        setHistory(formattedHistory);
+        
+        // Ako je baza vratila tačno 5 stavki, pretpostavljamo da ima još za "View All"
+        if (formattedHistory.length === 5) {
+          setHasMoreHistory(true);
+        }
+      }
     }
-    loadStats();
+    loadInitialData();
   }, []);
 
   useEffect(() => {
@@ -87,16 +118,47 @@ export default function Home() {
       if ("error" in res) {
         setResult({ error: res.error });
       } else if (res.success && res.data) {
-        // Hvatamo proslijeđeni ID iz baze za kreiranje Share linka
         if (res.auditId) {
           setCurrentAuditId(res.auditId);
         }
+
+        // ⚡ Reaktivno dodavanje novog audita na vrh istorije u realnom vremenu
+        const newHistoryItem: AuditHistoryItem = {
+          id: Date.now(),
+          website_url: formData.get("url") as string,
+          created_at: new Date().toISOString(),
+          share_token: res.auditId || "",
+          result_data: res.data as AuditData
+        };
+        
+        setHistory((prevHistory) => [newHistoryItem, ...prevHistory]);
+
         setResult({
           success: true,
           data: res.data as AuditData
         });
       }
     });
+  };
+
+  // 📜 Funkcija koja skida klijentski limit i povlači kompletne logove iz baze
+  const loadAllHistory = async () => {
+    setIsLoadingAllHistory(true);
+    const historyRes = await getUserAuditHistory(); // Bez parametara povlači sve unose
+    
+    if (historyRes?.success && historyRes.history) {
+      const formattedHistory: AuditHistoryItem[] = historyRes.history.map((item) => ({
+        id: item.id,
+        website_url: item.website_url,
+        created_at: item.created_at,
+        share_token: item.share_token,
+        result_data: item.result_data as unknown as AuditData,
+      }));
+
+      setHistory(formattedHistory);
+      setHasMoreHistory(false); // Gasimo dugme jer je istorija kompletirana
+    }
+    setIsLoadingAllHistory(false);
   };
 
   // 📋 Funkcija za kopiranje pametnog share linka na klijentski clipboard
@@ -125,7 +187,6 @@ export default function Home() {
       title,
       metaDescription,
       h1,
-      robotsStatus,
       aiBotsStatus,
       entityTrustMap,
       semanticLayoutMap,
@@ -199,7 +260,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white print:hidden">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white">
       
       {/* NAVBAR */}
       <nav className="w-full max-w-6xl mx-auto p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-transparent border-b border-slate-200/40 sm:border-none">
@@ -335,8 +396,7 @@ export default function Home() {
         {result?.data && (
           <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-700">
             
-            {/* 🛠️ SPREMNI GRID SA TRI MATIČNE EXPORT I SHARE OPCIJE */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button 
                 onClick={downloadDocx} 
                 className="w-full bg-slate-900 text-white hover:bg-blue-600 py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg shadow-blue-900/10"
@@ -711,9 +771,76 @@ export default function Home() {
             </div>
           </div>
         )}
-      </div>
 
-     
+        {/* 📜 MODERAN PANEL ZA AUTOMATSKU PAGINACIJU KORISNIČKE ISTORIJE */}
+        <div className="bg-white border border-slate-200 rounded-[24px] sm:rounded-[32px] p-5 sm:p-8 shadow-xl shadow-blue-900/5 mt-12 mb-12">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-2 h-6 bg-slate-900 rounded-full" />
+            <h3 className="text-sm font-black uppercase tracking-wider text-slate-400">Your Recent Audit Logs</h3>
+          </div>
+          
+          {history.length === 0 ? (
+            <div className="text-center py-8 bg-slate-50 border border-dashed rounded-2xl">
+              <p className="text-xs font-bold text-slate-400 italic">No previous optimization sweeps discovered on this profile.</p>
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+              {history.map((audit) => (
+                <div key={audit.id} className="flex flex-col sm:flex-row justify-between sm:items-center bg-slate-50 border border-slate-100 p-4 rounded-2xl gap-4 hover:border-blue-500/30 transition-all duration-200">
+                  <div className="overflow-hidden">
+                    <div className="text-sm font-black text-slate-800 truncate">{audit.website_url}</div>
+                    <div className="text-slate-400 font-semibold text-[11px] mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                      <span>Score: <span className="text-blue-600 font-black">{audit.result_data?.score ?? 0}/100</span></span>
+                      <span className="text-slate-200">|</span>
+                      <span className="text-slate-400 font-medium">{new Date(audit.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={async () => {
+                        const shareUrl = `${window.location.origin}/share/${audit.share_token}`;
+                        await navigator.clipboard.writeText(shareUrl);
+                        alert("🔗 Share link copied for: " + audit.website_url);
+                      }}
+                      className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold rounded-xl text-xs transition shadow-sm"
+                    >
+                      Copy Link
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCurrentAuditId(audit.share_token);
+                        setResult({
+                          success: true,
+                          data: audit.result_data
+                        });
+                        window.scrollTo({ top: 400, behavior: "smooth" });
+                      }}
+                      className="px-4 py-2 bg-slate-900 hover:bg-blue-600 text-white font-black rounded-xl text-xs transition shadow-md"
+                    >
+                      Load Report ↗
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {/* 🔽 DUGME ZA DINAMIČKI DOHVAT SVIH PREOSTALIH AUDITA IZ BAZE REAKTIVNO */}
+              {hasMoreHistory && (
+                <div className="pt-2 text-center">
+                  <button
+                    type="button"
+                    onClick={loadAllHistory}
+                    disabled={isLoadingAllHistory}
+                    className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 disabled:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-black uppercase tracking-wider rounded-xl transition shadow-sm border border-slate-200/40"
+                  >
+                    {isLoadingAllHistory ? "Fetching complete logs..." : "✨ View All History"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+      </div>
 
       {/* FOOTER */}
       <footer className="border-t border-slate-200/50 py-6 text-center text-xs font-bold text-slate-400 bg-white w-full px-4 leading-relaxed mt-12 flex flex-col items-center">
