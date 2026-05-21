@@ -343,13 +343,6 @@ export default function Home() {
               >
                 DOWNLOAD WORD (.DOCX)
               </button>
-              
-              <button 
-                onClick={() => window.print()} 
-                className="w-full bg-slate-900 text-white hover:bg-blue-600 py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg shadow-blue-900/10"
-              >
-                EXPORT TO PDF (.PDF)
-              </button>
 
               <button 
                 onClick={copyShareLink}
