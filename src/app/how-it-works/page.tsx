@@ -24,12 +24,20 @@ export default async function HowItWorksPage() {
           <Link href="/pricing" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition">
             Pricing
           </Link>
-          <Link href="/sign-in" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition">
-            Sign In
-          </Link>
-          <Link href="/sign-up" className="bg-slate-900 text-white text-xs sm:text-sm font-bold px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl hover:bg-blue-600 transition shadow-sm">
-            Get Started
-          </Link>
+          {!userId ? (
+            <>
+              <Link href="/sign-in" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition">
+                Sign In
+              </Link>
+              <Link href="/sign-up" className="bg-slate-900 text-white text-xs sm:text-sm font-bold px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl hover:bg-blue-600 transition shadow-sm">
+                Get Started
+              </Link>
+            </>
+          ) : (
+            <Link href="/dashboard" className="bg-blue-600 text-white text-xs sm:text-sm font-bold px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl hover:bg-slate-900 transition shadow-sm">
+              Go to Dashboard
+            </Link>
+          )}
         </div>
       </nav>
 
