@@ -114,7 +114,7 @@ export async function analyzeUrl(formData: FormData) {
           result_data: auditOutputData,
         },
       ])
-      .select("id") // ✅ Povlačimo int8 ID iz baze podataka
+      .select("share_token") // ✅ Povlačimo share_token iz baze podataka
       .single();
 
     if (auditInsertError) {
@@ -141,7 +141,7 @@ export async function analyzeUrl(formData: FormData) {
 
     return {
       success: true,
-      auditId: insertedAudit?.id?.toString(), // ✅ Pretvaramo int8 u string radi lakše manipulacije na frontendu
+      auditId: insertedAudit?.share_token, // ✅ Vraćamo share_token kao auditId za dalju upotrebu u dijeljenju
       data: auditOutputData,
       userStats: {
         plan: userPlan,
@@ -189,18 +189,21 @@ export async function getUserStats() {
   }
 }
 
-// 🌐 JAVNA SERVER AKCIJA ZA UČITAVANJE DIJELJENIH IZVJEŠTAJA (Mapirana za int8)
-export async function getSharedAudit(auditId: string) {
-  if (!auditId) return { error: "Invalid report identifier." };
-  // 🛡️ VALIDACIJA: Dozvoli prolaz samo ako su u pitanju čiste cifre (0-9)
-  const isNumeric = /^\d+$/.test(auditId);
-  if (!isNumeric) {
-    console.warn(`⚠️ BLOKIRAN NEVALIDAN UPIT: Pokušan pristup sa ID-jem "${auditId}" koji nije broj.`);
+// 🌐 JAVNA SERVER AKCIJA ZA UČITAVANJE DIJELJENIH IZVJEŠTAJA PREKO SIGURNOG UUID-A
+export async function getSharedAudit(shareToken: string) {
+  if (!shareToken) return { error: "Invalid report identifier." };
+
+  // 🛡️ VALIDACIJA: Dozvoli prolaz samo ako je unijeti string validan UUID format
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(shareToken);
+  if (!isUuid) {
+    console.warn(`⚠️ BLOKIRAN NAPAD/NEVALIDAN UPIT: Pokušan pristup sa nevalidnim tokenom "${shareToken}".`);
     return { error: "This audit report was not found or has been deleted." };
   }
+
   try {
+    // Pozivamo novu RPC funkciju koja pretražuje po tokenu
     const { data, error } = await supabase
-      .rpc("get_public_audit_by_id", { target_id: auditId })
+      .rpc("get_public_audit_by_token", { target_token: shareToken })
       .maybeSingle() as { 
         data: { website_url: string; result_data: AuditData; created_at: string } | null; 
         error: PostgrestError | null; 
@@ -212,7 +215,7 @@ export async function getSharedAudit(auditId: string) {
     }
 
     if (!data) {
-      console.warn(`⚠️ PODATAK NIJE PRONAĐEN: Audit sa ID-jem "${auditId}" ne postoji u bazi ili je sakriven RLS-om.`);
+      console.warn(`⚠️ REPORT NIJE PRONAĐEN: Audit sa tokenom "${shareToken}" ne postoji.`);
       return { error: "This audit report was not found or has been deleted." };
     }
 
