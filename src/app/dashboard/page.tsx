@@ -776,7 +776,16 @@ export default function Home() {
         <div className="bg-white border border-slate-200 rounded-[24px] sm:rounded-[32px] p-5 sm:p-8 shadow-xl shadow-blue-900/5 mt-12 mb-12">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-2 h-6 bg-slate-900 rounded-full" />
-            <h3 className="text-sm font-black uppercase tracking-wider text-slate-400">Your Recent Audit Logs</h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-6 bg-slate-900 rounded-full" />
+              <h3 className="text-sm font-black uppercase tracking-wider text-slate-400">Your Recent Audit Logs</h3>
+            </div>
+            {/* 💡 Elegantno obavještenje o brisanju nakon 30 dana */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200/60 text-amber-700 text-[10px] font-bold rounded-xl shrink-0">
+              <span>⏱️ Logs expire after 30 days</span>
+            </div>
+          </div>
           </div>
           
           {history.length === 0 ? (
