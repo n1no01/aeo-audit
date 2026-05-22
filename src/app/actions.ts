@@ -67,7 +67,7 @@ export async function analyzeUrl(formData: FormData) {
     userLimit = dbUser.audit_limit;
     currentUsedAudits = dbUser.used_audits || 0; 
 
-    // 🕒 4. PROVJERA LIMITA
+    // 👥 4. PROVJERA LIMITA
     if (currentUsedAudits >= userLimit) {
       const stats = { plan: userPlan, limit: userLimit, used: currentUsedAudits };
       return { 
@@ -87,6 +87,7 @@ export async function analyzeUrl(formData: FormData) {
 
       auditOutputData = {
         ...scrapedResult,
+        website_url: url, // ✨ OVDJE SMO UBACILI URL: Sada se sprema direktno u JSON unutar result_data i TypeScript ga vidi!
         score: aiData.score || score,
         pageCategory: aiData.pageCategory || "Uncategorized",
         aiAnalysis: aiData.aiAnalysis || "No analysis provided.",
@@ -125,7 +126,7 @@ export async function analyzeUrl(formData: FormData) {
       };
     }
 
-    // ⚡ 7. ATOMSKO UVEĆAVANJE KREDITA (Koristi tvoju RPC funkciju)
+    // 👥 7. ATOMSKO UVEĆAVANJE KREDITA (Koristi tvoju RPC funkciju)
     const { data: updatedUsers, error: rpcError } = await supabase.rpc("increment_used_audits", {
       row_id: userId,
     });
@@ -201,7 +202,6 @@ export async function getSharedAudit(shareToken: string) {
   }
 
   try {
-    // Pozivamo novu RPC funkciju koja pretražuje po tokenu
     const { data, error } = await supabase
       .rpc("get_public_audit_by_token", { target_token: shareToken })
       .maybeSingle() as { 
@@ -223,7 +223,10 @@ export async function getSharedAudit(shareToken: string) {
       success: true,
       url: data.website_url,
       createdAt: data.created_at,
-      data: data.result_data
+      data: {
+        ...data.result_data,
+        website_url: data.website_url // 🔐 Pomaže i kod javnih share-ova da imamo url namiren u tipu
+      }
     };
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
@@ -237,7 +240,7 @@ interface DBHistoryItem {
   website_url: string;
   created_at: string;
   share_token: string;
-  result_data: Record<string, unknown>; // Sigurna zamjena za 'any' u objektima
+  result_data: Record<string, unknown>; 
 }
 
 // 📜 SERVER AKCIJA ZA DOHVATANJE ISTORIJE - SADA SA OPTIMIZOVANIM LIMITOM
@@ -256,7 +259,6 @@ export async function getUserAuditHistory(limit?: number): Promise<{
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
-    // ⚡ Ako je proslijeđen limit, ograniči broj redova
     if (limit) {
       query = query.limit(limit);
     }

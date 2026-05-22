@@ -175,6 +175,40 @@ export default function Home() {
       console.error("Failed to copy share link:", err);
     }
   };
+  // 🚀 Potpuno sigurna funkcija koja garantovano vuče URL skeniranog sajta
+  const shareOnLinkedIn = () => {
+    if (!currentAuditId || !result?.data) return;
+
+    const shareUrl = `${window.location.origin}/share/${currentAuditId}`;
+    
+    // 🔍 STRATEGIJA PRETRAGE: Tražimo URL na 3 nivoa kako nikada ne bi bio prazan
+    let targetUrl = "";
+
+    // Nivo 1: Probaj izvući iz novog rezultata (ako je tip ispravljen i audit je tek urađen)
+    if (result.data.website_url) {
+      targetUrl = result.data.website_url;
+    } 
+    // Nivo 2: Ako je prazno, pročešljaj istoriju i nađi sajt koji ima ovaj isti share_token
+    else {
+      const matchingAudit = history.find(h => h.share_token === currentAuditId);
+      if (matchingAudit) {
+        targetUrl = matchingAudit.website_url;
+      }
+    }
+
+    // Nivo 3: Ako i dalje nemamo ništa (za svaki slučaj), očisti ga na "AEO Audit"
+    const displayUrl = targetUrl ? targetUrl : "this platform";
+
+    // 📝 Tekst objave sa pravim URL-om
+    const text = `Just ran an AI Visibility Audit for ${displayUrl} using AEO Audit Pro! 🎯\n\n` +
+                 `Our Answer Engine Optimization (AEO) score is ${result.data.score}/100. The engine analyzed how search models like ChatGPT, Perplexity, and Claude read our content hierarchy and entity graphs.\n\n` +
+                 `See the live, interactive report here: ${shareUrl}`;
+
+    // 🔗 Otvaranje feed-a sa prelomljenim tekstom
+    const linkedinUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`;
+
+    window.open(linkedinUrl, "_blank", "width=600,height=600,scrollbars=yes,resizable=yes");
+  };
 
   const downloadDocx = async () => {
     if (!result?.data) return;
@@ -396,10 +430,11 @@ export default function Home() {
         {result?.data && (
           <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-700">
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* 🛠️ GRID SA 3 GUMBA ZA AKCIJU */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <button 
                 onClick={downloadDocx} 
-                className="w-full bg-slate-900 text-white hover:bg-blue-600 py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg shadow-blue-900/10"
+                className="w-full bg-slate-900 text-white hover:bg-slate-800 py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg"
               >
                 DOWNLOAD WORD (.DOCX)
               </button>
@@ -410,10 +445,18 @@ export default function Home() {
                 className={`w-full py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg border ${
                   copied 
                     ? "bg-emerald-500 text-white border-emerald-500" 
-                    : "bg-blue-600 text-white hover:bg-blue-700 border-blue-600 shadow-blue-900/10 disabled:bg-slate-200 disabled:border-slate-200 disabled:text-slate-400"
+                    : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200"
                 }`}
               >
                 {copied ? "🔗 LINK COPIED!" : "🔗 COPY SHARE LINK"}
+              </button>
+
+              <button 
+                onClick={shareOnLinkedIn}
+                disabled={!currentAuditId}
+                className="w-full bg-[#0077b5] text-white hover:bg-[#006296] py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg disabled:bg-slate-200 disabled:text-slate-400 font-sans flex items-center justify-center gap-2"
+              >
+                <span className="font-serif lowercase font-bold text-sm tracking-tighter">in</span> SHARE ON LINKEDIN
               </button>
             </div>
 
@@ -774,9 +817,7 @@ export default function Home() {
 
         {/* 📜 MODERAN PANEL ZA AUTOMATSKU PAGINACIJU KORISNIČKE ISTORIJE */}
         <div className="bg-white border border-slate-200 rounded-[24px] sm:rounded-[32px] p-5 sm:p-8 shadow-xl shadow-blue-900/5 mt-12 mb-12">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-2 h-6 bg-slate-900 rounded-full" />
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
               <div className="w-2 h-6 bg-slate-900 rounded-full" />
               <h3 className="text-sm font-black uppercase tracking-wider text-slate-400">Your Recent Audit Logs</h3>
@@ -785,7 +826,6 @@ export default function Home() {
             <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200/60 text-amber-700 text-[10px] font-bold rounded-xl shrink-0">
               <span>⏱️ Logs expire after 30 days</span>
             </div>
-          </div>
           </div>
           
           {history.length === 0 ? (
@@ -802,6 +842,21 @@ export default function Home() {
                       <span>Score: <span className="text-blue-600 font-black">{audit.result_data?.score ?? 0}/100</span></span>
                       <span className="text-slate-200">|</span>
                       <span className="text-slate-400 font-medium">{new Date(audit.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}</span>
+                      
+                      {/* ⏱️ Računica za preostale dane do brisanja */}
+                      <span className="text-slate-200">|</span>
+                      {(() => {
+                        const createdDate = new Date(audit.created_at).getTime();
+                        const expiresDate = createdDate + (30 * 24 * 60 * 60 * 1000); 
+                        const msLeft = expiresDate - Date.now();
+                        const daysLeft = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
+                        
+                        return (
+                          <span className={`font-bold ${daysLeft <= 5 ? "text-rose-500 animate-pulse" : "text-amber-600"}`}>
+                            {daysLeft === 0 ? "Expires today" : `Expires in ${daysLeft} ${daysLeft === 1 ? "day" : "days"}`}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">

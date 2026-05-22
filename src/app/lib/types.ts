@@ -53,6 +53,7 @@ export interface AuditData extends ScrapedData {
   entityDensityScore: number;
   sentenceSimplicityScore: number;
   hasListsOrTables: boolean;
+  website_url?: string;
 }
 
 export type TabId = "metrics" | "analysis" | "recommendations" | "robots";
