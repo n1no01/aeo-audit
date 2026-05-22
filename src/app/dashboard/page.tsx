@@ -175,7 +175,6 @@ export default function Home() {
       console.error("Failed to copy share link:", err);
     }
   };
-  // 🚀 Potpuno sigurna funkcija koja garantovano vuče URL skeniranog sajta
   const shareOnLinkedIn = () => {
     if (!currentAuditId || !result?.data) return;
 
@@ -184,11 +183,11 @@ export default function Home() {
     // 🔍 STRATEGIJA PRETRAGE: Tražimo URL na 3 nivoa kako nikada ne bi bio prazan
     let targetUrl = "";
 
-    // Nivo 1: Probaj izvući iz novog rezultata (ako je tip ispravljen i audit je tek urađen)
+    // Nivo 1: Iz novog rezultata
     if (result.data.website_url) {
       targetUrl = result.data.website_url;
     } 
-    // Nivo 2: Ako je prazno, pročešljaj istoriju i nađi sajt koji ima ovaj isti share_token
+    // Nivo 2: Iz istorije
     else {
       const matchingAudit = history.find(h => h.share_token === currentAuditId);
       if (matchingAudit) {
@@ -196,14 +195,24 @@ export default function Home() {
       }
     }
 
-    // Nivo 3: Ako i dalje nemamo ništa (za svaki slučaj), očisti ga na "AEO Audit"
-    const displayUrl = targetUrl ? targetUrl : "this platform";
+    //  Izvlačimo SAMO čist tekst domena (npr. "figma.com")
+    let displayUrl = "this website";
+    if (targetUrl) {
+      try {
+        // Ako URL nema protokol (npr. samo figma.com), new URL() će pući, pa mu dodajemo privremeno za parsiranje
+        const parsingUrl = targetUrl.startsWith("http") ? targetUrl : `https://${targetUrl}`;
+        displayUrl = new URL(parsingUrl).hostname.replace("www.", "");
+      } catch (e) {
+        // Ako čišćenje pukne, koristimo sirovi string očišćen od uobičajenih simbola
+        displayUrl = targetUrl.replace("https://", "").replace("http://", "").replace("www.", "");
+      }
+    }
 
-    // 📝 Tekst objave sa pravim URL-om
+    // 📝 Tekst objave - sada displayUrl sadrži čist tekst "figma.com", pa LinkedIn neće poludjeti
     const text = `🎯 AI Visibility Audit for ${displayUrl} is officially LIVE via AEO Audit Pro!\n\n` +
-             `The Answer Engine Optimization (AEO) score is ${result.data.score}/100. The platform just analyzed how top-tier AI models like ChatGPT, Perplexity, and Claude crawl, parse, and extract this domain's content hierarchy and entity graphs.\n\n` +
-             `Want to see how this site stacks up in the age of AI search? Review the live, interactive report here: ${shareUrl}\n\n` +
-             `#AEO #SEO #AISearch #DigitalMarketing #AEOAuditPro`;
+                 `The Answer Engine Optimization (AEO) score is ${result.data.score}/100. The platform just analyzed how top-tier AI models like ChatGPT, Perplexity, and Claude crawl, parse, and extract this domain's content hierarchy and entity graphs.\n\n` +
+                 `Want to see how this site stacks up in the age of AI search? Review the live, interactive report here: ${shareUrl}\n\n` +
+                 `#AEO #SEO #AISearch #DigitalMarketing #AEOAuditPro`;
 
     // 🔗 Otvaranje feed-a sa prelomljenim tekstom
     const linkedinUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`;
