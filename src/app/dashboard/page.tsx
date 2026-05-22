@@ -209,9 +209,10 @@ export default function Home() {
       displayUrl = displayUrl.substring(0, lastDotIndex) + " . " + displayUrl.substring(lastDotIndex + 1);
     }
 
+    // 📝 Tekst bez upitnika i hashtagova - sada je 100% imun na rezanje parametara!
     const text = `🎯 AI Visibility Audit for ${displayUrl} is officially LIVE via AEO Audit Pro!\n\n` +
                  `The Answer Engine Optimization (AEO) score is ${result.data.score}/100. The platform just analyzed how top-tier AI models like ChatGPT, Perplexity, and Claude crawl, parse, and extract this domain's content hierarchy.\n\n` +
-                 `Want to see how this site stacks up in the age of AI search? Review the live, interactive report here: ${shareUrl}`;
+                 `See how this site stacks up in the age of AI search and review the live, interactive report here: ${shareUrl}`;
 
     const linkedinUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`;
 
