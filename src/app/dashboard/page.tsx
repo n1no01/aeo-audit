@@ -200,9 +200,10 @@ export default function Home() {
     const displayUrl = targetUrl ? targetUrl : "this platform";
 
     // 📝 Tekst objave sa pravim URL-om
-    const text = `Just ran an AI Visibility Audit for ${displayUrl} using AEO Audit Pro! 🎯\n\n` +
-                 `Our Answer Engine Optimization (AEO) score is ${result.data.score}/100. The engine analyzed how search models like ChatGPT, Perplexity, and Claude read our content hierarchy and entity graphs.\n\n` +
-                 `See the live, interactive report here: ${shareUrl}`;
+    const text = `🎯 AI Visibility Audit for ${displayUrl} is officially LIVE via AEO Audit Pro!\n\n` +
+             `The Answer Engine Optimization (AEO) score is ${result.data.score}/100. The platform just analyzed how top-tier AI models like ChatGPT, Perplexity, and Claude crawl, parse, and extract this domain's content hierarchy and entity graphs.\n\n` +
+             `Want to see how this site stacks up in the age of AI search? Review the live, interactive report here: ${shareUrl}\n\n` +
+             `#AEO #SEO #AISearch #DigitalMarketing #AEOAuditPro`;
 
     // 🔗 Otvaranje feed-a sa prelomljenim tekstom
     const linkedinUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`;
