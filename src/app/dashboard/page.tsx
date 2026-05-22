@@ -175,7 +175,7 @@ export default function Home() {
       console.error("Failed to copy share link:", err);
     }
   };
-  
+ 
   // 🚀 Potpuno optimizovana funkcija za LinkedIn sa prelomljenim domenom (zaštita od kradljivca kartica)
   const shareOnLinkedIn = () => {
     if (!currentAuditId || !result?.data) return;
@@ -219,13 +219,15 @@ export default function Home() {
         displayUrl.substring(lastDotIndex + 1);
     }
 
-    // 📝 Tekst objave - brendiran, univerzalan i siguran za algoritam
-    const text = `🎯 AI Visibility Audit for ${displayUrl} is officially LIVE via AEO Audit Pro!\n\n` +
-                 `The Answer Engine Optimization (AEO) score is ${result.data.score}/100. The platform just analyzed how top-tier AI models like ChatGPT, Perplexity, and Claude crawl, parse, and extract this domain's content hierarchy and entity graphs.\n\n` +
-                 `Want to see how this site stacks up in the age of AI search? Review the live, interactive report here: ${shareUrl}\n\n` +
-                 `#AEO #SEO #AISearch #DigitalMarketing #AEOAuditPro`;
+   const text = `🎯 AI Visibility Audit for ${displayUrl} is officially LIVE via AEO Audit Pro!
 
-    // 🔗 Otvaranje feed-a sa prelomljenim tekstom
+The Answer Engine Optimization (AEO) score is ${result.data.score}/100. The platform just analyzed how top-tier AI models like ChatGPT, Perplexity, and Claude crawl, parse, and extract this domain's content hierarchy and entity graphs.
+
+Want to see how this site stacks up in the age of AI search? Review the live, interactive report here: ${shareUrl}
+
+#AEO #SEO #AISearch #DigitalMarketing #AEOAuditPro`;
+
+    // 🔗 Otvaranje feed-a sa 100% sigurnim enkodiranjem svih znakova (uključujući #)
     const linkedinUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`;
 
     window.open(linkedinUrl, "_blank", "width=600,height=600,scrollbars=yes,resizable=yes");
