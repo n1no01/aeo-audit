@@ -176,21 +176,18 @@ export default function Home() {
     }
   };
  
-  // 🚀 Potpuno optimizovana funkcija za LinkedIn sa prelomljenim domenom (zaštita od kradljivca kartica)
+  // 🚀 Ultimatna, službena verzija imuna na LinkedIn filtre i sjeckanje teksta
   const shareOnLinkedIn = () => {
     if (!currentAuditId || !result?.data) return;
 
+    // 1. Link do tvog AEO izvještaja (pravi veliku klikabilnu karticu)
     const shareUrl = `${window.location.origin}/share/${currentAuditId}`;
     
-    // 🔍 STRATEGIJA PRETRAGE: Tražimo URL na 3 nivoa kako nikada ne bi bio prazan
+    // 2. Tražimo URL skeniranog sajta na 3 nivoa
     let targetUrl = "";
-
-    // Nivo 1: Iz novog rezultata
     if (result.data.website_url) {
       targetUrl = result.data.website_url;
-    } 
-    // Nivo 2: Iz istorije
-    else {
+    } else {
       const matchingAudit = history.find(h => h.share_token === currentAuditId);
       if (matchingAudit) {
         targetUrl = matchingAudit.website_url;
@@ -200,35 +197,27 @@ export default function Home() {
     let displayUrl = "this website";
     if (targetUrl) {
       try {
-        // Ako URL nema protokol, dodajemo ga privremeno za stabilno parsiranje
         const parsingUrl = targetUrl.startsWith("http") ? targetUrl : `https://${targetUrl}`;
         displayUrl = new URL(parsingUrl).hostname.replace("www.", "");
       } catch (e) {
-        // Fallback čišćenje ako URL parser omane
         displayUrl = targetUrl.replace("https://", "").replace("http://", "").replace("www.", "");
       }
     }
 
-    // 🛡️ MAGIJA PROTIV LINKEDIN BAGA: Pretvaramo "figma.com" u "figma . com"
-    // Tražimo posljednju tačku u domenu i mijenjamo je tako da bot ne prepozna URL
+    // 🛡️ Prelom domena (npr. figma . com) da LinkedIn ne pomisli da je to drugi link
     const lastDotIndex = displayUrl.lastIndexOf(".");
     if (lastDotIndex !== -1) {
-      displayUrl = 
-        displayUrl.substring(0, lastDotIndex) + 
-        " . " + 
-        displayUrl.substring(lastDotIndex + 1);
+      displayUrl = displayUrl.substring(0, lastDotIndex) + " . " + displayUrl.substring(lastDotIndex + 1);
     }
 
-   const text = `🎯 AI Visibility Audit for ${displayUrl} is officially LIVE via AEO Audit Pro!
+    // 📝 Kompletan tekst (ovdje koristimo obične razmake umjesto # da ne triggerujemo spam filter)
+    const text = `🎯 AI Visibility Audit for ${displayUrl} is officially LIVE via AEO Audit Pro!\n\n` +
+                 `The Answer Engine Optimization (AEO) score is ${result.data.score}/100. The platform just analyzed how top-tier AI models like ChatGPT, Perplexity, and Claude crawl, parse, and extract this domain's content hierarchy.\n\n` +
+                 `Want to see how this site stacks up in the age of AI search? Review the live, interactive report here:`;
 
-The Answer Engine Optimization (AEO) score is ${result.data.score}/100. The platform just analyzed how top-tier AI models like ChatGPT, Perplexity, and Claude crawl, parse, and extract this domain's content hierarchy and entity graphs.
-
-Want to see how this site stacks up in the age of AI search? Review the live, interactive report here: ${shareUrl}
-
-#AEO #SEO #AISearch #DigitalMarketing #AEOAuditPro`;
-
-    // 🔗 Otvaranje feed-a sa 100% sigurnim enkodiranjem svih znakova (uključujući #)
-    const linkedinUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`;
+    // 🔗 Slanje kroz službeni share-offsite prozor. 
+    // shareUrl ide u 'url' (od njega se pravi velika kartica), a tekst ide u 'summary'
+    const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}&summary=${encodeURIComponent(text)}`;
 
     window.open(linkedinUrl, "_blank", "width=600,height=600,scrollbars=yes,resizable=yes");
   };
