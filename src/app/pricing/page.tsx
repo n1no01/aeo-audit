@@ -1,32 +1,15 @@
 import Link from "next/link";
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { getDodoCheckoutUrl } from "@/app/actions/checkout";
 import { CheckoutButton } from "./CheckoutButton";
 
 export default async function PricingPage() {
   const { userId } = await auth();
   const user = await currentUser();
+  const userEmail = user?.emailAddresses[0]?.emailAddress || "";
 
-  // 1. ID-jevi planova povučeni tokom migracije iz .env fajla
+  // ID-jevi planova iz .env fajla
   const STARTER_PRODUCT_ID = process.env.NEXT_PUBLIC_DODO_STARTER_PLAN_ID!;
   const AGENCY_PRODUCT_ID = process.env.NEXT_PUBLIC_DODO_AGENCY_PLAN_ID!;
-
-  // 2. Podrazumijevani linkovi ako korisnik nije ulogovan (šaljemo ga na sign-up)
-  let starterFinalUrl = "/sign-up?redirect_url=/pricing";
-  let proFinalUrl = "/sign-up?redirect_url=/pricing";
-
-  // 3. Ako je korisnik ulogovan, asinhrono generišemo unikatni Dodo URL na serveru
-if (userId && user) {
-  const userEmail = user.emailAddresses[0]?.emailAddress || "";
-
-  // 🎯 Pozivamo funkciju koja sada prihvata 3 argumenta i vraća čist string
-  const starterUrl = await getDodoCheckoutUrl(STARTER_PRODUCT_ID, userId, userEmail);
-  const proUrl = await getDodoCheckoutUrl(AGENCY_PRODUCT_ID, userId, userEmail);
-
-  // 🎯 Pošto je starterUrl sada čist string, dodjeljivanje prolazi bez greške!
-  if (starterUrl) starterFinalUrl = starterUrl;
-  if (proUrl) proFinalUrl = proUrl;
-}
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white">
@@ -130,9 +113,11 @@ if (userId && user) {
             </div>
             
             <div className="mt-8">
-              {/* 🛠️ PROMIJENJENO: Staru LS rutu mijenja Dodo dugme */}
+              {/* 🎯 PROMIJENJENO: Proslijeđujemo sirove parametre u pametno dugme */}
               <CheckoutButton 
-                finalUrl={starterFinalUrl}
+                productId={STARTER_PRODUCT_ID}
+                userId={userId}
+                userEmail={userEmail}
                 text="CHOOSE STARTER"
                 className="block w-full bg-blue-600 text-white text-center py-3 rounded-xl font-black tracking-wide hover:bg-slate-900 transition text-sm cursor-pointer shadow-md"
               />
@@ -165,9 +150,11 @@ if (userId && user) {
             </div>
             
             <div className="mt-8">
-              {/* 🛠️ PROMIJENJENO: Staru LS rutu mijenja Dodo dugme */}
+              {/* 🎯 PROMIJENJENO: Proslijeđujemo sirove parametre u pametno dugme */}
               <CheckoutButton 
-                finalUrl={proFinalUrl}
+                productId={AGENCY_PRODUCT_ID}
+                userId={userId}
+                userEmail={userEmail}
                 text="UPGRADE TO PRO"
                 className="block w-full bg-blue-600 text-white text-center py-3 rounded-xl font-black tracking-wide hover:bg-slate-900 transition text-sm cursor-pointer shadow-lg"
               />
@@ -223,17 +210,11 @@ if (userId && user) {
         </div>
 
         <div className="flex items-center justify-center gap-4 mt-2 text-[11px] text-slate-400 font-medium w-full">
-          <Link 
-            href="/privacy" 
-            className="hover:text-slate-900 underline decoration-slate-200 hover:decoration-blue-500 transition-colors duration-200"
-          >
+          <Link href="/privacy" className="hover:text-slate-900 underline decoration-slate-200 hover:decoration-blue-500 transition-colors duration-200">
             Privacy Policy
           </Link>
           <span className="text-slate-200">|</span>
-          <Link 
-            href="/terms" 
-            className="hover:text-slate-900 underline decoration-slate-200 hover:decoration-blue-500 transition-colors duration-200"
-          >
+          <Link href="/terms" className="hover:text-slate-900 underline decoration-slate-200 hover:decoration-blue-500 transition-colors duration-200">
             Terms of Service
           </Link>
         </div>
