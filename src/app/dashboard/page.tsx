@@ -209,7 +209,6 @@ export default function Home() {
       displayUrl = displayUrl.substring(0, lastDotIndex) + " . " + displayUrl.substring(lastDotIndex + 1);
     }
 
-    // 📝 Tekst bez upitnika i hashtagova - sada je 100% imun na rezanje parametara!
     const text = `🎯 AI Visibility Audit for ${displayUrl} is officially LIVE via AEO Audit Pro!\n\n` +
                  `The Answer Engine Optimization (AEO) score is ${result.data.score}/100. The platform just analyzed how top-tier AI models like ChatGPT, Perplexity, and Claude crawl, parse, and extract this domain's content hierarchy.\n\n` +
                  `See how this site stacks up in the age of AI search and review the live, interactive report here: ${shareUrl}`;
@@ -321,7 +320,6 @@ export default function Home() {
           </Link>
           <div className="h-4 w-px bg-slate-200 hidden sm:block" />
           
-          {/* 💎 KORISNIČKI STATS WIDGET UGRAĐEN U NAVBAR */}
           {userStats && (
             <div className="flex items-center gap-2.5 bg-slate-100 border border-slate-200/50 rounded-xl px-3 py-1.5 text-[11px] font-bold text-slate-600 shadow-sm animate-in fade-in duration-200">
               <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${

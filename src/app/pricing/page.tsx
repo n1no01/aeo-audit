@@ -1,21 +1,29 @@
 import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { getDodoCheckoutUrl } from "@/app/actions/checkout";
+import { CheckoutButton } from "./CheckoutButton";
 
 export default async function PricingPage() {
   const { userId } = await auth();
+  const user = await currentUser();
 
-// 1. Pravi i ispravni Lemon Squeezy linkovi za tvoj checkout
-const BASE_STARTER_URL = "https://aeoauditpro.lemonsqueezy.com/checkout/buy/74f95cf6-5d0b-43e9-ae57-955fc34e053d?enabled=1681365";
-const BASE_PRO_URL = "https://aeoauditpro.lemonsqueezy.com/checkout/buy/2d741065-0590-4991-93e3-c13af9e72a38?enabled=1681413";
+  // 1. ID-jevi planova povučeni tokom migracije iz .env fajla
+  const STARTER_PRODUCT_ID = process.env.NEXT_PUBLIC_DODO_STARTER_PLAN_ID!;
+  const AGENCY_PRODUCT_ID = process.env.NEXT_PUBLIC_DODO_AGENCY_PLAN_ID!;
 
-  // 2. Dinamičko generisanje linkova na serveru ovisno o tome da li je korisnik ulogovan
+  // 2. Podrazumijevani linkovi ako korisnik nije ulogovan (šaljemo ga na sign-up)
   let starterFinalUrl = "/sign-up?redirect_url=/pricing";
   let proFinalUrl = "/sign-up?redirect_url=/pricing";
 
-  if (userId) {
-    // Ako je ulogovan, dodajemo passthrough parametar koji naš webhook hvata pod custom_data.user_id
-    starterFinalUrl = `${BASE_STARTER_URL}&checkout[custom][user_id]=${userId}`;
-    proFinalUrl = `${BASE_PRO_URL}&checkout[custom][user_id]=${userId}`;
+  // 3. Ako je korisnik ulogovan, asinhrono generišemo unikatni Dodo URL na serveru
+  if (userId && user) {
+    const userEmail = user.emailAddresses[0]?.emailAddress || "";
+
+    const starterUrl = await getDodoCheckoutUrl(STARTER_PRODUCT_ID, userId, userEmail);
+    const proUrl = await getDodoCheckoutUrl(AGENCY_PRODUCT_ID, userId, userEmail);
+
+    if (starterUrl) starterFinalUrl = starterUrl;
+    if (proUrl) proFinalUrl = proUrl;
   }
 
   return (
@@ -120,12 +128,12 @@ const BASE_PRO_URL = "https://aeoauditpro.lemonsqueezy.com/checkout/buy/2d741065
             </div>
             
             <div className="mt-8">
-              <Link 
-                href={starterFinalUrl} 
+              {/* 🛠️ PROMIJENJENO: Staru LS rutu mijenja Dodo dugme */}
+              <CheckoutButton 
+                finalUrl={starterFinalUrl}
+                text="CHOOSE STARTER"
                 className="block w-full bg-blue-600 text-white text-center py-3 rounded-xl font-black tracking-wide hover:bg-slate-900 transition text-sm cursor-pointer shadow-md"
-              >
-                CHOOSE STARTER
-              </Link>
+              />
             </div>
           </div>
 
@@ -155,12 +163,12 @@ const BASE_PRO_URL = "https://aeoauditpro.lemonsqueezy.com/checkout/buy/2d741065
             </div>
             
             <div className="mt-8">
-              <Link 
-                href={proFinalUrl} 
+              {/* 🛠️ PROMIJENJENO: Staru LS rutu mijenja Dodo dugme */}
+              <CheckoutButton 
+                finalUrl={proFinalUrl}
+                text="UPGRADE TO PRO"
                 className="block w-full bg-blue-600 text-white text-center py-3 rounded-xl font-black tracking-wide hover:bg-slate-900 transition text-sm cursor-pointer shadow-lg"
-              >
-                UPGRADE TO PRO
-              </Link>
+              />
             </div>
           </div>
 
@@ -198,7 +206,6 @@ const BASE_PRO_URL = "https://aeoauditpro.lemonsqueezy.com/checkout/buy/2d741065
         </div>
       </main>
 
-
       {/* FOOTER */}
       <footer className="border-t border-slate-200/50 py-6 text-center text-xs font-bold text-slate-400 bg-white w-full px-4 leading-relaxed mt-12 flex flex-col items-center">
         <div>&copy; 2026 AEO Audit Pro. All rights reserved.</div>
@@ -213,7 +220,6 @@ const BASE_PRO_URL = "https://aeoauditpro.lemonsqueezy.com/checkout/buy/2d741065
           </a>
         </div>
 
-        {/* DODAN JUSTIFY-CENTER ZA SAVRŠENO CENTRIRANJE LINKOVA */}
         <div className="flex items-center justify-center gap-4 mt-2 text-[11px] text-slate-400 font-medium w-full">
           <Link 
             href="/privacy" 
