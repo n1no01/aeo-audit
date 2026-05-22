@@ -1,34 +1,47 @@
 "use server";
 
-import DodoPayments from "dodopayments";
-
-const client = new DodoPayments({
-  bearerToken: process.env.DODO_PAYMENTS_API_KEY,
-  environment: "live_mode", // Kada kreneš uživo, promijeni u 'live_mode'
-});
-
-export async function getDodoCheckoutUrl(productId: string, userId: string, email: string) {
+export async function getDodoCheckoutUrl(productId: string, clerkUserId: string, email: string) {
   try {
-    const session = await client.checkoutSessions.create({
-      product_cart: [
-        { 
-          product_id: productId, 
-          quantity: 1 
-        }
-      ],
-      customer: {
-        email: email,
+    console.log(`Creating session for product: ${productId}, user: ${clerkUserId}, email: ${email}`);
+
+    const apiKey = process.env.DODO_PAYMENTS_API_KEY;
+    if (!apiKey) {
+      throw new Error("Missing DODO_PAYMENTS_API_KEY inside environment variables.");
+    }
+
+    const response = await fetch("https://testapi.dodopayments.com/v1/checkouts", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
       },
-      metadata: {
-        clerkUserId: userId, // Poveznica koju će naš webhook pročitati
-      },
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?payment=success`,
+      body: JSON.stringify({
+        product_id: productId,
+        quantity: 1,
+        customer_email: email,
+        metadata: {
+          clerkUserId: clerkUserId,
+        },
+        return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard`,
+      }),
     });
 
-    // Zvanično polje iz API-ja je checkout_url
-    return session.checkout_url; 
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error("Dodo API Error Response:", errorData);
+      throw new Error(`Dodo API responded with status ${response.status}`);
+    }
+
+    const session = await response.json();
+
+    if (!session.checkout_url) {
+      throw new Error("Dodo API did not return a checkout_url");
+    }
+
+    return session.checkout_url as string;
   } catch (error) {
-    console.error("Dodo Payments Error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Dodo Checkout Error:", errorMessage);
     return null;
   }
 }

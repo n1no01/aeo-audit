@@ -16,15 +16,17 @@ export default async function PricingPage() {
   let proFinalUrl = "/sign-up?redirect_url=/pricing";
 
   // 3. Ako je korisnik ulogovan, asinhrono generišemo unikatni Dodo URL na serveru
-  if (userId && user) {
-    const userEmail = user.emailAddresses[0]?.emailAddress || "";
+if (userId && user) {
+  const userEmail = user.emailAddresses[0]?.emailAddress || "";
 
-    const starterUrl = await getDodoCheckoutUrl(STARTER_PRODUCT_ID, userId, userEmail);
-    const proUrl = await getDodoCheckoutUrl(AGENCY_PRODUCT_ID, userId, userEmail);
+  // 🎯 Pozivamo funkciju koja sada prihvata 3 argumenta i vraća čist string
+  const starterUrl = await getDodoCheckoutUrl(STARTER_PRODUCT_ID, userId, userEmail);
+  const proUrl = await getDodoCheckoutUrl(AGENCY_PRODUCT_ID, userId, userEmail);
 
-    if (starterUrl) starterFinalUrl = starterUrl;
-    if (proUrl) proFinalUrl = proUrl;
-  }
+  // 🎯 Pošto je starterUrl sada čist string, dodjeljivanje prolazi bez greške!
+  if (starterUrl) starterFinalUrl = starterUrl;
+  if (proUrl) proFinalUrl = proUrl;
+}
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white">
