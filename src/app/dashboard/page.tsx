@@ -175,15 +175,14 @@ export default function Home() {
       console.error("Failed to copy share link:", err);
     }
   };
- 
-  // 🚀 Ultimatna, službena verzija imuna na LinkedIn filtre i sjeckanje teksta
+  
+  // 🚀 Očišćena i direktna funkcija bez hashtagova – unosi tekst instantno unutar LinkedIn-a
   const shareOnLinkedIn = () => {
     if (!currentAuditId || !result?.data) return;
 
-    // 1. Link do tvog AEO izvještaja (pravi veliku klikabilnu karticu)
     const shareUrl = `${window.location.origin}/share/${currentAuditId}`;
     
-    // 2. Tražimo URL skeniranog sajta na 3 nivoa
+    // 🔍 Tražimo URL skeniranog sajta na 3 nivoa
     let targetUrl = "";
     if (result.data.website_url) {
       targetUrl = result.data.website_url;
@@ -204,20 +203,17 @@ export default function Home() {
       }
     }
 
-    // 🛡️ Prelom domena (npr. figma . com) da LinkedIn ne pomisli da je to drugi link
+    // 🛡️ Prelom domena (npr. figma . com) da se LinkedIn ne zbuni oko primarnog linka
     const lastDotIndex = displayUrl.lastIndexOf(".");
     if (lastDotIndex !== -1) {
       displayUrl = displayUrl.substring(0, lastDotIndex) + " . " + displayUrl.substring(lastDotIndex + 1);
     }
 
-    // 📝 Kompletan tekst (ovdje koristimo obične razmake umjesto # da ne triggerujemo spam filter)
     const text = `🎯 AI Visibility Audit for ${displayUrl} is officially LIVE via AEO Audit Pro!\n\n` +
                  `The Answer Engine Optimization (AEO) score is ${result.data.score}/100. The platform just analyzed how top-tier AI models like ChatGPT, Perplexity, and Claude crawl, parse, and extract this domain's content hierarchy.\n\n` +
-                 `Want to see how this site stacks up in the age of AI search? Review the live, interactive report here:`;
+                 `Want to see how this site stacks up in the age of AI search? Review the live, interactive report here: ${shareUrl}`;
 
-    // 🔗 Slanje kroz službeni share-offsite prozor. 
-    // shareUrl ide u 'url' (od njega se pravi velika kartica), a tekst ide u 'summary'
-    const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}&summary=${encodeURIComponent(text)}`;
+    const linkedinUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`;
 
     window.open(linkedinUrl, "_blank", "width=600,height=600,scrollbars=yes,resizable=yes");
   };
