@@ -40,6 +40,7 @@ export interface ScrapedData {
   hasVideoElements: boolean;
   qaBlocksCount: number;
   detectedSchemas: string[];
+  javascriptDependency: "Low" | "Critical";
   robotsStatus: "Valid" | "Missing" | "Blocking AI" | "Error";
   robotsRawContent: string;
   aiBotsStatus: BotStatus;

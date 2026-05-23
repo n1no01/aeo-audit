@@ -98,31 +98,46 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
   }
 
   // ==========================================
-  // MAIN HTML CRAWL (OPTIMIZOVAN TRISLOJNI MEHANIZAM)
+  // MAIN HTML CRAWL (SADA SA JS DETEKCIJOM)
   // ==========================================
   let scrapeResponse;
+  let javascriptDependency: "Low" | "Critical" = "Low";
+
   try {
-    // TIER 1: Najbrža i najjeftinija opcija (Basic - Bez JS, Bez Residential) -> 💸 TROŠI: 1 KREDIT
+    // TIER 1: Najbrža i najjeftinija opcija (Basic - Bez JS, Bez Residential) -> 💸 1 KREDIT
     scrapeResponse = await axios.get("https://api.webscraping.ai/html", {
       params: { api_key: scrapingApiKey, url, render: "false" },
       timeout: 12000,
     });
+    
+    // Provera: Ako je Tier 1 vratio HTML, ali u body-ju nema skoro nikakvog teksta (npr. prazan React app)
+    const t1Check = cheerio.load(typeof scrapeResponse.data === "string" ? scrapeResponse.data : "");
+    if (t1Check("body").text().trim().length < 200 && t1Check("#root, #__next, #app").length > 0) {
+      throw new Error("Trigger JS fallback: Empty DOM detected in Tier 1");
+    }
   } catch {
     try {
-      // TIER 2: Ako Basic baci grešku, palimo težu artiljeriju (Residential bez JS) -> 💸 TROŠI: 5 KREDITA
+      // TIER 2: Stari dobri Residential bez JS (Za sajtove sa Cloudflare zaštitom) -> 💸 5 KREDITA
       scrapeResponse = await axios.get("https://api.webscraping.ai/html", {
         params: { api_key: scrapingApiKey, url, proxy: "residential", render: "false" },
         timeout: 18000,
       });
+
+      // Ponovna provera: Da li je i Residential bez JS vratio praznu SPA aplikaciju?
+      const t2Check = cheerio.load(typeof scrapeResponse.data === "string" ? scrapeResponse.data : "");
+      if (t2Check("body").text().trim().length < 200 && t2Check("#root, #__next, #app").length > 0) {
+        throw new Error("Trigger JS fallback: Empty DOM detected in Tier 2");
+      }
     } catch {
-      // TIER 3: Zadnja linija odbrane za najteže JS/SPA aplikacije (Residential + JS) -> 💸 TROŠI: 10 KREDITA
+      // TIER 3: Teška artiljerija (Residential + Headless Browser JS Render) -> 💸 10 KREDITA
+      javascriptDependency = "Critical"; // Ovdje zvanično palimo alarm za frontend! 🚨
       scrapeResponse = await axios.get("https://api.webscraping.ai/html", {
         params: { api_key: scrapingApiKey, url, proxy: "residential", render: "true" },
         timeout: 30000,
       });
     }
   }
-
+  
   const html = typeof scrapeResponse.data === "string" ? scrapeResponse.data : (scrapeResponse.data as ScraperResponseData)?.html || "";
   if (!html) throw new Error("Failed to retrieve HTML payload.");
 
@@ -329,6 +344,7 @@ $("h1, h2, h3, h4, h5, h6").each((_, el) => {
     hasVideoElements,
     qaBlocksCount,
     detectedSchemas,
+    javascriptDependency,
     robotsStatus,
     robotsRawContent,
     aiBotsStatus,

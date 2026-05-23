@@ -232,7 +232,8 @@ export default function Home() {
       aiBotsStatus,
       entityTrustMap,
       semanticLayoutMap,
-      hasVideoElements, // <-- DODATO: Povlačenje varijable za Word eksport
+      hasVideoElements, 
+      javascriptDependency,
       bluffScore,
       atomicStructureScore,
       entityDensityScore,
@@ -291,9 +292,10 @@ export default function Home() {
             new Paragraph({ text: `• Brand Disambiguation Alignment: ${entityTrustMap?.brandDisambiguationStatus || "Optimal"}` }),
             new Paragraph({ text: `• Semantic HTML5 Main Tag: ${semanticLayoutMap?.hasMainTag ? "Valid" : "Missing"}` }),
             new Paragraph({ text: `• Heading Hierarchy Defect (Leap): ${semanticLayoutMap?.hasHeadingLeap ? "Anomaly Detected" : "Healthy Cascade"}` }),
-            new Paragraph({ text: `• Visual RAG Video Assets: ${hasVideoElements ? "Optimized (Embedded Video Tracked)" : "Deficit (No Rich Media Found)"}` }), // <-- DODATO ZA WORD
+            new Paragraph({ text: `• Visual RAG Video Assets: ${hasVideoElements ? "Optimized (Embedded Video Tracked)" : "Deficit (No Rich Media Found)"}` }), 
             new Paragraph({ text: `• Multimodal Image Alt Coverage: ${semanticLayoutMap ? semanticLayoutMap.totalImages - semanticLayoutMap.missingAltCount : 0}/${semanticLayoutMap ? semanticLayoutMap.totalImages : 0} Images Configured` }),
-
+            new Paragraph({ text: `• JavaScript Framework Dependency: ${javascriptDependency === "Critical" ? "Critical Risk (Heavy Client-Side Rendering)" : "Optimal (Server-Side Rendered / Fast)"}` }),
+            
             new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "Prioritized Tactical Optimization Playbook", color: "0f172a", bold: true, size: 24 })] }),
             ...recommendations.map((item) => new Paragraph({ bullet: { level: 0 }, spacing: { after: 100 }, children: [new TextRun({ text: item })] })),
 
@@ -692,35 +694,75 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* SPEED METRICS GRID */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                      <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border flex flex-col justify-between">
-                        <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center">
-                          Word Count
-                          <Tooltip text={AEO_EXPLANATIONS.wordCount} />
-                        </div>
-                        <div className="font-bold text-slate-800 text-xs sm:text-sm leading-relaxed break-words">{result.data.wordCount}</div>
-                      </div>
-
-                      <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border flex flex-col justify-between">
-                        <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center">
-                          Conversational Q&A Loops
-                          <Tooltip text={AEO_EXPLANATIONS.qaLoops} />
-                        </div>
-                        <div className="font-bold text-slate-800 text-xs sm:text-sm leading-relaxed break-words">{result.data.qaBlocksCount} Blocks</div>
-                      </div>
-
-                      <div className="p-4 rounded-2xl bg-slate-50 border text-xs font-bold flex flex-col justify-between">
-                        <span className="text-[9px] sm:text-[10px] uppercase text-slate-400 tracking-wider flex items-center mb-1">
-                          Semantic Layout Density
-                          <Tooltip text={AEO_EXPLANATIONS.layoutDensity} />
-                        </span>
-                        <span className={result.data.hasTablesOrLists ? "text-emerald-700 truncate" : "text-amber-700 truncate"}>{result.data.hasTablesOrLists ? "Tables / Lists Active" : "Low Density Blocks"}</span>
-                      </div>
+                    {/* 🛠️ RE-DIZAJNIRANI SPEED & TEHNIČKI GRID (Sprečava sječenje teksta i bježanje Tooltipa) */}
+                    <div className="space-y-4">
                       
-                      <div className="p-4 rounded-2xl bg-slate-50 border text-xs font-bold flex flex-col justify-between">
-                        <span className="text-[9px] sm:text-[10px] uppercase text-slate-400 tracking-wider mb-1">Robots.txt Architecture</span>
-                        <span className="truncate text-slate-700">{result.data.robotsStatus}</span>
+                      {/* PRVI RED: 3 Standardne kratke kartice */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+                        <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col justify-between shadow-sm">
+                          <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center gap-1">
+                            Word Count
+                            <Tooltip text={AEO_EXPLANATIONS.wordCount} />
+                          </div>
+                          <div className="font-bold text-slate-800 text-xs sm:text-sm break-words">{result.data.wordCount} words</div>
+                        </div>
+
+                        <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col justify-between shadow-sm">
+                          <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center gap-1">
+                            Conversational Q&A Loops
+                            <Tooltip text={AEO_EXPLANATIONS.qaLoops} />
+                          </div>
+                          <div className="font-bold text-slate-800 text-xs sm:text-sm break-words">{result.data.qaBlocksCount} Blocks</div>
+                        </div>
+
+                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 text-xs font-bold flex flex-col justify-between shadow-sm">
+                          <span className="text-[9px] sm:text-[10px] uppercase text-slate-400 tracking-wider mb-2 flex items-center gap-1">
+                            Robots.txt Architecture
+                            <Tooltip text="Verifies AI agent clearance and crawling directives in the root robots.txt layout." />
+                          </span>
+                          <span className="text-slate-700 font-bold text-xs sm:text-sm break-words">{result.data.robotsStatus}</span>
+                        </div>
+                      </div>
+
+                      {/* DRUGI RED: 2 Velike tehničke kartice (Puni prostor za stabilan tekst i Tooltip) */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                        
+                        {/* KARTICA 1: Semantic Layout Density */}
+                        <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col justify-between shadow-sm relative">
+                          <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center gap-1">
+                            Semantic Layout Density
+                            <Tooltip text={AEO_EXPLANATIONS.layoutDensity} />
+                          </div>
+                          <div className="text-xs sm:text-sm font-bold text-slate-800 leading-relaxed">
+                            Status: <span className={result.data.hasTablesOrLists ? "text-emerald-700" : "text-amber-700"}>
+                              {result.data.hasTablesOrLists ? "Rich Layout (Tables / Lists Active)" : "Low Density Text Blocks"}
+                            </span>
+                          </div>
+                          <p className="text-[10px] font-medium text-slate-400 mt-2 leading-normal">
+                            Data tables and HTML lists allow structured RAG pipelines to parse data arrays efficiently without relying on text chunking inferences.
+                          </p>
+                        </div>
+
+                        {/* KARTICA 2: JavaScript Rendering Index */}
+                        <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col justify-between shadow-sm relative">
+                          <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center gap-1">
+                            JS Rendering Index
+                            <Tooltip text="Measures if your content requires heavy Client-Side JavaScript execution for AI crawlers to read it." />
+                          </div>
+                          <div className="text-xs sm:text-sm font-bold text-slate-800 leading-relaxed flex items-center gap-2">
+                            Engine State: 
+                            <span className={`inline-flex items-center gap-1.5 font-bold ${result.data.javascriptDependency === "Low" ? "text-emerald-700" : "text-amber-700"}`}>
+                              <span className={`w-2 h-2 rounded-full ${result.data.javascriptDependency === "Low" ? "bg-emerald-500" : "bg-amber-500 animate-pulse"}`} />
+                              {result.data.javascriptDependency === "Low" ? "SSR Optimized (AI-Friendly)" : "CSR Dependency (High Timeout Risk)"}
+                            </span>
+                          </div>
+                          <p className="text-[10px] font-medium text-slate-400 mt-2 leading-normal">
+                            {result.data.javascriptDependency === "Low"
+                              ? "Content is directly baked into the initial HTML server payload. Fast, lightweight, and perfectly optimized for strict AI crawler timeouts."
+                              : "Critical Warning: Google guidelines note heavy JS architectures are complex for AI. Crawlers may time out on hydration, leaving your site invisible."}
+                          </p>
+                        </div>
+
                       </div>
                     </div>
 
@@ -825,6 +867,18 @@ export default function Home() {
                           <div className="leading-relaxed">{item}</div>
                         </div>
                       ))}
+
+                      {/* 🚨 DINAMIČKI DODATAK ZA JAVASCRIPT UKOLIKO POSTOJI KRITIČAN RIZIK */}
+                      {result.data.javascriptDependency === "Critical" && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-slate-800 text-sm flex items-start gap-4">
+                          <span className="bg-amber-500 text-white rounded-xl w-7 h-7 flex items-center justify-center text-xs font-black shrink-0 mt-0.5">🚨</span>
+                          <div className="leading-relaxed">
+                            <span className="font-black text-amber-900 block mb-1">Critical Architecture Fix: High JavaScript Framework Dependency</span>
+                            Our crawl engine detected that your DOM structure loads empty initial templates and relies on heavy Client-Side JavaScript hydration. According to Google&apos;s 2026 AI guidelines, this significantly increases RAG parser timeouts. 
+                            <strong className="block mt-2 font-bold text-amber-950">Required Action:</strong> Migrating to Server-Side Rendering (Next.js/Nuxt.js) or deploying an aggressive static pre-rendering middleware layer (Prerender.io) is highly recommended to make content readable for rapid AI indexers.
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
