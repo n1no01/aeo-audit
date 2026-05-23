@@ -5,6 +5,9 @@ export interface BotStatus {
   oaiSearchBot: "Allowed" | "Blocked";
   googleExtended: "Allowed" | "Blocked";
   anthropicAi: "Allowed" | "Blocked";
+  deepSeekBot: "Allowed" | "Blocked";
+  appleBotExtended: "Allowed" | "Blocked";
+  bingbot: "Allowed" | "Blocked";
   cohereAi: "Allowed" | "Blocked";
 }
 
@@ -34,6 +37,7 @@ export interface ScrapedData {
   wordCount: number;
   bodyText: string;
   hasTablesOrLists: boolean;
+  hasVideoElements: boolean;
   qaBlocksCount: number;
   detectedSchemas: string[];
   robotsStatus: "Valid" | "Missing" | "Blocking AI" | "Error";

@@ -232,6 +232,7 @@ export default function Home() {
       aiBotsStatus,
       entityTrustMap,
       semanticLayoutMap,
+      hasVideoElements, // <-- DODATO: Povlačenje varijable za Word eksport
       bluffScore,
       atomicStructureScore,
       entityDensityScore,
@@ -283,9 +284,14 @@ export default function Home() {
             new Paragraph({ text: `• OpenAI SearchBot Clearance: ${aiBotsStatus?.oaiSearchBot || "Allowed"}` }),
             new Paragraph({ text: `• Perplexity AI Engine Status: ${aiBotsStatus?.perplexityBot || "Allowed"}` }),
             new Paragraph({ text: `• Claude Bot Architecture: ${aiBotsStatus?.claudeBot || "Allowed"}` }),
+            new Paragraph({ text: `• Gemini Extended Radar: ${aiBotsStatus?.googleExtended || "Allowed"}` }),
+            new Paragraph({ text: `• DeepSeek Engine Visibility: ${aiBotsStatus?.deepSeekBot || "Allowed"}` }),
+            new Paragraph({ text: `• Applebot Agent Deployment: ${aiBotsStatus?.appleBotExtended || "Allowed"}` }),
+            new Paragraph({ text: `• Microsoft Bingbot Indexation: ${aiBotsStatus?.bingbot || "Allowed"}` }),
             new Paragraph({ text: `• Brand Disambiguation Alignment: ${entityTrustMap?.brandDisambiguationStatus || "Optimal"}` }),
             new Paragraph({ text: `• Semantic HTML5 Main Tag: ${semanticLayoutMap?.hasMainTag ? "Valid" : "Missing"}` }),
             new Paragraph({ text: `• Heading Hierarchy Defect (Leap): ${semanticLayoutMap?.hasHeadingLeap ? "Anomaly Detected" : "Healthy Cascade"}` }),
+            new Paragraph({ text: `• Visual RAG Video Assets: ${hasVideoElements ? "Optimized (Embedded Video Tracked)" : "Deficit (No Rich Media Found)"}` }), // <-- DODATO ZA WORD
             new Paragraph({ text: `• Multimodal Image Alt Coverage: ${semanticLayoutMap ? semanticLayoutMap.totalImages - semanticLayoutMap.missingAltCount : 0}/${semanticLayoutMap ? semanticLayoutMap.totalImages : 0} Images Configured` }),
 
             new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "Prioritized Tactical Optimization Playbook", color: "0f172a", bold: true, size: 24 })] }),
@@ -433,7 +439,6 @@ export default function Home() {
 
         {result?.error && <div className="bg-rose-50 border border-rose-200 text-rose-600 rounded-[20px] p-5 sm:p-6 font-bold text-center text-sm sm:text-base">{result.error}</div>}
 
-        {/* RESULTS */}
         {result?.data && (
           <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-700">
             
@@ -533,6 +538,9 @@ export default function Home() {
                             { n: "Perplexity", v: result.data.aiBotsStatus?.perplexityBot },
                             { n: "ClaudeBot", v: result.data.aiBotsStatus?.claudeBot },
                             { n: "Gemini Ext.", v: result.data.aiBotsStatus?.googleExtended },
+                            { n: "DeepSeek Bot", v: result.data.aiBotsStatus?.deepSeekBot },
+                            { n: "Apple Bot Extended", v: result.data.aiBotsStatus?.appleBotExtended },
+                            { n: "Bing Bot", v: result.data.aiBotsStatus?.bingbot },
                             { n: "Cohere AI", v: result.data.aiBotsStatus?.cohereAi },
                           ].map((b, idx) => (
                             <div key={idx} className="bg-white border border-slate-100 p-2 rounded-xl flex items-center justify-between">
@@ -665,10 +673,21 @@ export default function Home() {
                                 {result.data.semanticLayoutMap ? result.data.semanticLayoutMap.totalImages - result.data.semanticLayoutMap.missingAltCount : 0}/{result.data.semanticLayoutMap ? result.data.semanticLayoutMap.totalImages : 0} ALT TAGS
                               </span>
                             </div>
+
+                            {/* 🎥 KARTICA ZA VIDEO DETEKCIJU NA FRONTENDU */}
+                            <div className="flex items-center justify-between bg-white border border-slate-100 p-2 rounded-xl text-xs font-semibold">
+                              <span className="text-slate-600 flex items-center">
+                                Visual RAG Integration (Video Embeds)
+                                <Tooltip text="Verifies if the page incorporates optimized embedded rich video content preferred by Google multimodal pipelines." />
+                              </span>
+                              <span className={`text-[10px] font-black tracking-wider px-2 py-0.5 rounded-md ${result.data.hasVideoElements ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-600"}`}>
+                                {result.data.hasVideoElements ? "OPTIMIZED" : "NO VIDEO FOUND"}
+                              </span>
+                            </div>
                           </div>
                         </div>
                         <p className="text-[10px] font-medium text-slate-400 mt-3 leading-tight">
-                          Multimodal models (GPT-4o/Gemini) use structural HTML tags and image descriptions to extract data context directly for rich chat snippets.
+                          Multimodal models (GPT-4o/Gemini) use structural HTML tags, image descriptions, and embedded rich video modules to extract rich semantic layers.
                         </p>
                       </div>
                     </div>

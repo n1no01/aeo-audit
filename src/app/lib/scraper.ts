@@ -23,6 +23,9 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
     oaiSearchBot: "Allowed",
     googleExtended: "Allowed",
     anthropicAi: "Allowed",
+    deepSeekBot: "Allowed",    
+    appleBotExtended: "Allowed",
+    bingbot: "Allowed",
     cohereAi: "Allowed",
   };
 
@@ -40,7 +43,10 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
     aiBotsStatus.oaiSearchBot = checkBot("oai-searchbot");
     aiBotsStatus.googleExtended = checkBot("google-extended");
     aiBotsStatus.anthropicAi = checkBot("anthropic-ai");
+    aiBotsStatus.deepSeekBot = checkBot("deepseekbot");
+    aiBotsStatus.appleBotExtended = checkBot("applebot-extended");
     aiBotsStatus.cohereAi = checkBot("cohere-ai");
+    aiBotsStatus.bingbot = checkBot("bingbot");
 
     const isAnyBlocked = Object.values(aiBotsStatus).includes("Blocked");
     robotsStatus = isAnyBlocked ? "Blocking AI" : "Valid";
@@ -141,12 +147,15 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
     if (!$(el).attr("alt")?.trim()) semanticLayoutMap.missingAltCount++;
   });
 
-  let lastHeadingLevel = 1;
-  $("h1, h2, h3, h4, h5, h6").each((_, el) => {
-    const currentLevel = parseInt(el.tagName.substring(1));
-    if (currentLevel - lastHeadingLevel > 1) semanticLayoutMap.hasHeadingLeap = true;
-    lastHeadingLevel = currentLevel;
-  });
+ let lastHeadingLevel = 1;
+$("h1, h2, h3, h4, h5, h6").each((_, el) => {
+  const currentLevel = parseInt(el.tagName.substring(1));
+  // Skok je neispravan samo ako preskočimo nivo idući dublje (npr. h1 direktno na h3)
+  if (currentLevel > lastHeadingLevel && currentLevel - lastHeadingLevel > 1) {
+    semanticLayoutMap.hasHeadingLeap = true;
+  }
+  lastHeadingLevel = currentLevel;
+});
 
   // Entity Map processing
   const entityTrustMap: EntityTrustMap = {
@@ -300,6 +309,12 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
     }
   }
 
+  const hasVideoElements = 
+  $("video").length > 0 || 
+  $("iframe[src*='youtube.com']").length > 0 || 
+  $("iframe[src*='youtu.be']").length > 0 || 
+  $("iframe[src*='vimeo.com']").length > 0;
+
   const bodyText = $("p, li, table tr, blockquote").map((_, el) => $(el).text().trim() ? `${$(el).text().trim()} ` : "").get().join(" ").replace(/\s+/g, " ").substring(0, 5000);
   const wordCount = bodyText.split(/\s+/).filter(Boolean).length;
 
@@ -311,6 +326,7 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
     wordCount,
     bodyText,
     hasTablesOrLists,
+    hasVideoElements,
     qaBlocksCount,
     detectedSchemas,
     robotsStatus,
