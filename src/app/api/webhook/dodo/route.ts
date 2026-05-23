@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import crypto from "crypto"; // 🛡️ Koristimo ugrađeni Node.js modul za bezbjednost
+import crypto from "crypto";
 
-// Bezbjednosna mjera za Next.js build proces
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
@@ -10,7 +9,6 @@ export async function POST(req: Request) {
   console.log("🚨 WEBHOOK OKINUT: Stigao zahtjev sa Dodo Paymentsa!");
   
   try {
-    // 1. Inicijalizacija Supabase varijabli
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL; 
     const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -21,7 +19,6 @@ export async function POST(req: Request) {
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRole);
     
-    // 2. Čitanje sirovog teksta i zaglavlja za verifikaciju potpisa
     const rawBody = await req.text();
     const signature = req.headers.get("x-dodo-signature");
     const webhookSecret = process.env.DODO_WEBHOOK_SECRET;
@@ -33,13 +30,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized missing headers" }, { status: 401 });
     }
 
-    // 🛡️ RUČNA VERIFIKACIJA POTPISA (HMAC SHA256) - Radi 100% bez greške u TS-u
     const expectedSignature = crypto
       .createHmac("sha256", webhookSecret)
       .update(rawBody)
       .digest("hex");
 
-    // Koristimo timingSafeEqual da spriječimo "timing attacks"
     const trusted = Buffer.from(expectedSignature, "ascii");
     const untrusted = Buffer.from(signature, "ascii");
 
@@ -50,13 +45,12 @@ export async function POST(req: Request) {
 
     console.log("✅ Potpis je VALIDAN! Paket je bezbjedan za obradu.");
 
-    // 3. Parsiranje tijela nakon uspješne verifikacije
     const body = JSON.parse(rawBody);
     const eventType = body.type;
     console.log("📦 Tip događaja (Event Type):", eventType);
 
-    // 4. OBRADA LOGIKE: Aktivacija ILI Obnova pretplate
-    if (eventType === "subscription.active" || eventType === "subscription.renewed") {
+    // OBRADA LOGIKE: Aktivacija (created) ILI Obnova (renewed)
+    if (eventType === "subscription.created" || eventType === "subscription.renewed") {
       const data = body.data;
       const clerkUserId = data.metadata?.clerkUserId;
       const productId = data.product_id;
@@ -69,11 +63,9 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "No metadata client ID" }, { status: 400 });
       }
 
-      // Podrazumijevane vrijednosti (Starter plan)
       let planName = "STARTER";
       let auditLimit = 50;
 
-      // Ako ID proizvoda odgovara Pro/Agency planu, podigni limite
       if (productId === process.env.NEXT_PUBLIC_DODO_AGENCY_PLAN_ID) {
         planName = "AGENCY";
         auditLimit = 200;
@@ -81,14 +73,15 @@ export async function POST(req: Request) {
       
       console.log(`🔄 Izvršavam UPDATE u Supabase za ID: ${clerkUserId} na plan ${planName}...`);
 
+      // ⚠️ Proveri da li su kolone u tvojoj bazi "plan", "limit", "used" ili "audit_limit", "used_audits"
       const { error: dbError } = await supabaseAdmin
         .from("users")
         .update({
           plan: planName,
-          audit_limit: auditLimit,
-          used_audits: 0 
+          audit_limit: auditLimit, // Promijeni u "limit" ako ti se kolona tako zove
+          used_audits: 0           // Promijeni u "used" ako ti se kolona tako zove
         })
-        .eq("id", clerkUserId);
+        .eq("id", clerkUserId);    // Promijeni u "user_id" ako preko toga mapiraš Clerk unose
 
       if (dbError) {
         console.error("❌ SUPABASE JE ODBIO UPIS! Detalji greške:", dbError.message);
@@ -98,7 +91,7 @@ export async function POST(req: Request) {
       console.log(`✅ USPIJEH! Korisnik ${clerkUserId} je uspješno nadograđen na ${planName}!`);
     } 
     
-    // 5. OBRADA LOGIKE: Pretplata je otkazana ili stavljena na čekanje
+    // OBRADA LOGIKE: Otkazano ili suspendovano
     else if (eventType === "subscription.cancelled" || eventType === "subscription.on_hold") {
       const data = body.data;
       const clerkUserId = data.metadata?.clerkUserId;
@@ -110,7 +103,8 @@ export async function POST(req: Request) {
           .from("users")
           .update({ 
             plan: "FREE", 
-            audit_limit: 0, 
+            audit_limit: 1, // Vraća na free limit od 1 audit
+            used_audits: 0
           })
           .eq("id", clerkUserId);
         console.log(`✅ Korisniku ${clerkUserId} su uspješno zamrznuti limiti.`);
