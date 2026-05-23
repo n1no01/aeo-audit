@@ -30,27 +30,37 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
   };
 
   const parseRobotsConfig = (content: string) => {
-    const lower = content.toLowerCase();
-    const checkBot = (agentToken: string): "Allowed" | "Blocked" => {
-      const blocksAll = lower.includes("user-agent: *") && (lower.includes("disallow: /") || lower.includes("disallow: / "));
-      const blocksSpecific = lower.includes(`user-agent: ${agentToken}`) && (lower.includes("disallow: /") || lower.includes("disallow: / "));
-      return (blocksAll || blocksSpecific) ? "Blocked" : "Allowed";
-    };
+  // Prebacujemo sve u mala slova i čistimo razmake oko dvotački
+  const cleanContent = content.toLowerCase().replace(/\s*:\s*/g, ":");
+  
+  const checkBot = (agentToken: string): "Allowed" | "Blocked" => {
+    // REGEX objašnjenje: Tražimo tačan izraz "disallow:/" iza kojeg ide kraj linije ($) ili novi red (\s)
+    // To znači da hvatamo samo "Disallow: /" ili "Disallow: / ", a ignorišemo "Disallow: /wp-admin/"
+    const fullSiteBlockRegex = /disallow:\/\s*($|\s)/;
 
-    aiBotsStatus.gptBot = checkBot("gptbot");
-    aiBotsStatus.claudeBot = checkBot("claudebot");
-    aiBotsStatus.perplexityBot = checkBot("perplexitybot");
-    aiBotsStatus.oaiSearchBot = checkBot("oai-searchbot");
-    aiBotsStatus.googleExtended = checkBot("google-extended");
-    aiBotsStatus.anthropicAi = checkBot("anthropic-ai");
-    aiBotsStatus.deepSeekBot = checkBot("deepseekbot");
-    aiBotsStatus.appleBotExtended = checkBot("applebot-extended");
-    aiBotsStatus.cohereAi = checkBot("cohere-ai");
-    aiBotsStatus.bingbot = checkBot("bingbot");
+    // Provjeravamo sekciju za sve botove (User-agent: *)
+    const hasGlobalBlock = cleanContent.includes("user-agent:*") && fullSiteBlockRegex.test(cleanContent.split("user-agent:*")[1]?.split("user-agent:")[0] || "");
+    
+    // Provjeravamo sekciju za specifičnog AI bota
+    const hasSpecificBlock = cleanContent.includes(`user-agent:${agentToken}`) && fullSiteBlockRegex.test(cleanContent.split(`user-agent:${agentToken}`)[1]?.split("user-agent:")[0] || "");
 
-    const isAnyBlocked = Object.values(aiBotsStatus).includes("Blocked");
-    robotsStatus = isAnyBlocked ? "Blocking AI" : "Valid";
+    return (hasGlobalBlock || hasSpecificBlock) ? "Blocked" : "Allowed";
   };
+
+  aiBotsStatus.gptBot = checkBot("gptbot");
+  aiBotsStatus.claudeBot = checkBot("claudebot");
+  aiBotsStatus.perplexityBot = checkBot("perplexitybot");
+  aiBotsStatus.oaiSearchBot = checkBot("oai-searchbot");
+  aiBotsStatus.googleExtended = checkBot("google-extended");
+  aiBotsStatus.anthropicAi = checkBot("anthropic-ai");
+  aiBotsStatus.deepSeekBot = checkBot("deepseekbot");
+  aiBotsStatus.appleBotExtended = checkBot("applebot-extended");
+  aiBotsStatus.cohereAi = checkBot("cohere-ai");
+  aiBotsStatus.bingbot = checkBot("bingbot");
+
+  const isAnyBlocked = Object.values(aiBotsStatus).includes("Blocked");
+  robotsStatus = isAnyBlocked ? "Blocking AI" : "Valid";
+};
 
   // 1. Pokušaj bazični Axios za robots.txt (0 kredita)
   try {
