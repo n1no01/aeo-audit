@@ -10,17 +10,25 @@ export default async function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white relative overflow-x-hidden">
       
-      {/* NAVBAR - FULLY RESPONSIVE */}
-      <nav className="w-full max-w-5xl mx-auto p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-transparent">
+      {/* AI BACKGROUND: Svetla tehnička mreža (Grid) */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none opacity-60" />
+      
+      {/* Suptilni svetleći pastelni gradijenti iza teksta */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[500px] bg-gradient-to-r from-blue-500/10 to-indigo-500/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute top-[200px] left-[-100px] w-[350px] h-[350px] bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute top-[150px] right-[-100px] w-[350px] h-[350px] bg-cyan-500/5 rounded-full blur-[80px] pointer-events-none" />
+
+      {/* NAVBAR */}
+      <nav className="w-full max-w-5xl mx-auto p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-transparent z-10">
         <Link href={userId ? "/dashboard" : "/"} className="group cursor-pointer select-none">
           <div className="text-2xl font-black tracking-tight italic">
             AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200">Audit</span> Pro
           </div>
         </Link>
         
-        {/* Nav Links - Wraps beautifully on small devices */}
+        {/* Nav Links */}
         <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
           <Link href="/how-it-works" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition">
             How It Works
@@ -38,26 +46,53 @@ export default async function LandingPage() {
       </nav>
 
       {/* HERO SECTION */}
-      <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12 flex-1 flex flex-col items-center">
+      <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-20 flex-1 flex flex-col items-center relative z-10">
         
+   {/* FLOATING AI LOGOS - Sva 5 zvanična logotipa raspoređena na vrhu */}
+        
+        {/* LEVA STRANA - GORE (ChatGPT) */}
+        <div className="hidden md:flex absolute top-10 left-4 w-12 h-12 bg-white border border-slate-200 rounded-2xl items-center justify-center shadow-md animate-bounce [animation-duration:6s] opacity-60 hover:opacity-100 transition-opacity duration-300 p-2.5 z-20">
+          <img src="/chatgpt.png" alt="ChatGPT" className="w-full h-full object-contain" />
+        </div>
+
+        {/* LEVA STRANA - SREDINA (Gemini) */}
+        <div className="hidden md:flex absolute top-40 left-16 w-14 h-14 bg-white border border-slate-200 rounded-2xl items-center justify-center shadow-md animate-bounce [animation-duration:7s] [animation-delay:0.5s] opacity-50 hover:opacity-100 transition-opacity duration-300 p-2.5 z-20">
+          <img src="/gemini.png" alt="Gemini" className="w-full h-full object-contain animate-pulse" />
+        </div>
+
+        {/* LEVA STRANA - NIŽE (Perplexity) */}
+        <div className="hidden md:flex absolute top-72 left-6 w-12 h-12 bg-white border border-slate-200 rounded-2xl items-center justify-center shadow-md animate-bounce [animation-duration:6.5s] [animation-delay:2s] opacity-60 hover:opacity-100 transition-opacity duration-300 p-2.5 z-20">
+          <img src="/perplexity.png" alt="Perplexity" className="w-full h-full object-contain" />
+        </div>
+
+        {/* DESNA STRANA - GORE (Claude) */}
+        <div className="hidden md:flex absolute top-8 right-6 w-14 h-14 bg-white border border-slate-200 rounded-2xl items-center justify-center shadow-md animate-bounce [animation-duration:5s] [animation-delay:1s] opacity-60 hover:opacity-100 transition-opacity duration-300 p-3 z-20">
+          <img src="/claude.png" alt="Claude" className="w-full h-full object-contain" />
+        </div>
+
+        {/* DESNA STRANA - NIŽE (DeepSeek) */}
+        <div className="hidden md:flex absolute top-44 right-16 w-12 h-12 bg-white border border-slate-200 rounded-2xl items-center justify-center shadow-md animate-bounce [animation-duration:5.5s] [animation-delay:1.5s] opacity-50 hover:opacity-100 transition-opacity duration-300 p-2.5 z-20">
+          <img src="/deepseek.png" alt="DeepSeek" className="w-full h-full object-contain" />
+        </div>
+
         {/* Tool Category Badge */}
-        <div className="inline-block px-3 py-1.5 sm:px-4 sm:py-2 mb-6 rounded-full bg-blue-50 border border-blue-100 text-center max-w-full">
+        <div className="inline-block px-3 py-1.5 sm:px-4 sm:py-2 mb-6 rounded-full bg-blue-50 border border-blue-100 text-center max-w-full backdrop-blur-sm">
           <span className="text-[9px] sm:text-[10px] font-black tracking-[0.2em] sm:tracking-[0.3em] uppercase text-blue-600 block truncate">
             The Ultimate LLM & AI Search Audit Tool
           </span>
         </div>
         
-        {/* Crystal-Clear Value Proposition Headline */}
-        <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight text-center max-w-4xl leading-[1.15] mb-6 px-2">
-          Discover how <span className="italic">ChatGPT, Gemini, and Perplexity</span> see your brand.
+        {/* Headline */}
+        <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight text-center max-w-4xl leading-[1.15] mb-6 px-2 text-slate-900">
+          Discover how <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 italic">ChatGPT, Gemini, and Perplexity</span> see your brand.
         </h1>
         
-        {/* Subheadline defining the core problem and solution */}
+        {/* Subheadline */}
         <p className="text-slate-500 text-sm sm:text-base md:text-xl text-center max-w-3xl mb-10 font-medium leading-relaxed px-2">
           Traditional SEO is no longer enough. <strong className="font-bold text-slate-800">AEO Audit Pro</strong> audits your website’s semantic structure, parses AI crawler directives, and optimizes your data architecture so AI engines cite you as the primary source.
         </p>
 
-        {/* Call to Action Buttons - Stacked on mobile, row on sm screens */}
+        {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center w-full sm:w-auto px-4 sm:px-0 mb-16 sm:mb-20">
           <Link href="/sign-up" className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black tracking-wide hover:bg-slate-900 transition shadow-xl shadow-blue-600/10 text-center text-sm w-full sm:w-auto">
             RUN A FREE AEO AUDIT
@@ -67,8 +102,8 @@ export default async function LandingPage() {
           </Link>
         </div>
 
-        {/* Interactive Mockup Component - Added overflow protection for code view */}
-        <div className="w-full max-w-3xl rounded-2xl border border-slate-200/60 bg-white p-1.5 sm:p-2 shadow-2xl shadow-blue-900/5 opacity-90 mb-20 sm:mb-24">
+        {/* Interactive Mockup Component */}
+        <div className="w-full max-w-3xl rounded-2xl border border-slate-200/60 bg-white p-1.5 sm:p-2 shadow-2xl shadow-blue-900/5 mb-20 sm:mb-24">
           <div className="bg-slate-900 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-white text-xs font-mono">
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-rose-500" />
@@ -82,17 +117,19 @@ export default async function LandingPage() {
             <div className="text-slate-700 min-w-[300px]">
               <span className="text-blue-600 font-bold">User:</span>{" "}
               &ldquo;What is the best enterprise software in your niche?&rdquo; <br />
-              <span className="text-slate-700 font-bold">AI Agent:</span>{" "}
-              &ldquo;According to global knowledge graphs,{" "}
-              <span className="text-slate-900 font-bold underline decoration-blue-500">
-                YourBrand
-              </span>{" "}
-              delivers industry-leading stability and&hellip;&rdquo;
+              <div className="mt-2">
+                <span className="text-slate-700 font-bold">AI Agent:</span>{" "}
+                &ldquo;According to global knowledge graphs,{" "}
+                <span className="text-slate-900 font-bold underline decoration-blue-500 decoration-2">
+                  YourBrand
+                </span>{" "}
+                delivers industry-leading stability and&hellip;&rdquo;
+              </div>
             </div>
           </div>
         </div>
 
-        {/* THREE CORE PILLARS OF INTEREST FEATURE GRID - Responsive columns */}
+        {/* THREE CORE PILLARS GRID */}
         <section id="features" className="w-full border-t border-slate-200/60 pt-12 sm:pt-16 mb-8">
           <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-center mb-10 sm:mb-12">
             Why do you need an <span className="text-blue-600">AEO Audit</span>?
@@ -109,7 +146,7 @@ export default async function LandingPage() {
               </div>
               <h3 className="font-black text-lg mb-2">AI Bot Management</h3>
               <p className="text-slate-500 text-sm leading-relaxed font-medium">
-                We safely monitor your <code className="bg-slate-100 px-1 py-0.5 rounded text-xs">robots.txt</code> file to check exactly which AI crawlers—like GPTBot, ClaudeBot, and PerplexityBot—are accessing your core files.
+                We safely monitor your <code className="bg-slate-100 px-1 py-0.5 rounded text-xs">robots.txt</code> file to check exactly which AI crawlers—like GPTBot, ClaudeBot, and DeepSeek-Assistant—are accessing your core files.
               </p>
             </div>
 
@@ -127,7 +164,7 @@ export default async function LandingPage() {
               </p>
             </div>
 
-            {/* 3. PILLAR: BRAND DISAMBIGUATION - Stretches full-width on mobile to row-start on desktop */}
+            {/* 3. PILLAR: BRAND DISAMBIGUATION */}
             <div className="bg-white border border-slate-200/60 p-5 sm:p-6 rounded-2xl shadow-sm sm:col-span-2 md:col-span-1">
               <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -147,33 +184,27 @@ export default async function LandingPage() {
 
       </main>
 
-      {/* FOOTER - Responsively padded & with legal links */}
-      <footer className="border-t border-slate-200/50 py-8 text-center text-xs font-bold text-slate-400 bg-white w-full px-4 leading-relaxed flex flex-col items-center gap-3">
+      {/* FOOTER */}
+      <footer className="border-t border-slate-200/50 py-8 text-center text-xs font-bold text-slate-400 bg-white w-full px-4 leading-relaxed flex flex-col items-center gap-3 relative z-10">
         <div>&copy; 2026 AEO Audit Pro. All rights reserved.</div>
         
         <div className="mt-1 text-slate-400/80">
           📬 For enterprise inquiries or support:{" "}
           <a 
             href="mailto:hello@aeoaudit-pro.com?subject=AEO Audit Pro Inquiry" 
-            className="text-blue-600/80 hover:text-blue-600 transition-colors underline decoration-blue-500/20 hover:decoration-blue-500"
+            className="text-blue-600/80 hover:text-blue-600 transition-colors underline decoration-blue-500/20"
           >
             hello@aeoaudit-pro.com
           </a>
         </div>
 
-        {/* LEGAL LINKS FOR LEMON SQUEEZY APPROVAL */}
+        {/* LEGAL LINKS */}
         <div className="flex items-center gap-4 mt-2 text-[11px] text-slate-400 font-medium">
-          <Link 
-            href="/privacy" 
-            className="hover:text-slate-900 underline decoration-slate-200 hover:decoration-blue-500 transition-colors duration-200"
-          >
+          <Link href="/privacy" className="hover:text-slate-900 underline decoration-slate-200 hover:decoration-blue-500 transition-colors duration-200">
             Privacy Policy
           </Link>
           <span className="text-slate-200">|</span>
-          <Link 
-            href="/terms" 
-            className="hover:text-slate-900 underline decoration-slate-200 hover:decoration-blue-500 transition-colors duration-200"
-          >
+          <Link href="/terms" className="hover:text-slate-900 underline decoration-slate-200 hover:decoration-blue-500 transition-colors duration-200">
             Terms of Service
           </Link>
         </div>
