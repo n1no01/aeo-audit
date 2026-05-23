@@ -1,127 +1,185 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import crypto from "crypto";
+import DodoPayments from "dodopayments";
+import { Webhook } from "standardwebhooks";
 
 export const dynamic = "force-dynamic";
 
+// 🛡️ REŠEN PROBLEM SA ANY: Koristimo duboko mapirani unknown tip za maksimalnu bezbednost
+type WebhookPayload = {
+  type: string;
+  data: {
+    product_id?: string;
+    plan_id?: string;
+    subscription_id?: string;
+    product?: { id?: string };
+    plan?: { product_id?: string };
+    metadata?: {
+      clerkUserId?: string;
+    };
+    [key: string]: unknown; // Zamena za any
+  };
+};
+
 export async function POST(req: Request) {
-  console.log("==================================================");
-  console.log("🚨 WEBHOOK OKINUT: Stigao zahtjev sa Dodo Paymentsa!");
-  
-  try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL; 
-    const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  console.log("===== Dodo Webhook: received =====");
 
-    if (!supabaseUrl || !supabaseServiceRole) {
-      console.error("❌ KRIZNA GREŠKA: Nedostaju Supabase ključevi u okruženju!");
-      return NextResponse.json({ error: "Missing configuration" }, { status: 500 });
-    }
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRole);
-    
-    const rawBody = await req.text();
-    const signature = req.headers.get("x-dodo-signature");
-    const webhookSecret = process.env.DODO_WEBHOOK_SECRET;
-
-    console.log("🔒 Pokrećem ručnu verifikaciju Dodo Payments potpisa...");
-
-    if (!signature || !webhookSecret) {
-      console.error("❌ BEZBJEDNOSNA GREŠKA: Nedostaje x-dodo-signature ili DODO_WEBHOOK_SECRET!");
-      return NextResponse.json({ error: "Unauthorized missing headers" }, { status: 401 });
-    }
-
-    const expectedSignature = crypto
-      .createHmac("sha256", webhookSecret)
-      .update(rawBody)
-      .digest("hex");
-
-    const trusted = Buffer.from(expectedSignature, "ascii");
-    const untrusted = Buffer.from(signature, "ascii");
-
-    if (trusted.length !== untrusted.length || !crypto.timingSafeEqual(trusted, untrusted)) {
-      console.error("❌ KRITIČNO: Verifikacija potpisa nije uspjela! Zahtjev je ODBIJEN.");
-      return NextResponse.json({ error: "Invalid signature verification" }, { status: 401 });
-    }
-
-    console.log("✅ Potpis je VALIDAN! Paket je bezbjedan za obradu.");
-
-    const body = JSON.parse(rawBody);
-    const eventType = body.type;
-    console.log("📦 Tip događaja (Event Type):", eventType);
-
-    // OBRADA LOGIKE: Aktivacija (created) ILI Obnova (renewed)
-    if (eventType === "subscription.created" || eventType === "subscription.renewed") {
-      const data = body.data;
-      const clerkUserId = data.metadata?.clerkUserId;
-      const productId = data.product_id;
-
-      console.log("👤 Korisnik iz metapodataka (clerkUserId):", clerkUserId);
-      console.log("🆔 ID Proizvoda (productId):", productId);
-
-      if (!clerkUserId) {
-        console.error("❌ GREŠKA: Dodo Payments nije poslao clerkUserId unutar metadata paketa!");
-        return NextResponse.json({ error: "No metadata client ID" }, { status: 400 });
-      }
-
-      let planName = "STARTER";
-      let auditLimit = 50;
-
-      if (productId === process.env.NEXT_PUBLIC_DODO_AGENCY_PLAN_ID) {
-        planName = "AGENCY";
-        auditLimit = 200;
-      }
-      
-      console.log(`🔄 Izvršavam UPDATE u Supabase za ID: ${clerkUserId} na plan ${planName}...`);
-
-      // ⚠️ Proveri da li su kolone u tvojoj bazi "plan", "limit", "used" ili "audit_limit", "used_audits"
-      const { error: dbError } = await supabaseAdmin
-        .from("users")
-        .update({
-          plan: planName,
-          audit_limit: auditLimit, // Promijeni u "limit" ako ti se kolona tako zove
-          used_audits: 0           // Promijeni u "used" ako ti se kolona tako zove
-        })
-        .eq("id", clerkUserId);    // Promijeni u "user_id" ako preko toga mapiraš Clerk unose
-
-      if (dbError) {
-        console.error("❌ SUPABASE JE ODBIO UPIS! Detalji greške:", dbError.message);
-        return NextResponse.json({ error: "Database update failed" }, { status: 500 });
-      }
-      
-      console.log(`✅ USPIJEH! Korisnik ${clerkUserId} je uspješno nadograđen na ${planName}!`);
-    } 
-    
-    // OBRADA LOGIKE: Otkazano ili suspendovano
-    else if (eventType === "subscription.cancelled" || eventType === "subscription.on_hold") {
-      const data = body.data;
-      const clerkUserId = data.metadata?.clerkUserId;
-
-      console.log(`⚠️ Pretplata suspendovana. Tip: ${eventType} za korisnika: ${clerkUserId}`);
-
-      if (clerkUserId) {
-        await supabaseAdmin
-          .from("users")
-          .update({ 
-            plan: "FREE", 
-            audit_limit: 1, // Vraća na free limit od 1 audit
-            used_audits: 0
-          })
-          .eq("id", clerkUserId);
-        console.log(`✅ Korisniku ${clerkUserId} su uspješno zamrznuti limiti.`);
-      }
-    } 
-    
-    else {
-      console.log(`ℹ️ Događaj '${eventType}' primljen, ali trenutno nema definisanu akciju.`);
-    }
-
-    console.log("==================================================");
-    return NextResponse.json({ success: true });
-
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("💥 TOTALNI KRAŠ WEBHOOKA:", errorMessage);
-    console.log("==================================================");
-    return NextResponse.json({ error: "Webhook failed internal" }, { status: 500 });
+  if (!supabaseUrl || !supabaseServiceRole) {
+    console.error("Missing Supabase configuration");
+    return NextResponse.json({ error: "Missing configuration" }, { status: 500 });
   }
+
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRole);
+
+  const payload = await req.text();
+  const webhookId = req.headers.get("webhook-id");
+  const webhookSignature = req.headers.get("webhook-signature");
+  const webhookTimestamp = req.headers.get("webhook-timestamp");
+
+  const secret =
+    process.env.DODO_WEBHOOK_SECRET || process.env.DODO_PAYMENTS_WEBHOOK_SECRET;
+
+  if (!secret || !webhookId || !webhookSignature || !webhookTimestamp) {
+    console.error("Missing webhook signature headers or secret");
+    return NextResponse.json({ error: "Unauthorized missing headers" }, { status: 401 });
+  }
+
+  const verifier = new Webhook(secret);
+
+  try {
+    await verifier.verify(payload, {
+      "webhook-id": webhookId,
+      "webhook-signature": webhookSignature,
+      "webhook-timestamp": webhookTimestamp,
+    });
+  } catch (e) {
+    console.error("Invalid webhook signature", e);
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  }
+
+  let evt: WebhookPayload;
+  try {
+    evt = JSON.parse(payload) as WebhookPayload;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  // Idempotency: skip if we've already processed this webhook-id
+  const { data: existing, error: alreadyErr } = await supabaseAdmin
+    .from("webhook_events")
+    .select("id")
+    .eq("webhook_id", webhookId)
+    .maybeSingle();
+
+  if (alreadyErr) {
+    console.warn("Idempotency check failed:", alreadyErr.message);
+  }
+  if (existing) {
+    console.log("Duplicate webhook detected; skipping.", webhookId);
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+
+  // Store the raw event for audit trail
+  const { error: insertLogErr } = await supabaseAdmin.from("webhook_events").insert({
+    webhook_id: webhookId,
+    event_type: evt.type,
+    payload: evt as unknown as Record<string, unknown>,
+  });
+  if (insertLogErr) {
+    console.warn("Failed to log webhook event:", insertLogErr.message);
+  }
+
+  const STARTER_ID = process.env.NEXT_PUBLIC_DODO_STARTER_PLAN_ID;
+  const AGENCY_ID = process.env.NEXT_PUBLIC_DODO_AGENCY_PLAN_ID;
+
+  const data = evt.data ?? {};
+  const clerkUserId = data.metadata?.clerkUserId;
+
+  if (!clerkUserId) {
+    console.warn("Webhook missing metadata.clerkUserId; nothing to update.");
+    return NextResponse.json({ received: true });
+  }
+
+  const environment = process.env.NODE_ENV === "production" ? "live_mode" : "test_mode";
+
+  async function resolvePlanOrProductId(): Promise<string | null> {
+    const direct =
+      data.product_id ||
+      data.plan_id ||
+      data.product?.id ||
+      data.plan?.product_id ||
+      null;
+    if (direct) return String(direct);
+
+    if (data.subscription_id && process.env.DODO_PAYMENTS_API_KEY) {
+      try {
+        const client = new DodoPayments({
+          bearerToken: process.env.DODO_PAYMENTS_API_KEY!,
+          environment,
+        });
+        const sub = await client.subscriptions.retrieve(String(data.subscription_id));
+        
+        // Bezbedno čitanje iz SDK odgovora bez korišćenja 'any' keywords-a
+      // ✅ POPRAVLJENI KOD (Prvo kroz unknown, pa u Record):
+        const planId = (sub as unknown as Record<string, unknown>)["plan_id"] as string | undefined;
+        if (planId) return planId;
+      } catch (e) {
+        console.warn("Subscription lookup failed; cannot resolve plan_id.", e);
+      }
+    }
+    return null;
+  }
+
+  async function setPlan(plan: "STARTER" | "AGENCY", limit: number) {
+    const { error: dbError } = await supabaseAdmin
+      .from("users")
+      .update({ plan, audit_limit: limit, used_audits: 0 })
+      .eq("id", clerkUserId);
+
+    if (dbError) {
+      console.error("Supabase update failed:", dbError.message);
+      return NextResponse.json({ error: "Database update failed" }, { status: 500 });
+    }
+    return NextResponse.json({ received: true });
+  }
+
+  // Usklađeno sa zvaničnim Dodo eventima (Dodat i created i active za svaki slučaj)
+  if (
+    evt.type === "subscription.created" ||
+    evt.type === "subscription.active" ||
+    evt.type === "subscription.renewed" ||
+    evt.type === "subscription.plan_changed"
+  ) {
+    const resolvedId = await resolvePlanOrProductId();
+    if (!resolvedId) {
+      console.warn("Unknown plan/product in event; skipping entitlement update.");
+      return NextResponse.json({ received: true });
+    }
+    if (AGENCY_ID && resolvedId === AGENCY_ID) {
+      return setPlan("AGENCY", 200);
+    }
+    if (STARTER_ID && resolvedId === STARTER_ID) {
+      return setPlan("STARTER", 50);
+    }
+    console.warn("Resolved plan/product does not match known IDs; skipping:", resolvedId);
+    return NextResponse.json({ received: true });
+  }
+
+  if (evt.type === "subscription.cancelled" || evt.type === "subscription.on_hold") {
+    const { error: dbError } = await supabaseAdmin
+      .from("users")
+      .update({ plan: "FREE", audit_limit: 1, used_audits: 0 })
+      .eq("id", clerkUserId);
+    if (dbError) {
+      console.error("Supabase update failed:", dbError.message);
+      return NextResponse.json({ error: "Database update failed" }, { status: 500 });
+    }
+    return NextResponse.json({ received: true });
+  }
+
+  console.log(`Unhandled Dodo event type: ${evt.type}`);
+  return NextResponse.json({ received: true, ignored: evt.type });
 }

@@ -1,56 +1,45 @@
 "use server";
 
-export async function getDodoCheckoutUrl(productId: string, clerkUserId: string, email: string) {
+import DodoPayments from "dodopayments";
+
+export async function getDodoCheckoutUrl(
+  productId: string,
+  clerkUserId: string,
+  email: string
+): Promise<string | null> {
+  console.log(`Creating Dodo checkout for product=${productId}, user=${clerkUserId}`);
+
+  const apiKey = process.env.DODO_PAYMENTS_API_KEY;
+  if (!apiKey) {
+    console.error("Missing DODO_PAYMENTS_API_KEY");
+    return null;
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const environment = process.env.NODE_ENV === "production" ? "live_mode" : "test_mode";
+
   try {
-    console.log(`Creating session for product: ${productId}, user: ${clerkUserId}, email: ${email}`);
-
-    const apiKey = process.env.DODO_PAYMENTS_API_KEY;
-    if (!apiKey) {
-      throw new Error("Missing DODO_PAYMENTS_API_KEY inside environment variables.");
-    }
-
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-
-    // 🚨 FIX: Dodo Payments traži ugniježđeni customer objekat i ispravne nazive polja
-    const response = await fetch("https://testapi.dodopayments.com/v1/checkouts", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        product_id: productId,
-        quantity: 1,
-        customer: {
-          email: email, // ✅ Ispravljeno: customer_email prebačen u customer.email objekat
-        },
-        metadata: {
-          clerkUserId: String(clerkUserId), // Osiguravamo da je čisti string
-        },
-        return_url: `${appUrl}/dashboard`,
-      }),
+    const client = new DodoPayments({
+      bearerToken: apiKey,
+      environment,
     });
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error("Dodo API Error Response:", errorData);
-      throw new Error(`Dodo API responded with status ${response.status}: ${errorData}`);
+    const session = await client.checkoutSessions.create({
+      product_cart: [{ product_id: productId, quantity: 1 }],
+      customer: { email },
+      metadata: { clerkUserId: String(clerkUserId) },
+      return_url: `${appUrl}/dashboard`,
+    });
+
+    const checkoutUrl = (session as { checkout_url?: string }).checkout_url ?? null;
+    if (!checkoutUrl) {
+      console.error("Dodo checkoutSessions.create returned no checkout_url", session);
+      return null;
     }
-
-    const session = await response.json();
-
-    // Dodo može vratiti 'url' ili 'checkout_url', hvatamo oba radi sigurnosti
-    const finalUrl = session.checkout_url || session.url;
-
-    if (!finalUrl) {
-      console.error("Full Dodo response payload:", session);
-      throw new Error("Dodo API did not return a checkout_url or url");
-    }
-
-    return finalUrl as string;
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("Dodo Checkout Error:", errorMessage);
+    return checkoutUrl;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Dodo Checkout Error:", message);
     return null;
   }
 }
