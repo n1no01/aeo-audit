@@ -76,10 +76,10 @@ export default async function PricingPage() {
               </p>
 
               <ul className="space-y-3 text-sm font-medium text-slate-600 border-t border-slate-100 pt-6">
-                <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Full White-Label Toolkit</strong></li>
                 <li className="flex items-center gap-2">✔ Advanced Semantic Diagnostics</li>
-                <li className="flex items-center gap-2">✔ Unlimited .DOCX Document Exports</li>
-                <li className="flex items-center gap-2">✔ Custom Brand Color Selection</li>
+                <li className="flex items-center gap-2 text-slate-400 line-through">❌ Full White-Label Toolkit</li>
+                <li className="flex items-center gap-2 text-slate-400 line-through">❌ Unlimited .DOCX Document Exports</li>
+                <li className="flex items-center gap-2 text-slate-400 line-through">❌ Custom Brand Color Selection</li>
               </ul>
             </div>
             
