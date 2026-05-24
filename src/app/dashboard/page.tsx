@@ -223,12 +223,38 @@ export default function Home() {
   };
 
   // 🐦 DODATO: Funkcija za deljenje na platformi X (Twitter) sa Intent Popup prozorom
+  // 🐦 POPRAVLJENO: Funkcija za deljenje na platformi X bez lažnih linkova domena
   const shareOnX = () => {
     if (!currentAuditId || !result?.data) return;
 
     const shareUrl = `${window.location.origin}/share/${currentAuditId}`;
-    const targetUrl = result.data.website_url || history.find(h => h.share_token === currentAuditId)?.website_url || "website";
-    const displayUrl = targetUrl.replace("https://", "").replace("http://", "").replace("www.", "");
+    
+    // 🔍 Tražimo URL skeniranog sajta na 3 nivoa
+    let targetUrl = "";
+    if (result.data.website_url) {
+      targetUrl = result.data.website_url;
+    } else {
+      const matchingAudit = history.find(h => h.share_token === currentAuditId);
+      if (matchingAudit) {
+        targetUrl = matchingAudit.website_url;
+      }
+    }
+
+    let displayUrl = "this website";
+    if (targetUrl) {
+      try {
+        const parsingUrl = targetUrl.startsWith("http") ? targetUrl : `https://${targetUrl}`;
+        displayUrl = new URL(parsingUrl).hostname.replace("www.", "");
+      } catch (e) {
+        displayUrl = targetUrl.replace("https://", "").replace("http://", "").replace("www.", "");
+      }
+    }
+
+    // 🛡️ RAZMAK ZA X (TWITTER): Prelom domena (npr. elitebounce . fit) da X ne napravi pogrešan link
+    const lastDotIndex = displayUrl.lastIndexOf(".");
+    if (lastDotIndex !== -1) {
+      displayUrl = displayUrl.substring(0, lastDotIndex) + " . " + displayUrl.substring(lastDotIndex + 1);
+    }
 
     const tweetText = `Just ran an AI Search & AEO Audit for ${displayUrl} using AEO Audit Pro. Our optimization score is ${result.data.score}/100! Checking if ChatGPT, Perplexity, and Gemini can index and cite our brand. 🚀\n\nReview the live interactive report here:`;
     const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}&hashtags=AEO,SEO,SaaS`;
