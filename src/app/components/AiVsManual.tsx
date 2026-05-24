@@ -13,7 +13,7 @@ export default function AiVsManual() {
             </span>
           </div>
           <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 mb-4 italic">
-            Why not just ask <span className="text-blue-600">ChatGPT</span> what&apos;s missing?
+            Why not just ask <span className="text-blue-600">ChatGPT </span> what&apos;s missing?
           </h2>
           <p className="text-slate-500 text-sm sm:text-lg font-medium leading-relaxed">
             Copy-pasting your website text into a consumer chat box and asking for feedback does not optimize your site for AI Search. Here is why the manual method completely fails:

@@ -19,13 +19,13 @@ export default async function LandingPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white relative overflow-x-hidden">
       
-      {/* AI BACKGROUND: Svetla tehnička mreža (Grid) */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none opacity-60" />
-      
-      {/* Suptilni svetleći pastelni gradijenti iza teksta */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[500px] bg-gradient-to-r from-blue-500/10 to-indigo-500/5 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute top-[200px] left-[-100px] w-[350px] h-[350px] bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none" />
-      <div className="absolute top-[150px] right-[-100px] w-[350px] h-[350px] bg-cyan-500/5 rounded-full blur-[80px] pointer-events-none" />
+     {/* ✅ GLOBALNA POZADINSKA MREŽA: Pokriva celu stranicu od vrha do dna */}
+    <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_0.75px,transparent_0.75px),linear-gradient(to_bottom,#e2e8f0_0.75px,transparent_0.75px)] bg-[size:4rem_4rem] pointer-events-none opacity-40" />
+    
+    {/* Pastelni gradijenti ostaju samo na vrhu za vizuelni akcenat iza teksta */}
+    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[500px] bg-gradient-to-r from-blue-500/10 to-indigo-500/5 rounded-full blur-[100px] pointer-events-none" />
+    <div className="absolute top-[200px] left-[-100px] w-[350px] h-[350px] bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none" />
+    <div className="absolute top-[150px] right-[-100px] w-[350px] h-[350px] bg-cyan-500/5 rounded-full blur-[80px] pointer-events-none" />
 
       {/* NAVBAR Component */}
       <Navbar userId={userId} />

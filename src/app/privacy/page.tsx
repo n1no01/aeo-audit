@@ -2,12 +2,18 @@ import Link from "next/link";
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 py-12 px-4 sm:px-6">
-      <div className="max-w-3xl mx-auto bg-white border border-slate-200/60 p-8 sm:p-12 rounded-2xl shadow-sm">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 py-12 px-4 sm:px-6 relative overflow-x-hidden">
+      
+      {/* ✅ ZAKLJUČANO NA Z-0: Globalna pozadinska mreža i suptilni sjaj idu skroz na dno ekrana */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_0.75px,transparent_0.75px),linear-gradient(to_bottom,#e2e8f0_0.75px,transparent_0.75px)] bg-[size:4rem_4rem] pointer-events-none opacity-40 z-0" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-r from-blue-500/5 to-indigo-500/5 rounded-full blur-[100px] pointer-events-none z-0" />
+
+      {/* ✅ PODIGNUTO NA Z-10: Dokument sa tekstom privatnosti sigurno pluta iznad mreže */}
+      <div className="max-w-3xl mx-auto bg-white border border-slate-200/60 p-8 sm:p-12 rounded-2xl shadow-xl shadow-blue-900/5 relative z-10">
         
         {/* Dugme za povratak */}
         <Link href="/" className="text-xs font-bold text-blue-600 hover:text-blue-500 transition mb-8 inline-block">
-          ← Back to Home
+          &larr; Back to Home
         </Link>
 
         <h1 className="text-3xl font-black tracking-tight mb-2">Privacy Policy</h1>
