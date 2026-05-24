@@ -67,6 +67,9 @@ export default function Home() {
   const [hasMoreHistory, setHasMoreHistory] = useState(false);
   const [isLoadingAllHistory, setIsLoadingAllHistory] = useState(false);
 
+  // 🛡️ Provera da li je korisnik na besplatnom planu
+  const isFreePlan = !userStats || userStats.plan === "FREE";
+
   // 🔄 Učitaj statse i prva 5 audita ODMAH čim se stranica otvori
   useEffect(() => {
     async function loadInitialData() {
@@ -219,6 +222,12 @@ export default function Home() {
   };
 
   const downloadDocx = async () => {
+    // 🔒 Blokada za besplatne korisnike
+    if (isFreePlan) {
+      alert("🔒 Word (.DOCX) Export is a Premium Feature.\n\nPlease upgrade your plan under the Pricing section to unlock downloadable executive reports for your clients.");
+      return;
+    }
+
     if (!result?.data) return;
 
     const {
@@ -400,21 +409,38 @@ export default function Home() {
             </div>
 
             {showBranding && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-50">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Agency Name</label>
-                  <input type="text" value={agencyName} onChange={(e) => setAgencyName(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Accent Color</label>
-                  <div className="flex gap-2">
-                    <input type="color" value={`#${brandColor.replace("#", "")}`} onChange={(e) => setBrandColor(e.target.value.replace("#", ""))} className="w-8 h-8 rounded-lg border cursor-pointer shrink-0" />
-                    <input type="text" value={brandColor} onChange={(e) => setBrandColor(e.target.value.replace("#", ""))} className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none flex-1" />
+              <div className="relative pt-4 border-t border-slate-50">
+                {/* 🔒 PAYWALL OVERLAY ZA BELU LABELU */}
+                {isFreePlan && (
+                  <div className="absolute inset-0 bg-slate-50/60 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center rounded-xl p-4 text-center">
+                    <span className="bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-1 shadow-sm">
+                      🔒 Agency Override Locked
+                    </span>
+                    <p className="text-[11px] text-slate-500 font-bold max-w-sm">
+                      Custom branding and DOCX report generation requires an{" "}
+                      <Link href="/pricing" className="text-blue-600 underline hover:text-blue-700">
+                        Agency Plan
+                      </Link>.
+                    </p>
                   </div>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Compiler Name</label>
-                  <input type="text" value={authorName} onChange={(e) => setAuthorName(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none" />
+                )}
+
+                <div className={`grid grid-cols-1 sm:grid-cols-3 gap-4 ${isFreePlan ? "opacity-40 select-none pointer-events-none" : ""}`}>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Agency Name</label>
+                    <input type="text" disabled={isFreePlan} value={agencyName} onChange={(e) => setAgencyName(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-blue-500 bg-white" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Accent Color</label>
+                    <div className="flex gap-2">
+                      <input type="color" disabled={isFreePlan} value={`#${brandColor.replace("#", "")}`} onChange={(e) => setBrandColor(e.target.value.replace("#", ""))} className="w-8 h-8 rounded-lg border cursor-pointer shrink-0" />
+                      <input type="text" disabled={isFreePlan} value={brandColor} onChange={(e) => setBrandColor(e.target.value.replace("#", ""))} className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none flex-1 focus:border-blue-500 bg-white" />
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Compiler Name</label>
+                    <input type="text" disabled={isFreePlan} value={authorName} onChange={(e) => setAuthorName(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-blue-500 bg-white" />
+                  </div>
                 </div>
               </div>
             )}
@@ -446,11 +472,16 @@ export default function Home() {
             
             {/* 🛠️ GRID SA 3 GUMBA ZA AKCIJU */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* WORD EXPORT SA VIZUELNOM IKONICOM I OZNAKOM */}
               <button 
                 onClick={downloadDocx} 
-                className="w-full bg-slate-900 text-white hover:bg-slate-800 py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg"
+                className={`w-full py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg flex items-center justify-center gap-1.5 ${
+                  isFreePlan 
+                    ? "bg-slate-700 text-slate-300 hover:bg-slate-800" 
+                    : "bg-slate-900 text-white hover:bg-slate-800"
+                }`}
               >
-                DOWNLOAD WORD (.DOCX)
+                {isFreePlan ? "🔒 DOWNLOAD WORD (.DOCX)" : "DOWNLOAD WORD (.DOCX)"}
               </button>
 
               <button 
@@ -468,7 +499,7 @@ export default function Home() {
               <button 
                 onClick={shareOnLinkedIn}
                 disabled={!currentAuditId}
-                className="w-full bg-[#0077b5] text-white hover:bg-[#006296] py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg disabled:bg-slate-200 disabled:text-slate-400 font-sans flex items-center justify-center gap-2"
+                className="w-full bg-blue-600 text-white hover:bg-blue-700 py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg disabled:bg-slate-200 disabled:text-slate-400 font-sans flex items-center justify-center gap-2"
               >
                 <span className="font-serif lowercase font-bold text-sm tracking-tighter">in</span> SHARE ON LINKEDIN
               </button>
@@ -631,7 +662,7 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {/* SEMANTIC & MULTIMODAL */}
+                      {/* text-slate-600 FRAMEWORK DETEKCIJA */}
                       <div className="border border-slate-200/60 rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-slate-50/50 flex flex-col justify-between">
                         <div>
                           <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3">AI Semantic & Multimodal Blueprint</div>
@@ -676,7 +707,6 @@ export default function Home() {
                               </span>
                             </div>
 
-                            {/* 🎥 KARTICA ZA VIDEO DETEKCIJU NA FRONTENDU */}
                             <div className="flex items-center justify-between bg-white border border-slate-100 p-2 rounded-xl text-xs font-semibold">
                               <span className="text-slate-600 flex items-center">
                                 Visual RAG Integration (Video Embeds)
@@ -694,15 +724,13 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* 🛠️ RE-DIZAJNIRANI SPEED & TEHNIČKI GRID (Sprečava sječenje teksta i bježanje Tooltipa) */}
+                    {/* 🛠️ RE-DIZAJNIRANI SPEED & TEHNIČKI GRID */}
                     <div className="space-y-4">
-                      
-                      {/* PRVI RED: 3 Standardne kratke kartice */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
                         <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col justify-between shadow-sm">
                           <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center gap-1">
                             Word Count
-                            <Tooltip text={AEO_EXPLANATIONS.wordCount} />
+                            <Tooltip text={result?.data?.wordCount?.toString() || "0"} />
                           </div>
                           <div className="font-bold text-slate-800 text-xs sm:text-sm break-words">{result.data.wordCount} words</div>
                         </div>
@@ -724,10 +752,7 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {/* DRUGI RED: 2 Velike tehničke kartice (Puni prostor za stabilan tekst i Tooltip) */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                        
-                        {/* KARTICA 1: Semantic Layout Density */}
                         <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col justify-between shadow-sm relative">
                           <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center gap-1">
                             Semantic Layout Density
@@ -743,7 +768,6 @@ export default function Home() {
                           </p>
                         </div>
 
-                        {/* KARTICA 2: JavaScript Rendering Index */}
                         <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col justify-between shadow-sm relative">
                           <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center gap-1">
                             JS Rendering Index
@@ -762,7 +786,6 @@ export default function Home() {
                               : "Critical Warning: Google guidelines note heavy JS architectures are complex for AI. Crawlers may time out on hydration, leaving your site invisible."}
                           </p>
                         </div>
-
                       </div>
                     </div>
 

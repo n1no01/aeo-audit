@@ -67,7 +67,7 @@ export async function analyzeUrl(formData: FormData) {
     userLimit = dbUser.audit_limit;
     currentUsedAudits = dbUser.used_audits || 0; 
 
-    // 👥 4. PROVJERA LIMITA
+    // 👥 4. PROVJERA LIMITA BROJA AUDITA
     if (currentUsedAudits >= userLimit) {
       const stats = { plan: userPlan, limit: userLimit, used: currentUsedAudits };
       return { 
@@ -75,6 +75,20 @@ export async function analyzeUrl(formData: FormData) {
           ? "You have exhausted your single free audit. Upgrade your plan for more audits!"
           : `You have exceeded your monthly limit for the ${userPlan} plan (${userLimit} monthly). Upgrade your plan for more flexibility!`,
         userStats: stats
+      };
+    }
+
+    // 🔒 4b. BACKEND ZAŠTITA: Osiguraj da besplatni korisnici ne varaju sa White-Label podacima
+    const hasSubmittedWhiteLabel = 
+      formData.get("agencyName") || 
+      formData.get("brandColor") || 
+      formData.get("authorName");
+
+    if (userPlan === "FREE" && hasSubmittedWhiteLabel) {
+      // Ako besplatni plan pokuša da pošalje modifikaciju brenda, saseci zahtev na backendu
+      return { 
+        error: "Custom white-label branding options are only available for Premium and Agency tiers.",
+        userStats: { plan: userPlan, limit: userLimit, used: currentUsedAudits }
       };
     }
 
@@ -87,7 +101,7 @@ export async function analyzeUrl(formData: FormData) {
 
       auditOutputData = {
         ...scrapedResult,
-        website_url: url, // ✨ OVDJE SMO UBACILI URL: Sada se sprema direktno u JSON unutar result_data i TypeScript ga vidi!
+        website_url: url, // ✨ Sačuvano direktno u JSON unutar result_data
         score: aiData.score || score,
         pageCategory: aiData.pageCategory || "Uncategorized",
         aiAnalysis: aiData.aiAnalysis || "No analysis provided.",
@@ -115,7 +129,7 @@ export async function analyzeUrl(formData: FormData) {
           result_data: auditOutputData,
         },
       ])
-      .select("share_token") // ✅ Povlačimo share_token iz baze podataka
+      .select("share_token") // Povlačimo share_token iz baze podataka
       .single();
 
     if (auditInsertError) {
@@ -126,7 +140,7 @@ export async function analyzeUrl(formData: FormData) {
       };
     }
 
-    // 👥 7. ATOMSKO UVEĆAVANJE KREDITA (Koristi tvoju RPC funkciju)
+    // 👥 7. ATOMSKO UVEĆAVANJE KREDITA
     const { data: updatedUsers, error: rpcError } = await supabase.rpc("increment_used_audits", {
       row_id: userId,
     });
@@ -142,7 +156,7 @@ export async function analyzeUrl(formData: FormData) {
 
     return {
       success: true,
-      auditId: insertedAudit?.share_token, // ✅ Vraćamo share_token kao auditId za dalju upotrebu u dijeljenju
+      auditId: insertedAudit?.share_token, 
       data: auditOutputData,
       userStats: {
         plan: userPlan,
@@ -244,6 +258,7 @@ interface DBHistoryItem {
 }
 
 // 📜 SERVER AKCIJA ZA DOHVATANJE ISTORIJE - SADA SA OPTIMIZOVANIM LIMITOM
+// 📜 POPRAVLJENA SERVER AKCIJA ZA DOHVATANJE ISTORIJE
 export async function getUserAuditHistory(limit?: number): Promise<{ 
   success?: boolean; 
   error?: string; 
