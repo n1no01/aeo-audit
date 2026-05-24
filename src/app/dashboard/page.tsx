@@ -521,7 +521,7 @@ export default function Home() {
                     : "bg-slate-900 text-white hover:bg-slate-800"
                 }`}
               >
-                {isFreePlan ? "🔒 DOWNLOAD WORD (.DOCX)" : "DOWNLOAD WORD (.DOCX)"}
+                {isFreePlan ? "🔒 EXPORT .DOCX" : "EXPORT .DOCX"}
               </button>
 
               <button 
