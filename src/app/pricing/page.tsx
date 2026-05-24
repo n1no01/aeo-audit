@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { CheckoutButton } from "./CheckoutButton";
+import Navbar from "../components/Navbar"; // ✅ Ponovo koristimo istu komponentu
+import Footer from "../components/Footer"; // ✅ Ponovo koristimo istu komponentu
 
 export default async function PricingPage() {
   const { userId } = await auth();
@@ -14,37 +16,8 @@ export default async function PricingPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white">
       
-      {/* NAVBAR */}
-      <nav className="w-full max-w-5xl mx-auto p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-transparent">
-        <Link href={userId ? "/dashboard" : "/"} className="group cursor-pointer select-none">
-          <div className="text-2xl font-black tracking-tight italic">
-            AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200">Audit</span> Pro
-          </div>
-        </Link>
-        
-        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
-          <Link href="/how-it-works" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition">
-            How It Works
-          </Link>
-          <Link href="/pricing" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition">
-            Pricing
-          </Link>
-          {!userId ? (
-            <>
-              <Link href="/sign-in" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition">
-                Sign In
-              </Link>
-              <Link href="/sign-up" className="bg-slate-900 text-white text-xs sm:text-sm font-bold px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl hover:bg-blue-600 transition shadow-sm">
-                Get Started
-              </Link>
-            </>
-          ) : (
-            <Link href="/dashboard" className="bg-blue-600 text-white text-xs sm:text-sm font-bold px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl hover:bg-slate-900 transition shadow-sm">
-              Go to Dashboard
-            </Link>
-          )}
-        </div>
-      </nav>
+      {/* NAVBAR Component - Prosleđujemo userId prop */}
+      <Navbar userId={userId} />
 
       {/* PRICING CONTENT SECTION */}
       <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12 flex-1 flex flex-col justify-center items-center">
@@ -84,8 +57,8 @@ export default async function PricingPage() {
             </div>
             
             <div className="mt-8">
-              <Link href={userId ? "/dashboard" : "/sign-up"} className="block w-full bg-slate-900 text-white text-center py-3 rounded-xl font-black tracking-wide hover:bg-blue-600 transition text-sm cursor-pointer shadow-md">
-                {userId ? "Go to Dashboard" : "Get Started"}
+              <Link href={userId ? "/dashboard" : "/sign-up"} className="block w-full bg-slate-100 text-slate-800 hover:text-white text-center py-3 rounded-xl font-black tracking-wide hover:bg-blue-600 transition text-sm cursor-pointer shadow-sm">
+                {userId ? "Go to Dashboard" : "Test for Free"}
               </Link>
             </div>
           </div>
@@ -113,7 +86,6 @@ export default async function PricingPage() {
             </div>
             
             <div className="mt-8">
-              {/* 🎯 PROMIJENJENO: Proslijeđujemo sirove parametre u pametno dugme */}
               <CheckoutButton 
                 productId={STARTER_PRODUCT_ID}
                 userId={userId}
@@ -150,7 +122,6 @@ export default async function PricingPage() {
             </div>
             
             <div className="mt-8">
-              {/* 🎯 PROMIJENJENO: Proslijeđujemo sirove parametre u pametno dugme */}
               <CheckoutButton 
                 productId={AGENCY_PRODUCT_ID}
                 userId={userId}
@@ -195,30 +166,8 @@ export default async function PricingPage() {
         </div>
       </main>
 
-      {/* FOOTER */}
-      <footer className="border-t border-slate-200/50 py-6 text-center text-xs font-bold text-slate-400 bg-white w-full px-4 leading-relaxed mt-12 flex flex-col items-center">
-        <div>&copy; 2026 AEO Audit Pro. All rights reserved.</div>
-        
-        <div className="mt-1 text-slate-400/80">
-          📬 For enterprise inquiries or support:{" "}
-          <a 
-            href="mailto:hello@aeoaudit-pro.com?subject=AEO Audit Pro Inquiry" 
-            className="text-blue-600/80 hover:text-blue-600 transition-colors underline decoration-blue-500/20"
-          >
-            hello@aeoaudit-pro.com
-          </a>
-        </div>
-
-        <div className="flex items-center justify-center gap-4 mt-2 text-[11px] text-slate-400 font-medium w-full">
-          <Link href="/privacy" className="hover:text-slate-900 underline decoration-slate-200 hover:decoration-blue-500 transition-colors duration-200">
-            Privacy Policy
-          </Link>
-          <span className="text-slate-200">|</span>
-          <Link href="/terms" className="hover:text-slate-900 underline decoration-slate-200 hover:decoration-blue-500 transition-colors duration-200">
-            Terms of Service
-          </Link>
-        </div>
-      </footer>
+      {/* FOOTER Component */}
+      <Footer />
 
     </div>
   );

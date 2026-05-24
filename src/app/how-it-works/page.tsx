@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
+import Navbar from "../components/Navbar"; // ✅ Koristimo našu deljenu komponentu
+import Footer from "../components/Footer"; // ✅ Koristimo našu deljenu komponentu
 
 export default async function HowItWorksPage() {
   const { userId } = await auth();
@@ -8,38 +10,8 @@ export default async function HowItWorksPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white">
       
-      {/* NAVBAR - FULLY RESPONSIVE */}
-      <nav className="w-full max-w-5xl mx-auto p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-transparent">
-        <Link href={userId ? "/dashboard" : "/"} className="group cursor-pointer select-none">
-          <div className="text-2xl font-black tracking-tight italic">
-            AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200">Audit</span> Pro
-          </div>
-        </Link>
-        
-        {/* Nav Links - Responsive wrapping */}
-        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
-          <Link href="/how-it-works" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition">
-            How It Works
-          </Link>
-          <Link href="/pricing" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition">
-            Pricing
-          </Link>
-          {!userId ? (
-            <>
-              <Link href="/sign-in" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition">
-                Sign In
-              </Link>
-              <Link href="/sign-up" className="bg-slate-900 text-white text-xs sm:text-sm font-bold px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl hover:bg-blue-600 transition shadow-sm">
-                Get Started
-              </Link>
-            </>
-          ) : (
-            <Link href="/dashboard" className="bg-blue-600 text-white text-xs sm:text-sm font-bold px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl hover:bg-slate-900 transition shadow-sm">
-              Go to Dashboard
-            </Link>
-          )}
-        </div>
-      </nav>
+      {/* NAVBAR Component - Reusable & fully reactive */}
+      <Navbar userId={userId} />
 
       {/* MAIN CONTENT CONTAINER */}
       <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 flex-1 flex flex-col justify-center items-center">
@@ -141,7 +113,7 @@ export default async function HowItWorksPage() {
           </div>
         </div>
 
-        {/* SECTION 3: ADVANCED CONTENT PILLARS (THE GRAPHIC) */}
+        {/* SECTION 3: ADVANCED CONTENT PILLARS */}
         <div className="w-full text-center mb-12 sm:mb-16 px-2 sm:px-0">
           <div className="flex items-center justify-center gap-3 mb-6">
             <div className="w-2 h-6 bg-blue-600 rounded-full" />
@@ -171,9 +143,18 @@ export default async function HowItWorksPage() {
             <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">04 / Core Tag Extraction Matrix</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
-            <div className="p-5 bg-white border rounded-2xl shadow-sm"><div className="text-[10px] uppercase font-black text-slate-400 mb-1">Meta Title</div><p className="text-xs font-bold text-slate-700">Extracted and evaluated for correct token lengths.</p></div>
-            <div className="p-5 bg-white border rounded-2xl shadow-sm"><div className="text-[10px] uppercase font-black text-slate-400 mb-1">Meta Description</div><p className="text-xs font-bold text-slate-700">Audited for contextual richness and keyword tokens.</p></div>
-            <div className="p-5 bg-white border rounded-2xl shadow-sm"><div className="text-[10px] uppercase font-black text-slate-400 mb-1">Primary H1 Anchor</div><p className="text-xs font-bold text-slate-700">Checked for single-instance compliance and topic clarity.</p></div>
+            <div className="p-5 bg-white border rounded-2xl shadow-sm">
+              <div className="text-[10px] uppercase font-black text-slate-400 mb-1">Meta Title</div>
+              <p className="text-xs font-bold text-slate-700">Extracted and evaluated for correct token lengths.</p>
+            </div>
+            <div className="p-5 bg-white border rounded-2xl shadow-sm">
+              <div className="text-[10px] uppercase font-black text-slate-400 mb-1">Meta Description</div>
+              <p className="text-xs font-bold text-slate-700">Audited for contextual richness and keyword tokens.</p>
+            </div>
+            <div className="p-5 bg-white border rounded-2xl shadow-sm">
+              <div className="text-[10px] uppercase font-black text-slate-400 mb-1">Primary H1 Anchor</div>
+              <p className="text-xs font-bold text-slate-700">Checked for single-instance compliance and topic clarity.</p>
+            </div>
           </div>
         </div>
 
@@ -196,37 +177,8 @@ export default async function HowItWorksPage() {
 
       </main>
 
-     {/* FOOTER */}
-      <footer className="border-t border-slate-200/50 py-6 text-center text-xs font-bold text-slate-400 bg-white w-full px-4 leading-relaxed mt-12 flex flex-col items-center">
-        <div>&copy; 2026 AEO Audit Pro. All rights reserved.</div>
-        
-        <div className="mt-1 text-slate-400/80">
-          📬 For enterprise inquiries or support:{" "}
-          <a 
-            href="mailto:hello@aeoaudit-pro.com?subject=AEO Audit Pro Inquiry" 
-            className="text-blue-600/80 hover:text-blue-600 transition-colors underline decoration-blue-500/20"
-          >
-            hello@aeoaudit-pro.com
-          </a>
-        </div>
-
-        {/* DODAN JUSTIFY-CENTER ZA SAVRŠENO CENTRIRANJE LINKOVA */}
-        <div className="flex items-center justify-center gap-4 mt-2 text-[11px] text-slate-400 font-medium w-full">
-          <Link 
-            href="/privacy" 
-            className="hover:text-slate-900 underline decoration-slate-200 hover:decoration-blue-500 transition-colors duration-200"
-          >
-            Privacy Policy
-          </Link>
-          <span className="text-slate-200">|</span>
-          <Link 
-            href="/terms" 
-            className="hover:text-slate-900 underline decoration-slate-200 hover:decoration-blue-500 transition-colors duration-200"
-          >
-            Terms of Service
-          </Link>
-        </div>
-      </footer>
+      {/* FOOTER Component - Reusable across all pages */}
+      <Footer />
 
     </div>
   );
