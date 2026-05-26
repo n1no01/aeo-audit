@@ -140,6 +140,15 @@ export async function analyzeUrl(formData: FormData) {
       };
     }
 
+    // ===================================================================
+    // GLOBALNI BROJAČ
+    // Audit je uspješno upisan u bazu iznad, sada sigurno uvećavamo globalnu statistiku
+    // ===================================================================
+    const { error: globalRpcError } = await supabase.rpc("increment_audit_counter");
+    if (globalRpcError) {
+      console.error("⚠️ Supabase RPC global counter error:", globalRpcError);
+    }
+
     // 👥 7. ATOMSKO UVEĆAVANJE KREDITA
     const { data: updatedUsers, error: rpcError } = await supabase.rpc("increment_used_audits", {
       row_id: userId,
