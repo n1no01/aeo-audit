@@ -7,6 +7,7 @@ import InteractiveMockup from "./components/InteractiveMockup";
 import FeaturesPillars from "./components/FeaturesPillars";
 import AiVsManual from "./components/AiVsManual";
 import Footer from "./components/Footer";
+import WhiteLabelSection from "./components/WhiteLabelSection";
 import Testimonials from "./components/Testimonials";
 
 export default async function LandingPage() {
@@ -15,6 +16,7 @@ export default async function LandingPage() {
   if (userId) {
     redirect("/dashboard");
   }
+  
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white relative overflow-x-hidden">
@@ -71,9 +73,9 @@ export default async function LandingPage() {
 
         {/* THE MANUAL PROMPT FALLACY SECTION */}
         <AiVsManual />
-
+        {/*WHITE-LABEL SECTION */}
+        <WhiteLabelSection />
       </main>
-
       {/* FOOTER Component */}
       <Footer />
 
