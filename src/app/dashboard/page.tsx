@@ -15,6 +15,7 @@ import {
   Paragraph,
   TextRun,
   Header,
+  ImageRun,
 } from "docx";
 import { saveAs } from "file-saver";
 
@@ -42,6 +43,15 @@ interface AuditHistoryItem {
   result_data: AuditData;
 }
 
+function MetricCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border flex flex-col justify-between">
+      <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2">{label}</div>
+      <div className="font-bold text-slate-800 text-xs sm:text-sm leading-relaxed break-words">{value}</div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [result, setResult] = useState<{
     success?: boolean;
@@ -55,9 +65,12 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>("metrics");
 
   const [showBranding, setShowBranding] = useState(false);
+  
+  // 🎨 WHITE-LABEL AGENCIJSKE POSTAVKE SA LOCALSTORAGE PODRŠKOM
   const [agencyName, setAgencyName] = useState("AEO Audit Pro");
   const [brandColor, setBrandColor] = useState("2563eb"); 
   const [authorName, setAuthorName] = useState("Senior AEO Strategist");
+  const [logoBase64, setLogoBase64] = useState<string | null>(null);
 
   // 🔗 Držanje UUID share_tokena trenutno učitanog izvještaja i stanja kopiranja
   const [currentAuditId, setCurrentAuditId] = useState<string | null>(null);
@@ -71,11 +84,22 @@ export default function Home() {
   // 🛡️ Provera da li je korisnik na besplatnom planu
   const isFreePlan = !userStats || userStats.plan === "FREE";
 
-  // 🔄 Učitaj statse i prva 5 audita ODMAH čim se stranica otvori
+  // 🔄 Učitaj statse, istoriju, ali i SAČUVANI BRAND KIT iz localStorage-a
   useEffect(() => {
     async function loadInitialData() {
       const stats = await getUserStats();
       if (stats) setUserStats(stats);
+
+      // Učitavanje Brand Kit-a ako postoji od ranije
+      const savedAgency = localStorage.getItem("aeo_agency_name");
+      const savedColor = localStorage.getItem("aeo_brand_color");
+      const savedAuthor = localStorage.getItem("aeo_author_name");
+      const savedLogo = localStorage.getItem("aeo_logo_base64");
+
+      if (savedAgency) setAgencyName(savedAgency);
+      if (savedColor) setBrandColor(savedColor);
+      if (savedAuthor) setAuthorName(savedAuthor);
+      if (savedLogo) setLogoBase64(savedLogo);
 
       // Tražimo samo 5 najnovijih audita za instant učitavanje ⚡
       const historyRes = await getUserAuditHistory(5);
@@ -90,7 +114,6 @@ export default function Home() {
 
         setHistory(formattedHistory);
         
-        // Ako je baza vratila tačno 5 stavki, pretpostavljamo da ima još za "View All"
         if (formattedHistory.length === 5) {
           setHasMoreHistory(true);
         }
@@ -98,6 +121,42 @@ export default function Home() {
     }
     loadInitialData();
   }, []);
+
+  // Funkcije koje automatski pamte izmjene u Brand Kit-u pri kucanju
+  const handleAgencyNameChange = (val: string) => {
+    setAgencyName(val);
+    localStorage.setItem("aeo_agency_name", val);
+  };
+
+  const handleBrandColorChange = (val: string) => {
+    const cleanColor = val.replace("#", "").trim();
+    setBrandColor(cleanColor);
+    localStorage.setItem("aeo_brand_color", cleanColor);
+  };
+
+  const handleAuthorNameChange = (val: string) => {
+    setAuthorName(val);
+    localStorage.setItem("aeo_author_name", val);
+  };
+
+  // Pretvaranje uploada slike logotipa u Base64 format za Word i lokalnu memoriju
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setLogoBase64(base64String);
+      localStorage.setItem("aeo_logo_base64", base64String);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeLogo = () => {
+    setLogoBase64(null);
+    localStorage.removeItem("aeo_logo_base64");
+  };
 
   useEffect(() => {
     if (!isPending) return;
@@ -126,7 +185,6 @@ export default function Home() {
           setCurrentAuditId(res.auditId);
         }
 
-        // ⚡ Reaktivno dodavanje novog audita na vrh istorije u realnom vremenu
         const newHistoryItem: AuditHistoryItem = {
           id: Date.now(),
           website_url: formData.get("url") as string,
@@ -145,10 +203,9 @@ export default function Home() {
     });
   };
 
-  // 📜 Funkcija koja skida klijentski limit i povlači kompletne logove iz baze
   const loadAllHistory = async () => {
     setIsLoadingAllHistory(true);
-    const historyRes = await getUserAuditHistory(); // Bez parametara povlači sve unose
+    const historyRes = await getUserAuditHistory();
     
     if (historyRes?.success && historyRes.history) {
       const formattedHistory: AuditHistoryItem[] = historyRes.history.map((item) => ({
@@ -160,17 +217,14 @@ export default function Home() {
       }));
 
       setHistory(formattedHistory);
-      setHasMoreHistory(false); // Gasimo dugme jer je istorija kompletirana
+      setHasMoreHistory(false);
     }
     setIsLoadingAllHistory(false);
   };
 
-  // 📋 Funkcija za kopiranje pametnog share linka na klijentski clipboard
   const copyShareLink = async () => {
     if (!currentAuditId) return;
-
     const shareUrl = `${window.location.origin}/share/${currentAuditId}`;
-
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
@@ -180,21 +234,15 @@ export default function Home() {
     }
   };
   
-  // 🚀 Očišćena i direktna funkcija bez hashtagova – unosi tekst instantno unutar LinkedIn-a
   const shareOnLinkedIn = () => {
     if (!currentAuditId || !result?.data) return;
-
     const shareUrl = `${window.location.origin}/share/${currentAuditId}`;
-    
-    // 🔍 Tražimo URL skeniranog sajta na 3 nivoa
     let targetUrl = "";
     if (result.data.website_url) {
       targetUrl = result.data.website_url;
     } else {
       const matchingAudit = history.find(h => h.share_token === currentAuditId);
-      if (matchingAudit) {
-        targetUrl = matchingAudit.website_url;
-      }
+      if (matchingAudit) targetUrl = matchingAudit.website_url;
     }
 
     let displayUrl = "this website";
@@ -207,7 +255,6 @@ export default function Home() {
       }
     }
 
-    // 🛡️ Prelom domena (npr. figma . com) da se LinkedIn ne zbuni oko primarnog linka
     const lastDotIndex = displayUrl.lastIndexOf(".");
     if (lastDotIndex !== -1) {
       displayUrl = displayUrl.substring(0, lastDotIndex) + " . " + displayUrl.substring(lastDotIndex + 1);
@@ -218,26 +265,18 @@ export default function Home() {
                  `See how this site stacks up in the age of AI search and review the live, interactive report here: ${shareUrl}`;
 
     const linkedinUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`;
-
     window.open(linkedinUrl, "_blank", "width=600,height=600,scrollbars=yes,resizable=yes");
   };
 
-  // 🐦 DODATO: Funkcija za deljenje na platformi X (Twitter) sa Intent Popup prozorom
-  // 🐦 POPRAVLJENO: Funkcija za deljenje na platformi X bez lažnih linkova domena
   const shareOnX = () => {
     if (!currentAuditId || !result?.data) return;
-
     const shareUrl = `${window.location.origin}/share/${currentAuditId}`;
-    
-    // 🔍 Tražimo URL skeniranog sajta na 3 nivoa
     let targetUrl = "";
     if (result.data.website_url) {
       targetUrl = result.data.website_url;
     } else {
       const matchingAudit = history.find(h => h.share_token === currentAuditId);
-      if (matchingAudit) {
-        targetUrl = matchingAudit.website_url;
-      }
+      if (matchingAudit) targetUrl = matchingAudit.website_url;
     }
 
     let displayUrl = "this website";
@@ -250,7 +289,6 @@ export default function Home() {
       }
     }
 
-    // 🛡️ RAZMAK ZA X (TWITTER): Prelom domena (npr. elitebounce . fit) da X ne napravi pogrešan link
     const lastDotIndex = displayUrl.lastIndexOf(".");
     if (lastDotIndex !== -1) {
       displayUrl = displayUrl.substring(0, lastDotIndex) + " . " + displayUrl.substring(lastDotIndex + 1);
@@ -258,12 +296,10 @@ export default function Home() {
 
     const tweetText = `Just ran an AI Search & AEO Audit for ${displayUrl} using AEO Audit Pro. Our optimization score is ${result.data.score}/100! Checking if ChatGPT, Perplexity, and Gemini can index and cite our brand. 🚀\n\nReview the live interactive report here:`;
     const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}&hashtags=AEO,SEO,SaaS`;
-
     window.open(xUrl, "_blank", "width=600,height=450,scrollbars=yes,resizable=yes");
   };
 
   const downloadDocx = async () => {
-    // 🔒 Blokada za besplatne korisnike
     if (isFreePlan) {
       alert("🔒 Word (.DOCX) Export is a Premium Feature.\n\nPlease upgrade your plan under the Pricing section to unlock downloadable executive reports for your clients.");
       return;
@@ -292,6 +328,80 @@ export default function Home() {
 
     const cleanHexColor = brandColor.replace("#", "").trim();
 
+    // POPRAVLJENO: Eksplicitan docx tip niza umesto any[] da se spreči linter greska
+    const documentChildren: Paragraph[] = [];
+
+    // Ako korisnik ima sačuvan logo sliku, dinamički je konvertujemo u DOCX ImageRun modul
+    if (logoBase64) {
+      try {
+        const base64Data = logoBase64.split(",")[1];
+        const imageBuffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+        
+        documentChildren.push(
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 200, after: 200 },
+            children: [
+           new ImageRun({
+            data: imageBuffer,
+            type: "png", // 🛠️ OBAVEZNO: Govori biblioteci o kojem formatu se radi
+            transformation: {
+              width: 70,
+              height: 70,
+            },
+          }),
+            ],
+          })
+        );
+      } catch (err) {
+        console.error("Failed to embedded custom logo inside document structure:", err);
+      }
+    } else {
+      // Fallback: Ako nema logo, ispisujemo ime agencije stilizovano tekstom
+      documentChildren.push(
+        new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 200, after: 100 }, children: [new TextRun({ text: agencyName.toUpperCase(), bold: true, size: 18, color: cleanHexColor })] })
+      );
+    }
+
+    // Dodavanje ostatka strukture dokumenta
+    documentChildren.push(
+      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 400 }, children: [new TextRun({ text: "ANSWER ENGINE OPTIMIZATION AUDIT", bold: true, size: 32, color: "0f172a" })] }),
+      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 400 }, children: [new TextRun({ text: `Detected Category / Niche: ${pageCategory || "General Website"}`.toUpperCase(), bold: true, size: 14, color: "64748b" })] }),
+      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 600 }, children: [new TextRun({ text: `Overall Visibility Score: ${score}/100`, bold: true, size: 26, color: cleanHexColor })] }),
+      
+      new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 200, after: 200 }, children: [new TextRun({ text: "Executive Summary", color: "0f172a", bold: true, size: 24 })] }),
+      new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: "Target Title: ", bold: true }), new TextRun({ text: title })] }),
+      new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: "Meta Description: ", bold: true }), new TextRun({ text: metaDescription })] }),
+      new Paragraph({ spacing: { after: 400 }, children: [new TextRun({ text: "Primary H1 Anchor: ", bold: true }), new TextRun({ text: h1 })] }),
+
+      new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "AEO Content Core Pillars Score", color: "0f172a", bold: true, size: 24 })] }),
+      new Paragraph({ text: `• BLUFF Alignment (Bottom Line Up Front): ${bluffScore || 5}/10` }),
+      new Paragraph({ text: `• LLM Chunking Readiness (Atomic Structure): ${atomicStructureScore || 5}/10` }),
+      new Paragraph({ text: `• Entity Density (vs Generic Fluff): ${entityDensityScore || 5}/10` }),
+      new Paragraph({ text: `• Syntactic Simplicity (Declarative Writing): ${sentenceSimplicityScore || 5}/10` }),
+
+      new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "AI Crawler Access & Entity Token Map", color: "0f172a", bold: true, size: 24 })] }),
+      new Paragraph({ text: `• OpenAI GPTBot Clearance: ${aiBotsStatus?.gptBot || "Allowed"}` }),
+      new Paragraph({ text: `• OpenAI SearchBot Clearance: ${aiBotsStatus?.oaiSearchBot || "Allowed"}` }),
+      new Paragraph({ text: `• Perplexity AI Engine Status: ${aiBotsStatus?.perplexityBot || "Allowed"}` }),
+      new Paragraph({ text: `• Claude Bot Architecture: ${aiBotsStatus?.claudeBot || "Allowed"}` }),
+      new Paragraph({ text: `• Gemini Extended Radar: ${aiBotsStatus?.googleExtended || "Allowed"}` }),
+      new Paragraph({ text: `• DeepSeek Engine Visibility: ${aiBotsStatus?.deepSeekBot || "Allowed"}` }),
+      new Paragraph({ text: `• Applebot Agent Deployment: ${aiBotsStatus?.appleBotExtended || "Allowed"}` }),
+      new Paragraph({ text: `• Microsoft Bingbot Indexation: ${aiBotsStatus?.bingbot || "Allowed"}` }),
+      new Paragraph({ text: `• Brand Disambiguation Alignment: ${entityTrustMap?.brandDisambiguationStatus || "Optimal"}` }),
+      new Paragraph({ text: `• Semantic HTML5 Main Tag: ${semanticLayoutMap?.hasMainTag ? "Valid" : "Missing"}` }),
+      new Paragraph({ text: `• Heading Hierarchy Defect (Leap): ${semanticLayoutMap?.hasHeadingLeap ? "Anomaly Detected" : "Healthy Cascade"}` }),
+      new Paragraph({ text: `• Visual RAG Video Assets: ${hasVideoElements ? "Optimized (Embedded Video Tracked)" : "Deficit (No Rich Media Found)"}` }), 
+      new Paragraph({ text: `• Multimodal Image Alt Coverage: ${semanticLayoutMap ? semanticLayoutMap.totalImages - semanticLayoutMap.missingAltCount : 0}/{semanticLayoutMap ? semanticLayoutMap.totalImages : 0} Images Configured` }),
+      new Paragraph({ text: `• JavaScript Framework Dependency: ${javascriptDependency === "Critical" ? "Critical Risk (Heavy Client-Side Rendering)" : "Optimal (Server-Side Rendered / Fast)"}` }),
+      
+      new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "Prioritized Tactical Optimization Playbook", color: "0f172a", bold: true, size: 24 })] }),
+      ...recommendations.map((item) => new Paragraph({ bullet: { level: 0 }, spacing: { after: 100 }, children: [new TextRun({ text: item })] })),
+
+      new Paragraph({ spacing: { before: 800 }, alignment: AlignmentType.CENTER, children: [new TextRun({ text: `${authorName}. Powered by AEO Audit Pro.`, size: 14, color: "64748b", italics: true })] })
+    );
+
     const doc = new Document({
       sections: [
         {
@@ -303,7 +413,7 @@ export default function Home() {
                   alignment: AlignmentType.RIGHT,
                   children: [
                     new TextRun({ 
-                      text: `Prepared by: ${agencyName} | Strategic Intelligence`, 
+                      text: `Prepared by: ${agencyName}`, 
                       size: 16, 
                       color: "94a3b8", 
                       italics: true 
@@ -313,44 +423,7 @@ export default function Home() {
               ],
             }),
           },
-          children: [
-            new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 200, after: 100 }, children: [new TextRun({ text: agencyName.toUpperCase(), bold: true, size: 18, color: cleanHexColor })] }),
-            new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 400 }, children: [new TextRun({ text: "ANSWER ENGINE OPTIMIZATION AUDIT", bold: true, size: 32, color: "0f172a" })] }),
-            new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 400 }, children: [new TextRun({ text: `Detected Category / Niche: ${pageCategory || "General Website"}`.toUpperCase(), bold: true, size: 14, color: "64748b" })] }),
-            new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 600 }, children: [new TextRun({ text: `Overall Visibility Score: ${score}/100`, bold: true, size: 26, color: cleanHexColor })] }),
-            
-            new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 200, after: 200 }, children: [new TextRun({ text: "Executive Summary", color: "0f172a", bold: true, size: 24 })] }),
-            new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: "Target Title: ", bold: true }), new TextRun({ text: title })] }),
-            new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: "Meta Description: ", bold: true }), new TextRun({ text: metaDescription })] }),
-            new Paragraph({ spacing: { after: 400 }, children: [new TextRun({ text: "Primary H1 Anchor: ", bold: true }), new TextRun({ text: h1 })] }),
-
-            new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "AEO Content Core Pillars Score", color: "0f172a", bold: true, size: 24 })] }),
-            new Paragraph({ text: `• BLUFF Alignment (Bottom Line Up Front): ${bluffScore || 5}/10` }),
-            new Paragraph({ text: `• LLM Chunking Readiness (Atomic Structure): ${atomicStructureScore || 5}/10` }),
-            new Paragraph({ text: `• Entity Density (vs Generic Fluff): ${entityDensityScore || 5}/10` }),
-            new Paragraph({ text: `• Syntactic Simplicity (Declarative Writing): ${sentenceSimplicityScore || 5}/10` }),
-
-            new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "AI Crawler Access & Entity Token Map", color: "0f172a", bold: true, size: 24 })] }),
-            new Paragraph({ text: `• OpenAI GPTBot Clearance: ${aiBotsStatus?.gptBot || "Allowed"}` }),
-            new Paragraph({ text: `• OpenAI SearchBot Clearance: ${aiBotsStatus?.oaiSearchBot || "Allowed"}` }),
-            new Paragraph({ text: `• Perplexity AI Engine Status: ${aiBotsStatus?.perplexityBot || "Allowed"}` }),
-            new Paragraph({ text: `• Claude Bot Architecture: ${aiBotsStatus?.claudeBot || "Allowed"}` }),
-            new Paragraph({ text: `• Gemini Extended Radar: ${aiBotsStatus?.googleExtended || "Allowed"}` }),
-            new Paragraph({ text: `• DeepSeek Engine Visibility: ${aiBotsStatus?.deepSeekBot || "Allowed"}` }),
-            new Paragraph({ text: `• Applebot Agent Deployment: ${aiBotsStatus?.appleBotExtended || "Allowed"}` }),
-            new Paragraph({ text: `• Microsoft Bingbot Indexation: ${aiBotsStatus?.bingbot || "Allowed"}` }),
-            new Paragraph({ text: `• Brand Disambiguation Alignment: ${entityTrustMap?.brandDisambiguationStatus || "Optimal"}` }),
-            new Paragraph({ text: `• Semantic HTML5 Main Tag: ${semanticLayoutMap?.hasMainTag ? "Valid" : "Missing"}` }),
-            new Paragraph({ text: `• Heading Hierarchy Defect (Leap): ${semanticLayoutMap?.hasHeadingLeap ? "Anomaly Detected" : "Healthy Cascade"}` }),
-            new Paragraph({ text: `• Visual RAG Video Assets: ${hasVideoElements ? "Optimized (Embedded Video Tracked)" : "Deficit (No Rich Media Found)"}` }), 
-            new Paragraph({ text: `• Multimodal Image Alt Coverage: ${semanticLayoutMap ? semanticLayoutMap.totalImages - semanticLayoutMap.missingAltCount : 0}/${semanticLayoutMap ? semanticLayoutMap.totalImages : 0} Images Configured` }),
-            new Paragraph({ text: `• JavaScript Framework Dependency: ${javascriptDependency === "Critical" ? "Critical Risk (Heavy Client-Side Rendering)" : "Optimal (Server-Side Rendered / Fast)"}` }),
-            
-            new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "Prioritized Tactical Optimization Playbook", color: "0f172a", bold: true, size: 24 })] }),
-            ...recommendations.map((item) => new Paragraph({ bullet: { level: 0 }, spacing: { after: 100 }, children: [new TextRun({ text: item })] })),
-
-            new Paragraph({ spacing: { before: 800 }, alignment: AlignmentType.CENTER, children: [new TextRun({ text: `Audit compiled organically by ${authorName}. Powered by AEO Audit Framework.`, size: 14, color: "64748b", italics: true })] }),
-          ],
+          children: documentChildren,
         },
       ],
     });
@@ -466,21 +539,36 @@ export default function Home() {
                   </div>
                 )}
 
-                <div className={`grid grid-cols-1 sm:grid-cols-3 gap-4 ${isFreePlan ? "opacity-40 select-none pointer-events-none" : ""}`}>
+                {/* PROŠIRENA REAKTIVNA WHITE-LABEL TABELA SA SPREMLJENIM LOGOTIPOM */}
+                <div className={`grid grid-cols-1 sm:grid-cols-4 gap-4 ${isFreePlan ? "opacity-40 select-none pointer-events-none" : ""}`}>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Agency Name</label>
-                    <input type="text" disabled={isFreePlan} value={agencyName} onChange={(e) => setAgencyName(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-blue-500 bg-white" />
+                    <input type="text" disabled={isFreePlan} value={agencyName} onChange={(e) => handleAgencyNameChange(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-blue-500 bg-white" />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Accent Color</label>
                     <div className="flex gap-2">
-                      <input type="color" disabled={isFreePlan} value={`#${brandColor.replace("#", "")}`} onChange={(e) => setBrandColor(e.target.value.replace("#", ""))} className="w-8 h-8 rounded-lg border cursor-pointer shrink-0" />
-                      <input type="text" disabled={isFreePlan} value={brandColor} onChange={(e) => setBrandColor(e.target.value.replace("#", ""))} className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none flex-1 focus:border-blue-500 bg-white" />
+                      <input type="color" disabled={isFreePlan} value={`#${brandColor.replace("#", "")}`} onChange={(e) => handleBrandColorChange(e.target.value)} className="w-8 h-8 rounded-lg border cursor-pointer shrink-0" />
+                      <input type="text" disabled={isFreePlan} value={brandColor} onChange={(e) => handleBrandColorChange(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none flex-1 focus:border-blue-500 bg-white" />
                     </div>
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Compiler Name</label>
-                    <input type="text" disabled={isFreePlan} value={authorName} onChange={(e) => setAuthorName(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-blue-500 bg-white" />
+                    <input type="text" disabled={isFreePlan} value={authorName} onChange={(e) => handleAuthorNameChange(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-blue-500 bg-white" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Agency Logo (png)</label>
+                    {logoBase64 ? (
+                      <div className="flex items-center justify-between border border-emerald-200 bg-emerald-50/50 p-1 rounded-xl h-[34px]">
+                        <span className="text-[10px] font-black text-emerald-700 px-2 truncate flex-1">✓ Logo Saved</span>
+                        <button type="button" onClick={removeLogo} className="text-[10px] font-black text-rose-500 hover:text-rose-700 px-2 bg-white rounded-lg h-full border border-slate-200">Remove</button>
+                      </div>
+                    ) : (
+                      <label className="border border-slate-200 hover:border-blue-500 bg-white rounded-xl px-3 py-2 text-xs font-bold text-slate-500 hover:text-blue-600 text-center cursor-pointer transition h-[34px] flex items-center justify-center">
+                        Upload Image Logo
+                        <input type="file" accept="image/png, image/jpeg" onChange={handleLogoUpload} className="hidden" disabled={isFreePlan} />
+                      </label>
+                    )}
                   </div>
                 </div>
               </div>
@@ -511,7 +599,7 @@ export default function Home() {
         {result?.data && (
           <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-700">
             
-            {/* 🛠️ PROŠIREN ACTION GRID: Sada ima 4 ravnopravne kolone sa ubačenim X dugmetom */}
+            {/* ACTION GRID */}
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               <button 
                 onClick={downloadDocx} 
@@ -544,7 +632,6 @@ export default function Home() {
                 <span className="font-serif lowercase font-bold text-sm tracking-tighter">in</span> SHARE ON LINKEDIN
               </button>
 
-              {/* 🐦 NOVO UBAČENO: SHARE ON X (TWITTER) BUTTON */}
               <button 
                 onClick={shareOnX}
                 disabled={!currentAuditId}
@@ -776,7 +863,7 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* RE-DIZAJNIRANI SPEED & TEHNIČKI GRID */}
+                    {/* SPEED & TEHNIČKI GRID */}
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
                         <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col justify-between shadow-sm">
@@ -943,7 +1030,6 @@ export default function Home() {
                         </div>
                       ))}
 
-                      {/* 🚨 DINAMIČKI DODATAK ZA JAVASCRIPT UKOLIKO POSTOJI KRITIČAN RIZIK */}
                       {result.data.javascriptDependency === "Critical" && (
                         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-slate-800 text-sm flex items-start gap-4">
                           <span className="bg-amber-500 text-white rounded-xl w-7 h-7 flex items-center justify-center text-xs font-black shrink-0 mt-0.5">🚨</span>
@@ -970,14 +1056,13 @@ export default function Home() {
           </div>
         )}
 
-        {/* 📜 MODERAN PANEL ZA AUTOMATSKU PAGINACIJU KORISNIČKE ISTORIJE */}
+        {/* RECENT AUDIT LOGS */}
         <div className="bg-white border border-slate-200 rounded-[24px] sm:rounded-[32px] p-5 sm:p-8 shadow-xl shadow-blue-900/5 mt-12 mb-12">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
               <div className="w-2 h-6 bg-slate-900 rounded-full" />
               <h3 className="text-sm font-black uppercase tracking-wider text-slate-400">Your Recent Audit Logs</h3>
             </div>
-            {/* 💡 Elegantno obavještenje o brisanju nakon 30 dana */}
             <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200/60 text-amber-700 text-[10px] font-bold rounded-xl shrink-0">
               <span>⏱️ Logs expire after 30 days</span>
             </div>
@@ -998,7 +1083,6 @@ export default function Home() {
                       <span className="text-slate-200">|</span>
                       <span className="text-slate-400 font-medium">{new Date(audit.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}</span>
                       
-                      {/* ⏱️ Računica za preostale dane do brisanja */}
                       <span className="text-slate-200">|</span>
                       {(() => {
                         const createdDate = new Date(audit.created_at).getTime();
@@ -1042,7 +1126,6 @@ export default function Home() {
                 </div>
               ))}
 
-              {/* 🔽 DUGME ZA DINAMIČKI DOHVAT SVIH PREOSTALIH AUDITA IZ BAZE REAKTIVNO */}
               {hasMoreHistory && (
                 <div className="pt-2 text-center">
                   <button
@@ -1062,17 +1145,8 @@ export default function Home() {
       </div>
 
       {/* FOOTER */}
-     <Footer />
+      <Footer />
 
-    </div>
-  );
-}
-
-function MetricCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border flex flex-col justify-between">
-      <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2">{label}</div>
-      <div className="font-bold text-slate-800 text-xs sm:text-sm leading-relaxed break-words">{value}</div>
     </div>
   );
 }
