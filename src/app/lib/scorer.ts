@@ -59,14 +59,28 @@ export function calculateScore(data: Omit<ScrapedData, "bodyText">): number {
   // ==========================================
   // 5. ENTITETI I BREND DISAMBIGUATION (Max 10 bodova)
   // ==========================================
-  if (data.entityTrustMap.hasWikidataOrWikipedia) score += 1;
-  if (data.entityTrustMap.hasLinkedIn) score += 1;
-  if (data.entityTrustMap.hasXAccount) score += 1;
+  if (data.entityTrustMap.hasWikidataOrWikipedia) score += 2;
+  
+  // Ako imaju validne profile, dobijaju bodove. Ako nemaju, gube ih (penalizacija)
+  if (data.entityTrustMap.hasLinkedIn) {
+    score += 2;
+  } else {
+    score -= 4; // Penal jer ozbiljan brend u 2026. mora imati potvrđen entitet na LinkedIn-u
+  }
+
+  if (data.entityTrustMap.hasXAccount) {
+    score += 1;
+  } else {
+    score -= 2; // Blaži penal za X
+  }
   
   if (data.entityTrustMap.brandDisambiguationStatus === "Optimal") {
-    score += 7;
+    score += 5;
   } else if (data.entityTrustMap.brandDisambiguationStatus === "Inconsistent") {
-    score += 3;
+    score += 1;
+    score -= 5; // Ozbiljan penal ako su entiteti kontradiktorni
+  } else if (data.entityTrustMap.brandDisambiguationStatus === "Critical Missing") {
+    score -= 10; // Teški penal ako nema nikakvog brand sidra
   }
 
   // ==========================================
