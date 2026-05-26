@@ -6,12 +6,10 @@ interface ScraperResponseData {
   html?: string;
 }
 
-// Pomoćna funkcija za validaciju stvarnih profila na društvenim mrežama
 function isValidSocialProfile(url: string, platform: 'linkedin' | 'x' | 'facebook'): boolean {
   if (!url) return false;
   const cleanUrl = url.trim().toLowerCase();
 
-  // Odbijamo linkove koji vode direktno na homepage ili osnovne rute platformi
   const strictlyMainDomains = [
     "https://linkedin.com", "https://www.linkedin.com", "linkedin.com", "linkedin.com/",
     "https://x.com", "https://www.x.com", "x.com", "x.com/",
@@ -22,19 +20,16 @@ function isValidSocialProfile(url: string, platform: 'linkedin' | 'x' | 'faceboo
   if (strictlyMainDomains.includes(cleanUrl)) return false;
 
   if (platform === 'linkedin') {
-    // Propušta samo ako iza domena ide /in/, /company/, /school/, /pub/ i sl. praćeno korisničkim imenom
     const linkedinRegex = /linkedin\.com\/(in|company|school|pub|showcase)\/[a-zA-Z0-9-_]+/i;
     return linkedinRegex.test(cleanUrl);
   }
 
   if (platform === 'x') {
-    // Ignoriše sistemske rute poput share, intent, privacy, a propušta profile (npr. x.com/passiondigital)
     const xRegex = /(x|twitter)\.com\/(?!(home|intent|share|widgets|privacy|tos|search|i)([/?#]|$))[a-zA-Z0-9-_]+/i;
     return xRegex.test(cleanUrl);
   }
 
   if (platform === 'facebook') {
-    // Ignoriše sistemske facebook linkove za deljenje, a hvata stranice i profile
     const fbRegex = /facebook\.com\/(?!(sharer|share|plugins|policies)([/?#]|$))[a-zA-Z0-9-_\.]+/i;
     return fbRegex.test(cleanUrl);
   }
@@ -231,7 +226,6 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
     if (rawFooterBrand.length > 2) brandVariantsSet.add(rawFooterBrand);
   }
 
-  // MODIFIKOVANA SOCIAL PROFIL DETEKCIJA
   $("a[href]").each((_, el) => {
     const href = $(el).attr("href")?.trim() || "";
     if (!href) return;
@@ -255,20 +249,30 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
     entityTrustMap.hasPhysicalSignals = true;
   }
 
+  // ==========================================
+  // POPRAVLJENO SVE-U-JEDNOM SCHEМА PARSIRANJE
+  // ==========================================
   const schemaScripts = $('script[type="application/ld+json"]');
   const schemaSet = new Set<string>();
+  let qaBlocksCount = 0;
 
   schemaScripts.each((_, el) => {
     const content = $(el).html();
-    if (!content?.includes("@context")) return;
+    if (!content) return;
     try {
       const parsed: unknown = JSON.parse(content);
-      const extractTypesAndNames = (obj: unknown): void => {
+      
+      const deepParseSchema = (obj: unknown): void => {
         if (!obj) return;
-        if (Array.isArray(obj)) { obj.forEach(extractTypesAndNames); return; }
+        if (Array.isArray(obj)) {
+          obj.forEach(deepParseSchema);
+          return;
+        }
         if (typeof obj !== "object") return;
+        
         const typedObj = obj as Record<string, unknown>;
-        if (typedObj["@graph"]) extractTypesAndNames(typedObj["@graph"]);
+        
+        // 1. Ekstrakcija tipova (uključujući nizove u @type)
         if (typedObj["@type"]) {
           const typeValue = typedObj["@type"];
           if (Array.isArray(typeValue)) {
@@ -276,17 +280,36 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
           } else if (typeof typeValue === "string") {
             schemaSet.add(typeValue);
           }
+
+          // Hvatanje varijacija brenda
           if (["Organization", "LocalBusiness", "Brand", "WebSite"].includes(String(typedObj["@type"]))) {
-            if (typeof typedObj["name"] === "string" && typedObj["name"].length < 40) brandVariantsSet.add(typedObj["name"].trim());
+            if (typeof typedObj["name"] === "string" && typedObj["name"].length < 40) {
+              brandVariantsSet.add(typedObj["name"].trim());
+            }
+          }
+
+          // 2. Popravljeno brojanje FAQ stavki (hvata i ugniježđene i direktne)
+          if (typedObj["@type"] === "FAQPage" && Array.isArray(typedObj["mainEntity"])) {
+            qaBlocksCount += typedObj["mainEntity"].length;
+          }
+        }
+
+        // Rekurzivno pretraži sve ključeve (rješava @graph i ugniježđene strukture)
+        for (const key in typedObj) {
+          if (typeof typedObj[key] === "object" && typedObj[key] !== null) {
+            deepParseSchema(typedObj[key]);
           }
         }
       };
-      extractTypesAndNames(parsed);
+
+      deepParseSchema(parsed);
     } catch {}
   });
 
   const detectedSchemas = Array.from(schemaSet);
-  if (detectedSchemas.includes("LocalBusiness") || detectedSchemas.includes("PostalAddress")) entityTrustMap.hasPhysicalSignals = true;
+  if (detectedSchemas.includes("LocalBusiness") || detectedSchemas.includes("PostalAddress")) {
+    entityTrustMap.hasPhysicalSignals = true;
+  }
 
   const rawVariants = Array.from(brandVariantsSet)
     .map(v => v.replace(/[\.\,\-\|]/g, "").trim())
@@ -304,35 +327,15 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
   }
 
   // ==========================================
-  // UNIVERSAL ALGORITHMIC Q&A DETECTOR
+  // POPRAVLJEN BEZBJEDNI ALGORITAMSKI Q&A DETECTOR
   // ==========================================
-  let qaBlocksCount = 0;
-  
-  schemaScripts.each((_, el) => {
-    const content = $(el).html();
-    if (!content) return;
-    try {
-      const parsed = JSON.parse(content);
-      const countFaqItems = (obj: unknown): void => {
-        if (!obj || typeof obj !== "object") return;
-        const typedObj = obj as Record<string, unknown>;
-        
-        if (typedObj["@type"] === "FAQPage" && Array.isArray(typedObj["mainEntity"])) {
-          qaBlocksCount += typedObj["mainEntity"].length;
-        }
-        if (typedObj["@graph"] && Array.isArray(typedObj["@graph"])) {
-          typedObj["@graph"].forEach(countFaqItems);
-        }
-      };
-      countFaqItems(parsed);
-    } catch {}
-  });
-
   if (qaBlocksCount === 0) {
     const textNodes: { text: string; element: ReturnType<typeof $> }[] = [];
+    
     $("h1, h2, h3, h4, h5, h6, p, div, li, summary, [aria-expanded], [aria-controls]").each((_, el) => {
-      const text = $(el).clone().children().remove().end().text().trim();
-      if (text.length > 5 && text.length < 160) {
+      // POPRAVKA: Koristimo čisti .text() umjesto uklanjanja djece, što je uništavalo spans/linkove unutar headinga
+      const text = $(el).text().trim().replace(/\s+/g, " ");
+      if (text.length > 5 && text.length < 250) {
         textNodes.push({ text, element: $(el) });
       }
     });
