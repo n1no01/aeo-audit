@@ -6,6 +6,42 @@ interface ScraperResponseData {
   html?: string;
 }
 
+// Pomoćna funkcija za validaciju stvarnih profila na društvenim mrežama
+function isValidSocialProfile(url: string, platform: 'linkedin' | 'x' | 'facebook'): boolean {
+  if (!url) return false;
+  const cleanUrl = url.trim().toLowerCase();
+
+  // Odbijamo linkove koji vode direktno na homepage ili osnovne rute platformi
+  const strictlyMainDomains = [
+    "https://linkedin.com", "https://www.linkedin.com", "linkedin.com", "linkedin.com/",
+    "https://x.com", "https://www.x.com", "x.com", "x.com/",
+    "https://twitter.com", "https://www.twitter.com", "twitter.com", "twitter.com/",
+    "https://facebook.com", "https://www.facebook.com", "facebook.com", "facebook.com/"
+  ];
+  
+  if (strictlyMainDomains.includes(cleanUrl)) return false;
+
+  if (platform === 'linkedin') {
+    // Propušta samo ako iza domena ide /in/, /company/, /school/, /pub/ i sl. praćeno korisničkim imenom
+    const linkedinRegex = /linkedin\.com\/(in|company|school|pub|showcase)\/[a-zA-Z0-9-_]+/i;
+    return linkedinRegex.test(cleanUrl);
+  }
+
+  if (platform === 'x') {
+    // Ignoriše sistemske rute poput share, intent, privacy, a propušta profile (npr. x.com/passiondigital)
+    const xRegex = /(x|twitter)\.com\/(?!(home|intent|share|widgets|privacy|tos|search|i)([/?#]|$))[a-zA-Z0-9-_]+/i;
+    return xRegex.test(cleanUrl);
+  }
+
+  if (platform === 'facebook') {
+    // Ignoriše sistemske facebook linkove za deljenje, a hvata stranice i profile
+    const fbRegex = /facebook\.com\/(?!(sharer|share|plugins|policies)([/?#]|$))[a-zA-Z0-9-_\.]+/i;
+    return fbRegex.test(cleanUrl);
+  }
+
+  return false;
+}
+
 export async function scrapeWebsite(url: string, scrapingApiKey: string): Promise<ScrapedData> {
   const parsedUrl = new URL(url);
   
@@ -30,39 +66,30 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
   };
 
   const parseRobotsConfig = (content: string) => {
-  // Prebacujemo sve u mala slova i čistimo razmake oko dvotački
-  const cleanContent = content.toLowerCase().replace(/\s*:\s*/g, ":");
-  
-  const checkBot = (agentToken: string): "Allowed" | "Blocked" => {
-    // REGEX objašnjenje: Tražimo tačan izraz "disallow:/" iza kojeg ide kraj linije ($) ili novi red (\s)
-    // To znači da hvatamo samo "Disallow: /" ili "Disallow: / ", a ignorišemo "Disallow: /wp-admin/"
-    const fullSiteBlockRegex = /disallow:\/\s*($|\s)/;
-
-    // Provjeravamo sekciju za sve botove (User-agent: *)
-    const hasGlobalBlock = cleanContent.includes("user-agent:*") && fullSiteBlockRegex.test(cleanContent.split("user-agent:*")[1]?.split("user-agent:")[0] || "");
+    const cleanContent = content.toLowerCase().replace(/\s*:\s*/g, ":");
     
-    // Provjeravamo sekciju za specifičnog AI bota
-    const hasSpecificBlock = cleanContent.includes(`user-agent:${agentToken}`) && fullSiteBlockRegex.test(cleanContent.split(`user-agent:${agentToken}`)[1]?.split("user-agent:")[0] || "");
+    const checkBot = (agentToken: string): "Allowed" | "Blocked" => {
+      const fullSiteBlockRegex = /disallow:\/\s*($|\s)/;
+      const hasGlobalBlock = cleanContent.includes("user-agent:*") && fullSiteBlockRegex.test(cleanContent.split("user-agent:*")[1]?.split("user-agent:")[0] || "");
+      const hasSpecificBlock = cleanContent.includes(`user-agent:${agentToken}`) && fullSiteBlockRegex.test(cleanContent.split(`user-agent:${agentToken}`)[1]?.split("user-agent:")[0] || "");
+      return (hasGlobalBlock || hasSpecificBlock) ? "Blocked" : "Allowed";
+    };
 
-    return (hasGlobalBlock || hasSpecificBlock) ? "Blocked" : "Allowed";
+    aiBotsStatus.gptBot = checkBot("gptbot");
+    aiBotsStatus.claudeBot = checkBot("claudebot");
+    aiBotsStatus.perplexityBot = checkBot("perplexitybot");
+    aiBotsStatus.oaiSearchBot = checkBot("oai-searchbot");
+    aiBotsStatus.googleExtended = checkBot("google-extended");
+    aiBotsStatus.anthropicAi = checkBot("anthropic-ai");
+    aiBotsStatus.deepSeekBot = checkBot("deepseekbot");
+    aiBotsStatus.appleBotExtended = checkBot("applebot-extended");
+    aiBotsStatus.cohereAi = checkBot("cohere-ai");
+    aiBotsStatus.bingbot = checkBot("bingbot");
+
+    const isAnyBlocked = Object.values(aiBotsStatus).includes("Blocked");
+    robotsStatus = isAnyBlocked ? "Blocking AI" : "Valid";
   };
 
-  aiBotsStatus.gptBot = checkBot("gptbot");
-  aiBotsStatus.claudeBot = checkBot("claudebot");
-  aiBotsStatus.perplexityBot = checkBot("perplexitybot");
-  aiBotsStatus.oaiSearchBot = checkBot("oai-searchbot");
-  aiBotsStatus.googleExtended = checkBot("google-extended");
-  aiBotsStatus.anthropicAi = checkBot("anthropic-ai");
-  aiBotsStatus.deepSeekBot = checkBot("deepseekbot");
-  aiBotsStatus.appleBotExtended = checkBot("applebot-extended");
-  aiBotsStatus.cohereAi = checkBot("cohere-ai");
-  aiBotsStatus.bingbot = checkBot("bingbot");
-
-  const isAnyBlocked = Object.values(aiBotsStatus).includes("Blocked");
-  robotsStatus = isAnyBlocked ? "Blocking AI" : "Valid";
-};
-
-  // 1. Pokušaj bazični Axios za robots.txt (0 kredita)
   try {
     const robotsResponse = await axios.get(robotsUrl, { timeout: 5000 });
     if (robotsResponse.status === 200 && typeof robotsResponse.data === "string") {
@@ -70,7 +97,6 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
       parseRobotsConfig(robotsRawContent);
     }
   } catch {
-    // 2. Fallback: Pokušaj najjeftiniji API poziv bez proksija (1 kredit) umjesto odmah na 5 kredita
     try {
       const scraperRobotsResponse = await axios.get("https://api.webscraping.ai/html", {
         params: { api_key: scrapingApiKey, url: robotsUrl, render: "false" },
@@ -87,7 +113,6 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
         robotsStatus = "Missing";
       }
     } catch {
-      // 3. Zadnji pokušaj za robots: Ako je sajt baš zaključan, upali Residential (5 kredita)
       try {
         const ultraRobotsResponse = await axios.get("https://api.webscraping.ai/html", {
           params: { api_key: scrapingApiKey, url: robotsUrl, proxy: "residential", render: "false" },
@@ -108,39 +133,34 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
   }
 
   // ==========================================
-  // MAIN HTML CRAWL (SADA SA JS DETEKCIJOM)
+  // MAIN HTML CRAWL
   // ==========================================
   let scrapeResponse;
   let javascriptDependency: "Low" | "Critical" = "Low";
 
   try {
-    // TIER 1: Najbrža i najjeftinija opcija (Basic - Bez JS, Bez Residential) -> 💸 1 KREDIT
     scrapeResponse = await axios.get("https://api.webscraping.ai/html", {
       params: { api_key: scrapingApiKey, url, render: "false" },
       timeout: 12000,
     });
     
-    // Provera: Ako je Tier 1 vratio HTML, ali u body-ju nema skoro nikakvog teksta (npr. prazan React app)
     const t1Check = cheerio.load(typeof scrapeResponse.data === "string" ? scrapeResponse.data : "");
     if (t1Check("body").text().trim().length < 200 && t1Check("#root, #__next, #app").length > 0) {
       throw new Error("Trigger JS fallback: Empty DOM detected in Tier 1");
     }
   } catch {
     try {
-      // TIER 2: Stari dobri Residential bez JS (Za sajtove sa Cloudflare zaštitom) -> 💸 5 KREDITA
       scrapeResponse = await axios.get("https://api.webscraping.ai/html", {
         params: { api_key: scrapingApiKey, url, proxy: "residential", render: "false" },
         timeout: 18000,
       });
 
-      // Ponovna provera: Da li je i Residential bez JS vratio praznu SPA aplikaciju?
       const t2Check = cheerio.load(typeof scrapeResponse.data === "string" ? scrapeResponse.data : "");
       if (t2Check("body").text().trim().length < 200 && t2Check("#root, #__next, #app").length > 0) {
         throw new Error("Trigger JS fallback: Empty DOM detected in Tier 2");
       }
     } catch {
-      // TIER 3: Teška artiljerija (Residential + Headless Browser JS Render) -> 💸 10 KREDITA
-      javascriptDependency = "Critical"; // Ovdje zvanično palimo alarm za frontend! 🚨
+      javascriptDependency = "Critical"; 
       scrapeResponse = await axios.get("https://api.webscraping.ai/html", {
         params: { api_key: scrapingApiKey, url, proxy: "residential", render: "true" },
         timeout: 30000,
@@ -159,7 +179,6 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
   const h2Count = $("h2").length;
   const hasTablesOrLists = $("table").length > 0 || $("ul").length > 0 || $("ol").length > 0;
 
-  // Semantic layout processing
   const semanticLayoutMap: SemanticLayoutMap = {
     hasMainTag: $("main").length === 1,
     hasArticleTag: $("article").length > 0,
@@ -172,17 +191,15 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
     if (!$(el).attr("alt")?.trim()) semanticLayoutMap.missingAltCount++;
   });
 
- let lastHeadingLevel = 1;
-$("h1, h2, h3, h4, h5, h6").each((_, el) => {
-  const currentLevel = parseInt(el.tagName.substring(1));
-  // Skok je neispravan samo ako preskočimo nivo idući dublje (npr. h1 direktno na h3)
-  if (currentLevel > lastHeadingLevel && currentLevel - lastHeadingLevel > 1) {
-    semanticLayoutMap.hasHeadingLeap = true;
-  }
-  lastHeadingLevel = currentLevel;
-});
+  let lastHeadingLevel = 1;
+  $("h1, h2, h3, h4, h5, h6").each((_, el) => {
+    const currentLevel = parseInt(el.tagName.substring(1));
+    if (currentLevel > lastHeadingLevel && currentLevel - lastHeadingLevel > 1) {
+      semanticLayoutMap.hasHeadingLeap = true;
+    }
+    lastHeadingLevel = currentLevel;
+  });
 
-  // Entity Map processing
   const entityTrustMap: EntityTrustMap = {
     hasWikidataOrWikipedia: false,
     hasLinkedIn: false,
@@ -214,12 +231,23 @@ $("h1, h2, h3, h4, h5, h6").each((_, el) => {
     if (rawFooterBrand.length > 2) brandVariantsSet.add(rawFooterBrand);
   }
 
+  // MODIFIKOVANA SOCIAL PROFIL DETEKCIJA
   $("a[href]").each((_, el) => {
-    const href = $(el).attr("href")?.toLowerCase() || "";
-    if (href.includes("wikipedia.org") || href.includes("wikidata.org")) entityTrustMap.hasWikidataOrWikipedia = true;
-    if (href.includes("linkedin.com")) entityTrustMap.hasLinkedIn = true;
-    if (href.includes("x.com") || href.includes("twitter.com")) entityTrustMap.hasXAccount = true;
-    if (href.includes("facebook.com")) entityTrustMap.hasFacebookAccount = true;
+    const href = $(el).attr("href")?.trim() || "";
+    if (!href) return;
+
+    if (href.toLowerCase().includes("wikipedia.org") || href.toLowerCase().includes("wikidata.org")) {
+      entityTrustMap.hasWikidataOrWikipedia = true;
+    } 
+    if (href.toLowerCase().includes("linkedin.com") && isValidSocialProfile(href, 'linkedin')) {
+      entityTrustMap.hasLinkedIn = true;
+    } 
+    if ((href.toLowerCase().includes("x.com") || href.toLowerCase().includes("twitter.com")) && isValidSocialProfile(href, 'x')) {
+      entityTrustMap.hasXAccount = true;
+    } 
+    if (href.toLowerCase().includes("facebook.com") && isValidSocialProfile(href, 'facebook')) {
+      entityTrustMap.hasFacebookAccount = true;
+    }
   });
 
   const fullBodyLowerText = $("body").text().toLowerCase();
@@ -335,10 +363,10 @@ $("h1, h2, h3, h4, h5, h6").each((_, el) => {
   }
 
   const hasVideoElements = 
-  $("video").length > 0 || 
-  $("iframe[src*='youtube.com']").length > 0 || 
-  $("iframe[src*='youtu.be']").length > 0 || 
-  $("iframe[src*='vimeo.com']").length > 0;
+    $("video").length > 0 || 
+    $("iframe[src*='youtube.com']").length > 0 || 
+    $("iframe[src*='youtu.be']").length > 0 || 
+    $("iframe[src*='vimeo.com']").length > 0;
 
   const bodyText = $("p, li, table tr, blockquote").map((_, el) => $(el).text().trim() ? `${$(el).text().trim()} ` : "").get().join(" ").replace(/\s+/g, " ").substring(0, 5000);
   const wordCount = bodyText.split(/\s+/).filter(Boolean).length;

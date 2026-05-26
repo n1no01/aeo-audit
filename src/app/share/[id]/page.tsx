@@ -71,14 +71,14 @@ export default function SharedAuditPage({ params }: SharePageProps) {
       <div className="max-w-5xl mx-auto px-4 sm:px-8 md:px-12 flex-1 w-full mt-6 mb-16">
         <div className="bg-white rounded-[24px] md:rounded-[48px] overflow-hidden border border-slate-100 shadow-2xl">
           
-          {/* AUDIT TOP BAR */}
+          {/* AUDIT TOP BAR - SA KOREKCIJOM ZA DUGE URL-OVE */}
           <div className="bg-slate-900 text-white p-5 sm:p-8 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 md:gap-8">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 md:gap-8 w-full md:w-auto">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 md:gap-8 w-full md:w-0 md:flex-1 min-w-0">
               <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-[16px] sm:rounded-[20px] bg-white text-slate-900 flex flex-col items-center justify-center shrink-0 shadow-lg mx-auto sm:mx-0">
                 <span className="text-3xl sm:text-5xl font-black">{result.data.score}</span>
                 <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-slate-400 font-bold mt-0.5 sm:mt-1">Score</span>
               </div>
-              <div className="text-center sm:text-left w-full sm:w-auto overflow-hidden">
+              <div className="text-center sm:text-left w-full sm:w-auto overflow-hidden min-w-0 flex-1">
                 {result.data.pageCategory && (
                   <div className="inline-flex items-center px-2.5 py-1 mb-2 rounded-md bg-blue-500/10 border border-blue-500/20">
                     <span className="text-[9px] sm:text-[10px] font-black tracking-wider uppercase text-blue-400">
@@ -86,17 +86,17 @@ export default function SharedAuditPage({ params }: SharePageProps) {
                     </span>
                   </div>
                 )}
-                <h2 className="text-xl sm:text-3xl font-black tracking-tight">AEO Performance Audit</h2>
-                <p className="text-slate-400 mt-1.5 text-xs sm:text-sm truncate max-w-full">Target: {targetUrl}</p>
+                <h2 className="text-xl sm:text-3xl font-black tracking-tight truncate">AEO Performance Audit</h2>
+                <p className="text-slate-400 mt-1.5 text-xs sm:text-sm truncate w-full" title={targetUrl}>Target: {targetUrl}</p>
               </div>
             </div>
-            <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl px-4 py-3 sm:px-6 sm:py-4 w-full md:w-auto text-center">
+            <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl px-4 py-3 sm:px-6 sm:py-4 w-full md:w-auto text-center shrink-0">
               <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-blue-400 font-black mb-0.5 sm:mb-1">OPTIMIZATION STATE</div>
               <div className="text-lg sm:text-2xl font-black italic uppercase text-white">{result.data.score >= 75 ? "Strong" : result.data.score >= 50 ? "Moderate" : "Weak"}</div>
             </div>
           </div>
 
-          {/* SADRŽAJ KARTICA (Identifikacija Core Metrics sekcije) */}
+          {/* SADRŽAJ KARTICA */}
           <div className="p-4 sm:p-8 md:p-12 space-y-6 sm:space-y-8">
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
