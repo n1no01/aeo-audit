@@ -132,6 +132,8 @@ INSTRUCTIONS:
    - sentenceSimplicityScore: Are sentences short, declarative, following a simple Subject-Verb-Object structure (one idea per sentence)?
 4. Write an authoritative 3-paragraph "aiAnalysis" focusing on how conversational AI models (ChatGPT, Perplexity, Gemini) tokenize and perceive this specific brand entity.
 5. Generate exactly 5 prioritized, tactical "recommendations" hyper-targeted to the detected pageCategory.
+   - CRITICAL REQUIREMENT: Look at the "DETECTED SCHEMA ENTITIES" provided above (${data.detectedSchemas.join(", ") || "None"}). 
+   - You are STRICTLY FORBIDDEN from recommending the implementation of any Schema.org types that are ALREADY detected on the page. If a schema is present, focus your recommendation on optimizing its specific internal properties or other missing AEO components instead.
 `;
 
   const aiResult = await model.generateContent(prompt);
