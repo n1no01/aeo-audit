@@ -28,6 +28,7 @@ export default async function LandingPage() {
         "name": "AEO Audit Pro",
         "url": "https://www.aeoaudit-pro.com",
         "logo": "https://www.aeoaudit-pro.com/logo.png",
+        "founder": "Nino Herenda",
       },
       {
         "@type": "WebSite",
