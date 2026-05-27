@@ -1,7 +1,8 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import Navbar from "./components/Navbar"; // ✅ Uvezen novi Navbar
+import Script from "next/script";
+import Navbar from "./components/Navbar";
 import HeroLogos from "./components/HeroLogos";
 import InteractiveMockup from "./components/InteractiveMockup";
 import FeaturesPillars from "./components/FeaturesPillars";
@@ -16,37 +17,100 @@ export default async function LandingPage() {
   if (userId) {
     redirect("/dashboard");
   }
-  
+
+  // 🚀 DODANO: Čist JS objekat sa strukturiranim podacima za aeoaudit-pro.com
+ const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.aeoaudit-pro.com/#organization",
+        "name": "AEO Audit Pro",
+        "url": "https://www.aeoaudit-pro.com",
+        "logo": "https://www.aeoaudit-pro.com/logo.png"
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.aeoaudit-pro.com/#website",
+        "url": "https://www.aeoaudit-pro.com",
+        "name": "AEO Audit Pro",
+        "publisher": {
+          "@id": "https://www.aeoaudit-pro.com/#organization"
+        }
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://www.aeoaudit-pro.com/#application",
+        "name": "AEO Audit Pro Engine",
+        "operatingSystem": "All",
+        "applicationCategory": "BusinessApplication",
+        "browserRequirements": "Requires HTML5. Requires JavaScript.",
+        "url": "https://www.aeoaudit-pro.com",
+        "offers": [
+          {
+            "@type": "Offer",
+            "name": "Free Plan",
+            "price": "0.00",
+            "priceCurrency": "USD",
+            "category": "FreeTrial",
+            "description": "Includes 1 full AI Search readiness audit."
+          },
+          {
+            "@type": "Offer",
+            "name": "Starter Plan",
+            "price" : "59.00",
+            "priceCurrency": "USD",
+            "description": "Designed for solo entrepreneurs and bloggers."
+          },
+          {
+            "@type": "Offer",
+            "name": "Agency Plan",
+            "price" : "159.00",
+            "priceCurrency": "USD",
+            "description": "Designed for agencies and businesses looking for comprehensive AI Search auditing."
+          }
+        ]
+      }
+    ]
+  };
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white relative overflow-x-hidden">
-      <div className="w-full bg-slate-900 text-white text-xs sm:text-sm py-2.5 px-4 text-center border-b border-slate-800 relative z-50 flex items-center justify-center gap-2 flex-wrap">
-  <span className="inline-flex items-center gap-1.5 font-medium text-slate-300">
-    <span className="flex h-2 w-2 relative">
-      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-    </span>
-    <strong className="text-white font-semibold">Looking for early partners 🤝</strong> 
-    We just launched. Build your first few AI Search audits completely free.
-  </span>
-  <span className="text-blue-400 font-medium">
-    Help us test the engine, keep the white-label DOCX reports.
-  </span>
-  <a 
-    href="mailto:hello@aeoaudit-pro.com" // Ili link do tvog LinkedIn profila
-    className="text-blue-400 font-semibold hover:text-blue-300 underline underline-offset-4 transition-colors duration-200"
-  >
-    Send us an email to get access &rarr;
-  </a>
-</div>
       
-     {/* ✅ GLOBALNA POZADINSKA MREŽA: Pokriva celu stranicu od vrha do dna */}
-    <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_0.75px,transparent_0.75px),linear-gradient(to_bottom,#e2e8f0_0.75px,transparent_0.75px)] bg-[size:4rem_4rem] pointer-events-none opacity-40" />
-    
-    {/* Pastelni gradijenti ostaju samo na vrhu za vizuelni akcenat iza teksta */}
-    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[500px] bg-gradient-to-r from-blue-500/10 to-indigo-500/5 rounded-full blur-[100px] pointer-events-none" />
-    <div className="absolute top-[200px] left-[-100px] w-[350px] h-[350px] bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none" />
-    <div className="absolute top-[150px] right-[-100px] w-[350px] h-[350px] bg-cyan-500/5 rounded-full blur-[80px] pointer-events-none" />
+      {/* 🚀 DODANO: Skripta se ubacuje u HTML izvor koda (izvrsno za AI skrapere) */}
+      <Script
+        id="aeo-homepage-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
+      <div className="w-full bg-slate-900 text-white text-xs sm:text-sm py-2.5 px-4 text-center border-b border-slate-800 relative z-50 flex items-center justify-center gap-2 flex-wrap">
+        <span className="inline-flex items-center gap-1.5 font-medium text-slate-300">
+          <span className="flex h-2 w-2 relative">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+          </span>
+          <strong className="text-white font-semibold">Looking for early partners 🤝</strong> 
+          We just launched. Build your first few AI Search audits completely free.
+        </span>
+        <span className="text-blue-400 font-medium">
+          Help us test the engine, keep the white-label DOCX reports.
+        </span>
+        <a 
+          href="mailto:hello@aeoaudit-pro.com"
+          className="text-blue-400 font-semibold hover:text-blue-300 underline underline-offset-4 transition-colors duration-200"
+        >
+          Send us an email to get access &rarr;
+        </a>
+      </div>
+        
+      {/* ✅ GLOBALNA POZADINSKA MREŽA: Pokriva celu stranicu od vrha do dna */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_0.75px,transparent_0.75px),linear-gradient(to_bottom,#e2e8f0_0.75px,transparent_0.75px)] bg-[size:4rem_4rem] pointer-events-none opacity-40" />
+      
+      {/* Pastelni gradijenti ostaju samo na vrhu za vizuelni akcenat iza teksta */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[500px] bg-gradient-to-r from-blue-500/10 to-indigo-500/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute top-[200px] left-[-100px] w-[350px] h-[350px] bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute top-[150px] right-[-100px] w-[350px] h-[350px] bg-cyan-500/5 rounded-full blur-[80px] pointer-events-none" />
 
       {/* NAVBAR Component */}
       <Navbar userId={userId} />
@@ -95,9 +159,9 @@ export default async function LandingPage() {
         {/*WHITE-LABEL SECTION */}
         <WhiteLabelSection />
       </main>
+      
       {/* FOOTER Component */}
       <Footer />
-
     </div>
   );
 }
