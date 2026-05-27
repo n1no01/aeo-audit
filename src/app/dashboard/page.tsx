@@ -5,7 +5,7 @@ import { analyzeUrl, getUserStats, getUserAuditHistory } from "../actions";
 import Tooltip from "../components/Tooltip";
 import Footer from "../components/Footer";
 import { AuditData, TabId, AEO_EXPLANATIONS } from "../lib/types"; 
-import { exportAuditToDocx } from "../lib/docxExport"; // Prilagodi putanju ako treba
+import { exportAuditToDocx } from "../lib/docxExport";
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
 
@@ -52,7 +52,7 @@ export default function Home() {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isPending, startTransition] = useTransition();
   const [loadingIndex, setLoadingIndex] = useState(0);
-  const [activeTab, setActiveTab] = useState<TabId | "simulator">("metrics"); // ✅ Omogućen simulator tip
+  const [activeTab, setActiveTab] = useState<TabId | "simulator">("metrics");
 
   const [showBranding, setShowBranding] = useState(false);
   
@@ -96,7 +96,6 @@ export default function Home() {
       const stats = await getUserStats();
       if (stats) setUserStats(stats);
 
-      // Učitavanje Brand Kit-a ako postoji od ranije
       const savedAgency = localStorage.getItem("aeo_agency_name");
       const savedColor = localStorage.getItem("aeo_brand_color");
       const savedAuthor = localStorage.getItem("aeo_author_name");
@@ -107,7 +106,6 @@ export default function Home() {
       if (savedAuthor) setAuthorName(savedAuthor);
       if (savedLogo) setLogoBase64(savedLogo);
 
-      // Tražimo samo 5 najnovijih audita za instant učitavanje ⚡
       const historyRes = await getUserAuditHistory(5);
       if (historyRes?.success && historyRes.history) {
         const formattedHistory: AuditHistoryItem[] = historyRes.history.map((item) => ({
@@ -128,7 +126,6 @@ export default function Home() {
     loadInitialData();
   }, [currentAuditId]);
 
-  // Funkcije koje automatski pamte izmjene u Brand Kit-u pri kucanju
   const handleAgencyNameChange = (val: string) => {
     setAgencyName(val);
     localStorage.setItem("aeo_agency_name", val);
@@ -145,7 +142,6 @@ export default function Home() {
     localStorage.setItem("aeo_author_name", val);
   };
 
-  // Pretvaranje uploada slike logotipa u Base64 format za Word i lokalnu memoriju
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -264,21 +260,20 @@ export default function Home() {
   };
 
   const downloadDocx = async () => {
-  if (isFreePlan) {
-    alert("🔒 Word (.DOCX) Export is a Premium Feature.\n\nPlease upgrade your plan under the Pricing section to unlock downloadable executive reports for your clients.");
-    return;
-  }
+    if (isFreePlan) {
+      alert("🔒 Word (.DOCX) Export is a Premium Feature.\n\nPlease upgrade your plan under the Pricing section to unlock downloadable executive reports for your clients.");
+      return;
+    }
 
-  if (!result?.data) return;
+    if (!result?.data) return;
 
-  // Pozivamo naš eksterni modul u jednom redu ⚡
-  await exportAuditToDocx(result.data, {
-    agencyName,
-    brandColor,
-    authorName,
-    logoBase64,
-  });
-};
+    await exportAuditToDocx(result.data, {
+      agencyName,
+      brandColor,
+      authorName,
+      logoBase64,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white">
@@ -372,7 +367,6 @@ export default function Home() {
 
             {showBranding && (
               <div className="relative pt-4 border-t border-slate-50">
-                {/* 🔒 PAYWALL OVERLAY ZA BELU LABELU */}
                 {isFreePlan && (
                   <div className="absolute inset-0 bg-slate-50/60 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center rounded-xl p-4 text-center">
                     <span className="bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-1 shadow-sm">
@@ -387,7 +381,6 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* BRAND KIT FORM */}
                 <div className={`grid grid-cols-1 sm:grid-cols-4 gap-4 ${isFreePlan ? "opacity-40 select-none pointer-events-none" : ""}`}>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Agency Name</label>
@@ -526,7 +519,7 @@ export default function Home() {
                     { id: "metrics", label: "Core Metrics" },
                     { id: "analysis", label: "AI Semantic Insights" },
                     { id: "recommendations", label: "Strategic Actions" },
-                    { id: "simulator", label: "AI SERP Simulator" }, // 🚀 DODANO: Novi vizuelni tab u nizu
+                    { id: "simulator", label: "AI SERP Simulator" }, 
                     { id: "robots", label: "Robots.txt" },
                   ] as const 
                 ).map((tab) => (
@@ -838,7 +831,7 @@ export default function Home() {
                           <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-2">
                             <div className="bg-blue-600 h-full rounded-full transition-all duration-500" style={{ width: `${(result.data.sentenceSimplicityScore || 5) * 10}%` }} />
                           </div>
-                          <p className="text-[10px] font-medium text-slate-400 leading-snug">Measures sentence structural speed. Favors declarative Subject-Verb-Object models carrying exactly one idea.</p>
+                          <p className="text-[10px] font-medium text-slate-400 mt-2 leading-snug">Measures sentence structural speed. Favors declarative Subject-Verb-Object models carrying exactly one idea.</p>
                         </div>
                       </div>
                     </div>
@@ -879,12 +872,12 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* 🚀 PANEL 4: AI SERP SIMULATOR [NOVI TAB DETALJNO IMPLEMENTIRAN] */}
+                {/* 🚀 PANEL 4: AI SERP SIMULATOR [UPGRADED ON GROUNDED CONTENT SIGNALS] */}
                 {activeTab === "simulator" && (
                   <div className="space-y-6 animate-in fade-in duration-300">
                     <div className="p-4 bg-slate-900/5 border border-slate-950/10 rounded-2xl">
-                      <p className="text-xs font-medium text-slate-500 leading-relaxed">
-                        <strong>AEO LIVE SIMULATION:</strong> This engine renders a real-time behavioral preview of how next-generation Language Models (LLMs) tokenize, cite, and output your brand architecture when queried by global users.
+                        <p className="text-xs font-medium text-slate-500 leading-relaxed">
+                        <strong>AEO LIVE PARAGRAPH ANALYSIS:</strong> Language Models evaluate content density and syntactic speed row-by-row. Below is a real-time extraction preview showing exactly which sections of your page pass LLM citation filters and which are flagged as &apos;low-potential fluff&apos;.
                       </p>
                     </div>
 
@@ -895,7 +888,7 @@ export default function Home() {
                           <div className="h-6 w-6 rounded-lg bg-emerald-600 flex items-center justify-center text-white text-xs font-bold">
                             A
                           </div>
-                          <span className="text-sm font-bold text-slate-800">AEO Engine (Response Preview)</span>
+                          <span className="text-sm font-bold text-slate-800">AEO Engine (Behavioral Content Tokenizer)</span>
                         </div>
                         <div className="flex gap-1.5">
                           <span className="w-2.5 h-2.5 rounded-full bg-slate-200 inline-block"></span>
@@ -909,34 +902,78 @@ export default function Home() {
                         {/* Korisničko Pitanje */}
                         <div className="flex justify-end">
                           <div className="bg-slate-100 text-slate-800 text-sm px-4 py-3 rounded-2xl rounded-tr-sm max-w-md font-medium shadow-sm">
-                            Can you analyze the optimization architecture and core parameters of {getCleanHostname()}?
+                            Extract the core value proposition and analytical claims from {getCleanHostname()}.
                           </div>
                         </div>
 
-                        {/* AI Odgovor */}
+                        {/* AI Odgovor - Segmentirana analiza */}
                         <div className="flex gap-4 max-w-3xl">
                           <div className="h-8 w-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-sm font-black flex-shrink-0 shadow-md shadow-emerald-600/10">
                             🤖
                           </div>
                           
-                          <div className="space-y-4">
-                            <div className="prose prose-slate text-sm text-slate-700 leading-relaxed font-medium">
-                              {/* Izvlačenje prvog paragrafa stručne AI analize */}
-                              {result.data.aiAnalysis ? result.data.aiAnalysis.split("\n\n")[0] : "Analyzing structural configuration parameters..."}
+                          <div className="space-y-6 flex-1">
+                            {/* PARAGRAF 1 */}
+                            <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-3">
+                              <div className="flex flex-wrap gap-2 items-center">
+                                <span className="text-[9px] font-black uppercase bg-slate-900 text-white px-2 py-0.5 rounded">Block #1 Preview</span>
+                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${result.data.entityDensityScore >= 7 ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>
+                                  Entity Density: {result.data.entityDensityScore || 5}/10
+                                </span>
+                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${result.data.sentenceSimplicityScore >= 6 ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                                  Syntax Simplicity: {result.data.sentenceSimplicityScore || 5}/10
+                                </span>
+                              </div>
+                              <p className="text-sm text-slate-700 leading-relaxed font-medium italic border-l-2 border-slate-300 pl-3">
+                                {result.data.aiAnalysis ? result.data.aiAnalysis.split("\n\n")[0] : "Extracting main layout text variables..."}
+                              </p>
+                              <div className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5">
+                                {result.data.entityDensityScore >= 7 ? (
+                                  <span className="text-emerald-600">✅ High Citation Potential: Rich network of concrete entities detected.</span>
+                                ) : (
+                                  <span className="text-rose-600">⚠️ Low Citation Potential: Paragraph contains filler language / low specificity.</span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* PARAGRAF 2 */}
+                            <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-3">
+                              <div className="flex flex-wrap gap-2 items-center">
+                                <span className="text-[9px] font-black uppercase bg-slate-900 text-white px-2 py-0.5 rounded">Block #2 Preview</span>
+                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${result.data.bluffScore >= 7 ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                                  BLUFF Alignment: {result.data.bluffScore || 5}/10
+                                </span>
+                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${result.data.atomicStructureScore >= 7 ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>
+                                  RAG Chunk Readiness: {result.data.atomicStructureScore || 5}/10
+                                </span>
+                              </div>
+                              <p className="text-sm text-slate-700 leading-relaxed font-medium italic border-l-2 border-slate-300 pl-3">
+                                {result.data.aiAnalysis && result.data.aiAnalysis.split("\n\n")[1] 
+                                  ? result.data.aiAnalysis.split("\n\n")[1] 
+                                  : "Evaluating secondary layout vectors and chunk distribution frameworks..."}
+                              </p>
+                              <div className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5">
+                                {result.data.atomicStructureScore >= 7 ? (
+                                  <span className="text-emerald-600">✅ Clean RAG Splitting: Node structure is self-contained.</span>
+                                ) : (
+                                  <span className="text-amber-600">⚠️ Risk: Content relies on context from other paragraphs. In danger of bad chunking fragments.</span>
+                                )}
+                              </div>
                             </div>
 
                             {/* Generisanje RAG Izvora */}
                             <div className="pt-2">
                               <span className="text-[10px] uppercase tracking-wider font-black text-slate-400 block mb-2">
-                                Sources Cited by RAG Engine:
+                                RAG Citation Engine Status:
                               </span>
                               <div className="flex flex-wrap gap-2">
-                                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-100/80 rounded-xl text-xs font-bold text-emerald-700">
-                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                  1. {getCleanHostname()}
-                                  <span className="text-[10px] text-emerald-500 font-medium ml-1">
-                                    ({result.data.score >= 75 ? "Highly Trusted Source" : "Unverified Identity Matrix"})
-                                  </span>
+                                <div className={`inline-flex items-center gap-2 px-3 py-1.5 border rounded-xl text-xs font-bold ${
+                                  result.data.score >= 75 
+                                    ? "bg-emerald-50 border-emerald-100/80 text-emerald-700" 
+                                    : "bg-amber-50 border-amber-100/80 text-amber-700"
+                                }`}>
+                                  <span className={`h-1.5 w-1.5 rounded-full animate-pulse ${result.data.score >= 75 ? "bg-emerald-500" : "bg-amber-500"}`}></span>
+                                  Source: {getCleanHostname()} — {result.data.score >= 75 ? "Highly Actionable Graph Node" : "Low Density Text Cluster"}
                                 </div>
                               </div>
                             </div>
