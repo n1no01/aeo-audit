@@ -82,12 +82,13 @@ export async function generateAiAnalysis(
     },
   });
 
-  // DO PUNJENI PROMPT SA 4 AEO STUBA IZ AHREFS STUDIJE
+  // DOPUNJENI PROMPT SA 4 AEO STUBA IZ AHREFS STUDIJE
   const prompt = `
 You are an expert Senior Answer Engine Optimisation (AEO) strategist.
 Analyze the target website data context provided and perform a highly specific structural alignment audit tailored strictly to the website's industry and business model.
 
 WEBSITE: ${url}
+DETECTOR CONTEXT: The scraper has algorithmically identified this page layout as a **${data.pageType}**.
 ROBOTS.TXT STATUS: ${data.robotsStatus}
 TITLE: ${data.title}
 META DESCRIPTION: ${data.metaDescription}
@@ -116,6 +117,11 @@ ${data.bodyText}
 
 COMPUTED SEED OPTIMIZATION SCORE: ${score}/100
 
+CRITICAL CONTEXTUAL SCORING RULES:
+1. You MUST evaluate the website quality based on the detected layout context (**${data.pageType}**).
+2. If the pageType is 'Homepage' or 'Commercial' and it explicitly represents an online software tool or a purely digital SaaS platform (like an AI auditing platform), do NOT penalize the final visibility score or authority metrics for missing physical signals (address/phone) or brand-owned social profile links (LinkedIn/X profile maps) IF the JSON-LD schema graph layout is clean, valid, and present.
+3. If it is a Homepage, focus your evaluation heavily on brand identity token consistency across metadata, headings, and code. Do NOT expect or penalize for the lack of long-form editorial content.
+
 INSTRUCTIONS:
 1. Evaluate the context and determine the exact "pageCategory".
 2. Refine and confirm the final "score" based on how well this page adheres to its specific category standards.
@@ -130,5 +136,16 @@ INSTRUCTIONS:
 
   const aiResult = await model.generateContent(prompt);
   const responseText = aiResult.response.text();
-  return JSON.parse(responseText);
+  const parsedResponse = JSON.parse(responseText) as {
+    score: number;
+    pageCategory: string;
+    aiAnalysis: string;
+    recommendations: string[];
+    bluffScore: number;
+    atomicStructureScore: number;
+    entityDensityScore: number;
+    sentenceSimplicityScore: number;
+  };
+
+  return parsedResponse;
 }
