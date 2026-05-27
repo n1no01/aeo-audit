@@ -5,19 +5,9 @@ import { analyzeUrl, getUserStats, getUserAuditHistory } from "../actions";
 import Tooltip from "../components/Tooltip";
 import Footer from "../components/Footer";
 import { AuditData, TabId, AEO_EXPLANATIONS } from "../lib/types"; 
+import { exportAuditToDocx } from "../lib/docxExport"; // Prilagodi putanju ako treba
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
-import {
-  AlignmentType,
-  Document,
-  HeadingLevel,
-  Packer,
-  Paragraph,
-  TextRun,
-  Header,
-  ImageRun,
-} from "docx";
-import { saveAs } from "file-saver";
 
 const loadingSteps = [
   "Initializing crawl engine...",
@@ -62,7 +52,7 @@ export default function Home() {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isPending, startTransition] = useTransition();
   const [loadingIndex, setLoadingIndex] = useState(0);
-  const [activeTab, setActiveTab] = useState<TabId>("metrics");
+  const [activeTab, setActiveTab] = useState<TabId | "simulator">("metrics"); // ✅ Omogućen simulator tip
 
   const [showBranding, setShowBranding] = useState(false);
   
@@ -83,6 +73,22 @@ export default function Home() {
 
   // 🛡️ Provera da li je korisnik na besplatnom planu
   const isFreePlan = !userStats || userStats.plan === "FREE";
+
+  // Dobijanje čistog URL hostnam-a za simulaciju pitanja u SERP-u
+  const getCleanHostname = () => {
+    let targetUrl = result?.data?.website_url || "";
+    if (!targetUrl && currentAuditId) {
+      const matchingAudit = history.find(h => h.share_token === currentAuditId);
+      if (matchingAudit) targetUrl = matchingAudit.website_url;
+    }
+    if (!targetUrl) return "this brand";
+    try {
+      const parsingUrl = targetUrl.startsWith("http") ? targetUrl : `https://${targetUrl}`;
+      return new URL(parsingUrl).hostname.replace("www.", "");
+    } catch (e) {
+      return targetUrl.replace("https://", "").replace("http://", "").replace("www.", "");
+    }
+  };
 
   // 🔄 Učitaj statse, istoriju, ali i SAČUVANI BRAND KIT iz localStorage-a
   useEffect(() => {
@@ -120,7 +126,7 @@ export default function Home() {
       }
     }
     loadInitialData();
-  }, []);
+  }, [currentAuditId]);
 
   // Funkcije koje automatski pamte izmjene u Brand Kit-u pri kucanju
   const handleAgencyNameChange = (val: string) => {
@@ -237,28 +243,7 @@ export default function Home() {
   const shareOnLinkedIn = () => {
     if (!currentAuditId || !result?.data) return;
     const shareUrl = `${window.location.origin}/share/${currentAuditId}`;
-    let targetUrl = "";
-    if (result.data.website_url) {
-      targetUrl = result.data.website_url;
-    } else {
-      const matchingAudit = history.find(h => h.share_token === currentAuditId);
-      if (matchingAudit) targetUrl = matchingAudit.website_url;
-    }
-
-    let displayUrl = "this website";
-    if (targetUrl) {
-      try {
-        const parsingUrl = targetUrl.startsWith("http") ? targetUrl : `https://${targetUrl}`;
-        displayUrl = new URL(parsingUrl).hostname.replace("www.", "");
-      } catch (e) {
-        displayUrl = targetUrl.replace("https://", "").replace("http://", "").replace("www.", "");
-      }
-    }
-
-    const lastDotIndex = displayUrl.lastIndexOf(".");
-    if (lastDotIndex !== -1) {
-      displayUrl = displayUrl.substring(0, lastDotIndex) + " . " + displayUrl.substring(lastDotIndex + 1);
-    }
+    const displayUrl = getCleanHostname();
 
     const text = `🎯 AI Visibility Audit for ${displayUrl} is officially LIVE via AEO Audit Pro!\n\n` +
                  `The Answer Engine Optimization (AEO) score is ${result.data.score}/100. The platform just analyzed how top-tier AI models like ChatGPT, Perplexity, and Claude crawl, parse, and extract this domain's content hierarchy.\n\n` +
@@ -271,28 +256,7 @@ export default function Home() {
   const shareOnX = () => {
     if (!currentAuditId || !result?.data) return;
     const shareUrl = `${window.location.origin}/share/${currentAuditId}`;
-    let targetUrl = "";
-    if (result.data.website_url) {
-      targetUrl = result.data.website_url;
-    } else {
-      const matchingAudit = history.find(h => h.share_token === currentAuditId);
-      if (matchingAudit) targetUrl = matchingAudit.website_url;
-    }
-
-    let displayUrl = "this website";
-    if (targetUrl) {
-      try {
-        const parsingUrl = targetUrl.startsWith("http") ? targetUrl : `https://${targetUrl}`;
-        displayUrl = new URL(parsingUrl).hostname.replace("www.", "");
-      } catch (e) {
-        displayUrl = targetUrl.replace("https://", "").replace("http://", "").replace("www.", "");
-      }
-    }
-
-    const lastDotIndex = displayUrl.lastIndexOf(".");
-    if (lastDotIndex !== -1) {
-      displayUrl = displayUrl.substring(0, lastDotIndex) + " . " + displayUrl.substring(lastDotIndex + 1);
-    }
+    const displayUrl = getCleanHostname();
 
     const tweetText = `Just ran an AI Search & AEO Audit for ${displayUrl} using AEO Audit Pro. Our optimization score is ${result.data.score}/100! Checking if ChatGPT, Perplexity, and Gemini can index and cite our brand. 🚀\n\nReview the live interactive report here:`;
     const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}&hashtags=AEO,SEO,SaaS`;
@@ -300,137 +264,21 @@ export default function Home() {
   };
 
   const downloadDocx = async () => {
-    if (isFreePlan) {
-      alert("🔒 Word (.DOCX) Export is a Premium Feature.\n\nPlease upgrade your plan under the Pricing section to unlock downloadable executive reports for your clients.");
-      return;
-    }
+  if (isFreePlan) {
+    alert("🔒 Word (.DOCX) Export is a Premium Feature.\n\nPlease upgrade your plan under the Pricing section to unlock downloadable executive reports for your clients.");
+    return;
+  }
 
-    if (!result?.data) return;
+  if (!result?.data) return;
 
-    const {
-      score,
-      pageCategory,
-      aiAnalysis,
-      recommendations,
-      title,
-      metaDescription,
-      h1,
-      aiBotsStatus,
-      entityTrustMap,
-      semanticLayoutMap,
-      hasVideoElements, 
-      javascriptDependency,
-      bluffScore,
-      atomicStructureScore,
-      entityDensityScore,
-      sentenceSimplicityScore,
-    } = result.data;
-
-    const cleanHexColor = brandColor.replace("#", "").trim();
-
-    // POPRAVLJENO: Eksplicitan docx tip niza umesto any[] da se spreči linter greska
-    const documentChildren: Paragraph[] = [];
-
-    // Ako korisnik ima sačuvan logo sliku, dinamički je konvertujemo u DOCX ImageRun modul
-    if (logoBase64) {
-      try {
-        const base64Data = logoBase64.split(",")[1];
-        const imageBuffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-        
-        documentChildren.push(
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 200, after: 200 },
-            children: [
-           new ImageRun({
-            data: imageBuffer,
-            type: "png", // 🛠️ OBAVEZNO: Govori biblioteci o kojem formatu se radi
-            transformation: {
-              width: 70,
-              height: 70,
-            },
-          }),
-            ],
-          })
-        );
-      } catch (err) {
-        console.error("Failed to embedded custom logo inside document structure:", err);
-      }
-    } else {
-      // Fallback: Ako nema logo, ispisujemo ime agencije stilizovano tekstom
-      documentChildren.push(
-        new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 200, after: 100 }, children: [new TextRun({ text: agencyName.toUpperCase(), bold: true, size: 18, color: cleanHexColor })] })
-      );
-    }
-
-    // Dodavanje ostatka strukture dokumenta
-    documentChildren.push(
-      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 400 }, children: [new TextRun({ text: "ANSWER ENGINE OPTIMIZATION AUDIT", bold: true, size: 32, color: "0f172a" })] }),
-      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 400 }, children: [new TextRun({ text: `Detected Category / Niche: ${pageCategory || "General Website"}`.toUpperCase(), bold: true, size: 14, color: "64748b" })] }),
-      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 600 }, children: [new TextRun({ text: `Overall Visibility Score: ${score}/100`, bold: true, size: 26, color: cleanHexColor })] }),
-      
-      new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 200, after: 200 }, children: [new TextRun({ text: "Executive Summary", color: "0f172a", bold: true, size: 24 })] }),
-      new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: "Target Title: ", bold: true }), new TextRun({ text: title })] }),
-      new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: "Meta Description: ", bold: true }), new TextRun({ text: metaDescription })] }),
-      new Paragraph({ spacing: { after: 400 }, children: [new TextRun({ text: "Primary H1 Anchor: ", bold: true }), new TextRun({ text: h1 })] }),
-
-      new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "AEO Content Core Pillars Score", color: "0f172a", bold: true, size: 24 })] }),
-      new Paragraph({ text: `• BLUFF Alignment (Bottom Line Up Front): ${bluffScore || 5}/10` }),
-      new Paragraph({ text: `• LLM Chunking Readiness (Atomic Structure): ${atomicStructureScore || 5}/10` }),
-      new Paragraph({ text: `• Entity Density (vs Generic Fluff): ${entityDensityScore || 5}/10` }),
-      new Paragraph({ text: `• Syntactic Simplicity (Declarative Writing): ${sentenceSimplicityScore || 5}/10` }),
-
-      new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "AI Crawler Access & Entity Token Map", color: "0f172a", bold: true, size: 24 })] }),
-      new Paragraph({ text: `• OpenAI GPTBot Clearance: ${aiBotsStatus?.gptBot || "Allowed"}` }),
-      new Paragraph({ text: `• OpenAI SearchBot Clearance: ${aiBotsStatus?.oaiSearchBot || "Allowed"}` }),
-      new Paragraph({ text: `• Perplexity AI Engine Status: ${aiBotsStatus?.perplexityBot || "Allowed"}` }),
-      new Paragraph({ text: `• Claude Bot Architecture: ${aiBotsStatus?.claudeBot || "Allowed"}` }),
-      new Paragraph({ text: `• Gemini Extended Radar: ${aiBotsStatus?.googleExtended || "Allowed"}` }),
-      new Paragraph({ text: `• DeepSeek Engine Visibility: ${aiBotsStatus?.deepSeekBot || "Allowed"}` }),
-      new Paragraph({ text: `• Applebot Agent Deployment: ${aiBotsStatus?.appleBotExtended || "Allowed"}` }),
-      new Paragraph({ text: `• Microsoft Bingbot Indexation: ${aiBotsStatus?.bingbot || "Allowed"}` }),
-      new Paragraph({ text: `• Brand Disambiguation Alignment: ${entityTrustMap?.brandDisambiguationStatus || "Optimal"}` }),
-      new Paragraph({ text: `• Semantic HTML5 Main Tag: ${semanticLayoutMap?.hasMainTag ? "Valid" : "Missing"}` }),
-      new Paragraph({ text: `• Heading Hierarchy Defect (Leap): ${semanticLayoutMap?.hasHeadingLeap ? "Anomaly Detected" : "Healthy Cascade"}` }),
-      new Paragraph({ text: `• Visual RAG Video Assets: ${hasVideoElements ? "Optimized (Embedded Video Tracked)" : "Deficit (No Rich Media Found)"}` }), 
-      new Paragraph({ text: `• Multimodal Image Alt Coverage: ${semanticLayoutMap ? semanticLayoutMap.totalImages - semanticLayoutMap.missingAltCount : 0}/{semanticLayoutMap ? semanticLayoutMap.totalImages : 0} Images Configured` }),
-      new Paragraph({ text: `• JavaScript Framework Dependency: ${javascriptDependency === "Critical" ? "Critical Risk (Heavy Client-Side Rendering)" : "Optimal (Server-Side Rendered / Fast)"}` }),
-      
-      new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "Prioritized Tactical Optimization Playbook", color: "0f172a", bold: true, size: 24 })] }),
-      ...recommendations.map((item) => new Paragraph({ bullet: { level: 0 }, spacing: { after: 100 }, children: [new TextRun({ text: item })] })),
-
-      new Paragraph({ spacing: { before: 800 }, alignment: AlignmentType.CENTER, children: [new TextRun({ text: `${authorName}. Powered by AEO Audit Pro.`, size: 14, color: "64748b", italics: true })] })
-    );
-
-    const doc = new Document({
-      sections: [
-        {
-          properties: { page: { margin: { top: 1000, right: 1000, bottom: 1000, left: 1000 } } },
-          headers: {
-            default: new Header({
-              children: [
-                new Paragraph({
-                  alignment: AlignmentType.RIGHT,
-                  children: [
-                    new TextRun({ 
-                      text: `Prepared by: ${agencyName}`, 
-                      size: 16, 
-                      color: "94a3b8", 
-                      italics: true 
-                    })
-                  ],
-                }),
-              ],
-            }),
-          },
-          children: documentChildren,
-        },
-      ],
-    });
-
-    const blob = await Packer.toBlob(doc);
-    saveAs(blob, `AEO-Report-${agencyName.replace(/\s+/g, "-")}.docx`);
-  };
+  // Pozivamo naš eksterni modul u jednom redu ⚡
+  await exportAuditToDocx(result.data, {
+    agencyName,
+    brandColor,
+    authorName,
+    logoBase64,
+  });
+};
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white">
@@ -539,7 +387,7 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* PROŠIRENA REAKTIVNA WHITE-LABEL TABELA SA SPREMLJENIM LOGOTIPOM */}
+                {/* BRAND KIT FORM */}
                 <div className={`grid grid-cols-1 sm:grid-cols-4 gap-4 ${isFreePlan ? "opacity-40 select-none pointer-events-none" : ""}`}>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Agency Name</label>
@@ -671,20 +519,21 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* TABS HEADER */}
+              {/* TABS HEADER WITH ADDED SIMULATOR */}
               <div className="flex flex-wrap border-b border-slate-100 bg-slate-50/50 p-1.5 sm:p-2 gap-1">
                 {(
                   [
                     { id: "metrics", label: "Core Metrics" },
                     { id: "analysis", label: "AI Semantic Insights" },
                     { id: "recommendations", label: "Strategic Actions" },
+                    { id: "simulator", label: "AI SERP Simulator" }, // 🚀 DODANO: Novi vizuelni tab u nizu
                     { id: "robots", label: "Robots.txt" },
                   ] as const 
                 ).map((tab) => (
                   <button 
                     key={tab.id} 
                     onClick={() => setActiveTab(tab.id)} 
-                    className={`flex-1 md:flex-none px-3 sm:px-6 py-2.5 sm:py-3 text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-xl transition ${activeTab === tab.id ? "bg-white text-blue-600 shadow-sm border border-slate-200/60" : "text-slate-400 hover:text-slate-600"}`}
+                    className={`flex-1 md:flex-none px-3 sm:px-5 py-2.5 sm:py-3 text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-xl transition ${activeTab === tab.id ? "bg-white text-blue-600 shadow-sm border border-slate-200/60" : "text-slate-400 hover:text-slate-600"}`}
                   >
                     {tab.label}
                   </button>
@@ -693,11 +542,11 @@ export default function Home() {
 
               {/* TAB CONTENT PANELS */}
               <div className="p-4 sm:p-8 md:p-12">
+                
+                {/* PANEL 1: CORE METRICS */}
                 {activeTab === "metrics" && (
                   <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
-                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                      {/* CRAWLER MATRIX */}
                       <div className="border border-slate-200/60 rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-slate-50/50 flex flex-col justify-between">
                         <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3 flex items-center">
                           AI Search Crawler Status
@@ -723,7 +572,6 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {/* BRAND DISAMBIGUATION */}
                       <div className="border border-slate-200/60 rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-slate-50/50 flex flex-col justify-between">
                         <div>
                           <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center">
@@ -769,7 +617,6 @@ export default function Home() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                      {/* KNOWLEDGE GRAPH */}
                       <div className="border border-slate-200/60 rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-slate-50/50 flex flex-col justify-between">
                         <div>
                           <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3">Knowledge Graph & Entity Blueprint</div>
@@ -801,7 +648,6 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {/* AI SEMANTIC BLUEPRINT */}
                       <div className="border border-slate-200/60 rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-slate-50/50 flex flex-col justify-between">
                         <div>
                           <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3">AI Semantic & Multimodal Blueprint</div>
@@ -863,7 +709,6 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* SPEED & TEHNIČKI GRID */}
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
                         <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col justify-between shadow-sm">
@@ -928,7 +773,6 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* METADATA SUMMARY */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                       <MetricCard label="Meta Title" value={result.data.title} />
                       <MetricCard label="H1 Header" value={result.data.h1} />
@@ -938,14 +782,12 @@ export default function Home() {
                         <div className="flex flex-wrap gap-1.5">{result.data.detectedSchemas.length > 0 ? result.data.detectedSchemas.map((s, i) => <span key={i} className="bg-white border text-slate-700 text-[11px] px-2.5 py-1 rounded-lg font-bold shadow-sm">{s}</span>) : <span className="text-slate-400 text-xs italic">No items parsed.</span>}</div>
                       </div>
                     </div>
-
                   </div>
                 )}
 
+                {/* PANEL 2: AI SEMANTIC INSIGHTS */}
                 {activeTab === "analysis" && (
                   <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
-                    
-                    {/* 4 CORE AEO PILLARS */}
                     <div>
                       <div className="flex items-center gap-3 mb-4 sm:mb-5">
                         <div className="w-2 h-6 bg-blue-600 rounded-full" />
@@ -953,8 +795,6 @@ export default function Home() {
                       </div>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 bg-slate-50 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/60">
-                        
-                        {/* 1. BLUFF */}
                         <div className="bg-white p-4 rounded-xl sm:rounded-2xl border border-slate-100">
                           <div className="flex justify-between items-center mb-1.5">
                             <span className="text-xs font-black text-slate-700 uppercase tracking-wide">BLUFF Alignment</span>
@@ -966,7 +806,6 @@ export default function Home() {
                           <p className="text-[10px] font-medium text-slate-400 leading-snug">Delivers critical answers upfront on headings instead of burying them deep into backstory paragraphs.</p>
                         </div>
 
-                        {/* 2. ATOMIC */}
                         <div className="bg-white p-4 rounded-xl sm:rounded-2xl border border-slate-100">
                           <div className="flex justify-between items-center mb-1.5">
                             <span className="text-xs font-black text-slate-700 uppercase tracking-wide">LLM Chunking Readiness</span>
@@ -978,7 +817,6 @@ export default function Home() {
                           <p className="text-[10px] font-medium text-slate-400 leading-snug">Checks if your H2/H3 text modules are self-contained and make complete sense when extracted independently.</p>
                         </div>
 
-                        {/* 3. ENTITY DENSITY */}
                         <div className="bg-white p-4 rounded-xl sm:rounded-2xl border border-slate-100 flex flex-col justify-between">
                           <div>
                             <div className="flex justify-between items-center mb-1.5">
@@ -992,7 +830,6 @@ export default function Home() {
                           <p className="text-[10px] font-medium text-slate-400 leading-snug">Evaluates the injection rate of concrete terms, brand tokens, and clear relational entities against generic wording.</p>
                         </div>
 
-                        {/* 4. SIMPLICITY */}
                         <div className="bg-white p-4 rounded-xl sm:rounded-2xl border border-slate-100">
                           <div className="flex justify-between items-center mb-1.5">
                             <span className="text-xs font-black text-slate-700 uppercase tracking-wide">Syntactic Simplicity</span>
@@ -1003,11 +840,9 @@ export default function Home() {
                           </div>
                           <p className="text-[10px] font-medium text-slate-400 leading-snug">Measures sentence structural speed. Favors declarative Subject-Verb-Object models carrying exactly one idea.</p>
                         </div>
-
                       </div>
                     </div>
 
-                    {/* AI TEXT MODULE */}
                     <div className="space-y-4">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-2 h-6 bg-blue-600 rounded-full" />
@@ -1015,10 +850,10 @@ export default function Home() {
                       </div>
                       <div className="bg-slate-50 rounded-[16px] p-4 sm:p-5 border text-sm leading-relaxed text-slate-700 whitespace-pre-line font-medium shadow-inner">{result.data.aiAnalysis}</div>
                     </div>
-
                   </div>
                 )}
 
+                {/* PANEL 3: STRATEGIC ACTIONS */}
                 {activeTab === "recommendations" && (
                   <div className="space-y-6 animate-in fade-in duration-300">
                     <div className="flex items-center gap-3 mb-2"><div className="w-2 h-6 bg-blue-600 rounded-full" /><h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Prioritized Optimization Playbook</h3></div>
@@ -1044,6 +879,85 @@ export default function Home() {
                   </div>
                 )}
 
+                {/* 🚀 PANEL 4: AI SERP SIMULATOR [NOVI TAB DETALJNO IMPLEMENTIRAN] */}
+                {activeTab === "simulator" && (
+                  <div className="space-y-6 animate-in fade-in duration-300">
+                    <div className="p-4 bg-slate-900/5 border border-slate-950/10 rounded-2xl">
+                      <p className="text-xs font-medium text-slate-500 leading-relaxed">
+                        <strong>AEO LIVE SIMULATION:</strong> This engine renders a real-time behavioral preview of how next-generation Language Models (LLMs) tokenize, cite, and output your brand architecture when queried by global users.
+                      </p>
+                    </div>
+
+                    <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden flex flex-col min-h-[400px]">
+                      {/* Zaglavlje četa */}
+                      <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="h-6 w-6 rounded-lg bg-emerald-600 flex items-center justify-center text-white text-xs font-bold">
+                            A
+                          </div>
+                          <span className="text-sm font-bold text-slate-800">AEO Engine (Response Preview)</span>
+                        </div>
+                        <div className="flex gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-slate-200 inline-block"></span>
+                          <span className="w-2.5 h-2.5 rounded-full bg-slate-200 inline-block"></span>
+                          <span className="w-2.5 h-2.5 rounded-full bg-slate-200 inline-block"></span>
+                        </div>
+                      </div>
+
+                      {/* Telo četa (Poruke) */}
+                      <div className="p-6 flex-1 space-y-6 bg-gradient-to-b from-white to-slate-50/30">
+                        {/* Korisničko Pitanje */}
+                        <div className="flex justify-end">
+                          <div className="bg-slate-100 text-slate-800 text-sm px-4 py-3 rounded-2xl rounded-tr-sm max-w-md font-medium shadow-sm">
+                            Can you analyze the optimization architecture and core parameters of {getCleanHostname()}?
+                          </div>
+                        </div>
+
+                        {/* AI Odgovor */}
+                        <div className="flex gap-4 max-w-3xl">
+                          <div className="h-8 w-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-sm font-black flex-shrink-0 shadow-md shadow-emerald-600/10">
+                            🤖
+                          </div>
+                          
+                          <div className="space-y-4">
+                            <div className="prose prose-slate text-sm text-slate-700 leading-relaxed font-medium">
+                              {/* Izvlačenje prvog paragrafa stručne AI analize */}
+                              {result.data.aiAnalysis ? result.data.aiAnalysis.split("\n\n")[0] : "Analyzing structural configuration parameters..."}
+                            </div>
+
+                            {/* Generisanje RAG Izvora */}
+                            <div className="pt-2">
+                              <span className="text-[10px] uppercase tracking-wider font-black text-slate-400 block mb-2">
+                                Sources Cited by RAG Engine:
+                              </span>
+                              <div className="flex flex-wrap gap-2">
+                                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-100/80 rounded-xl text-xs font-bold text-emerald-700">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                  1. {getCleanHostname()}
+                                  <span className="text-[10px] text-emerald-500 font-medium ml-1">
+                                    ({result.data.score >= 75 ? "Highly Trusted Source" : "Unverified Identity Matrix"})
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Lažni input bar na dnu četa */}
+                      <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-2 items-center">
+                        <div className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-400 font-medium">
+                          Ask follow up questions...
+                        </div>
+                        <div className="h-8 w-8 rounded-xl bg-slate-200 flex items-center justify-center text-slate-400 text-xs select-none">
+                          ▲
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* PANEL 5: ROBOTS.TXT */}
                 {activeTab === "robots" && (
                   <div className="space-y-6 animate-in fade-in duration-300">
                     <div className="flex items-center gap-3 mb-2"><div className="w-2 h-6 bg-slate-700 rounded-full" /><h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Raw Crawl Directives Content Mapping</h3></div>

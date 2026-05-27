@@ -13,35 +13,40 @@ export function calculateScore(data: Omit<ScrapedData, "bodyText">): number {
   // ==========================================
   // 2. SADRŽAJ I FORMATI (Max 25 bodova)
   // ==========================================
-  // Dužina teksta (Max 5 bodova)
-  if (data.wordCount >= 500) {
+  // Dužina teksta - Kontekstualno prilagođena (FAQ stranice ne kažnjavamo za kratak tekst)
+  if (data.pageType === "FAQ") {
     score += 5; 
-  } else if (data.wordCount >= 200) {
-    score += 2;
+  } else {
+    if (data.wordCount >= 500) {
+      score += 5; 
+    } else if (data.wordCount >= 200) {
+      score += 2;
+    }
   }
   
-  // Tabele i liste (Listicles) -> Esencijalno za ChatGPT/Perplexity citate (Max 10 bodova)
+  // Tabele i liste (Listicles) -> Esencijalno za ChatGPT/Perplexity ekstrakciju fragmenata
   if (data.hasTablesOrLists) score += 10;
 
-  // Q&A Struktura (Max 10 bodova)
+  // Q&A Struktura - Kritična za FAQ i Articles, opciona za Homepage/Commercial
   if (data.qaBlocksCount >= 2) {
     score += 10;
   } else if (data.qaBlocksCount === 1) {
     score += 5;
+  } else {
+    if (data.pageType === "Homepage" || data.pageType === "Commercial") {
+      score += 5; 
+    }
   }
 
   // ==========================================
   // 3. ROBOTS, ACCESS & RENDERING (Max 15 bodova)
   // ==========================================
-  // A. Robots.txt status i AI botovi (Max 10 bodova)
   if (data.robotsStatus === "Valid" || data.robotsStatus === "Missing") {
     score += 10; 
   } else if (data.robotsStatus === "Blocking AI") {
     score -= 25; // Teška penalizacija ako je pristup botovima eksplicitno zabranjen
   }
 
-  // B. Google AI SEO 2026: JS Framework rendering zavisnost (Max 5 bodova)
-  // Ako je "Low" (Server-Side Rendered), sajt je imun na timeout-e AI parsera.
   if (data.javascriptDependency === "Low") {
     score += 5;
   } else if (data.javascriptDependency === "Critical") {
@@ -49,38 +54,73 @@ export function calculateScore(data: Omit<ScrapedData, "bodyText">): number {
   }
 
   // ==========================================
-  // 4. STRUKTURIRANI PODACI & ŠEME (Max 15 bodova)
+  // 4. STRUKTURIRANI PODACI & KONTEKSTUALNE ŠEME (Max 15 bodova)
   // ==========================================
   if (data.detectedSchemas.length > 0) score += 5;
-  const highValueAeoSchemas = ["FAQPage", "TechArticle", "Article", "Organization", "LocalBusiness", "Product"];
-  const hasHighValueSchema = data.detectedSchemas.some(s => highValueAeoSchemas.includes(s));
-  if (hasHighValueSchema) score += 10;
+
+  const schemaValidationMap: Record<string, string[]> = {
+    Homepage: ["Organization", "LocalBusiness", "SoftwareApplication", "Brand", "WebSite"],
+    Commercial: ["Product", "SoftwareApplication", "Service", "Offer", "OfferCatalog"],
+    Article: ["Article", "TechArticle", "BlogPosting", "NewsArticle"],
+    FAQ: ["FAQPage", "Question", "Answer"],
+    About: ["Organization", "Person", "ProfilePage", "AboutPage", "ContactPage"]
+  };
+
+  const expectedSchemas = schemaValidationMap[data.pageType] || [];
+  const hasContextualHighValueSchema = data.detectedSchemas.some(schema => {
+    // 1. Direktno podudaranje iz mape (Homepage traži Organizaciju, Commercial traži Product/SaaS itd.)
+    if (expectedSchemas.includes(schema)) return true;
+    
+    // 2. Fallback za standardne tipove članaka ili FAQ stranica
+    if (data.pageType === "Article" && (schema.endsWith("Article") || schema.endsWith("Posting"))) return true;
+    if (data.pageType === "FAQ" && schema.endsWith("Page")) return true;
+
+    // 3. ULTIMATE AEO FILTER: Pokriva SVE specifične niše (Recepti, Knjige, Kursevi...) na bazi eliminacije generičkih šema
+    if (data.pageType === "Article") {
+      const genericSchemas = ["WebPage", "Thing", "WebSite", "BreadcrumbList"];
+      if (!genericSchemas.includes(schema)) return true;
+    }
+    
+    return false;
+  });
+
+  if (hasContextualHighValueSchema) {
+    score += 10; 
+  }
 
   // ==========================================
   // 5. ENTITETI I BREND DISAMBIGUATION (Max 10 bodova)
   // ==========================================
   if (data.entityTrustMap.hasWikidataOrWikipedia) score += 2;
   
-  // Ako imaju validne profile, dobijaju bodove. Ako nemaju, gube ih (penalizacija)
-  if (data.entityTrustMap.hasLinkedIn) {
-    score += 2;
-  } else {
-    score -= 4; // Penal jer ozbiljan brend u 2026. mora imati potvrđen entitet na LinkedIn-u
-  }
+  // Socijalni signali se striktno zahtijevaju samo na Homepage i About zonama
+  if (data.pageType === "Homepage" || data.pageType === "About") {
+    if (data.entityTrustMap.hasLinkedIn) {
+      score += 2;
+    } else {
+      score -= 4; 
+    }
 
-  if (data.entityTrustMap.hasXAccount) {
-    score += 1;
+    if (data.entityTrustMap.hasXAccount) {
+      score += 1;
+    } else {
+      score -= 2; 
+    }
   } else {
-    score -= 2; // Blaži penal za X
+    score += 3; // Neutralni bodovi za duboke stranice koje ne moraju imati ove linkove u kodu
   }
   
   if (data.entityTrustMap.brandDisambiguationStatus === "Optimal") {
     score += 5;
   } else if (data.entityTrustMap.brandDisambiguationStatus === "Inconsistent") {
     score += 1;
-    score -= 5; // Ozbiljan penal ako su entiteti kontradiktorni
+    score -= 5; 
   } else if (data.entityTrustMap.brandDisambiguationStatus === "Critical Missing") {
-    score -= 10; // Teški penal ako nema nikakvog brand sidra
+    if (data.pageType === "Article" || data.pageType === "FAQ") {
+      score -= 3; // Blaži penal za duboki sadržaj
+    } else {
+      score -= 10; // Teški penal ako na Homepage nema brand sidra
+    }
   }
 
   // ==========================================
@@ -90,7 +130,6 @@ export function calculateScore(data: Omit<ScrapedData, "bodyText">): number {
   if (data.semanticLayoutMap.hasArticleTag) score += 1;
   if (!data.semanticLayoutMap.hasHeadingLeap) score += 2;
   
-  // Slike i Alt Tagovi (Max 3 boda)
   if (data.semanticLayoutMap.totalImages > 0) {
     const missingRatio = data.semanticLayoutMap.missingAltCount / data.semanticLayoutMap.totalImages;
     if (missingRatio <= 0.2) score += 3;
@@ -98,11 +137,10 @@ export function calculateScore(data: Omit<ScrapedData, "bodyText">): number {
     score += 3;
   }
 
-  // Google AI SEO 2026: Multimodalni Visual RAG (Video integracija) -> (Max 2 boda)
   if (data.hasVideoElements) {
     score += 2;
   }
 
-  // Osiguravamo da zbog penalizacija skor ne ode ispod 0, niti preko 100
+  // Osiguravamo opseg bodova isključivo između 0 i 100
   return Math.max(0, Math.min(score, 100));
 }

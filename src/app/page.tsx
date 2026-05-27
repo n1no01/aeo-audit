@@ -27,12 +27,13 @@ export default async function LandingPage() {
         "@id": "https://www.aeoaudit-pro.com/#organization",
         "name": "AEO Audit Pro",
         "url": "https://www.aeoaudit-pro.com",
-        "logo": "https://www.aeoaudit-pro.com/logo.png"
+        "logo": "https://www.aeoaudit-pro.com/logo.png",
       },
       {
         "@type": "WebSite",
         "@id": "https://www.aeoaudit-pro.com/#website",
         "url": "https://www.aeoaudit-pro.com",
+        "logo": "https://www.aeoaudit-pro.com/logo.png",
         "name": "AEO Audit Pro",
         "publisher": {
           "@id": "https://www.aeoaudit-pro.com/#organization"
@@ -42,6 +43,7 @@ export default async function LandingPage() {
         "@type": "SoftwareApplication",
         "@id": "https://www.aeoaudit-pro.com/#application",
         "name": "AEO Audit Pro Engine",
+        "logo": "https://www.aeoaudit-pro.com/logo.png",
         "operatingSystem": "All",
         "applicationCategory": "BusinessApplication",
         "browserRequirements": "Requires HTML5. Requires JavaScript.",

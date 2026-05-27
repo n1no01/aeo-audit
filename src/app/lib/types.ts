@@ -62,7 +62,7 @@ export interface AuditData extends ScrapedData {
   website_url?: string;
 }
 
-export type TabId = "metrics" | "analysis" | "recommendations" | "robots";
+export type TabId = "metrics" | "analysis" | "recommendations" | "robots" | "simulator";
 
 export const AEO_EXPLANATIONS = {
   crawlerStatus: "Indicates whether your robots.txt allows AI bot scrapers to access your code context. If blocked, conversational engines like ChatGPT cannot index your latest content updates.",
