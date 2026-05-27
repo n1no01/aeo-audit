@@ -250,7 +250,7 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
   }
 
   // ==========================================
-  // POPRAVLJENO SVE-U-JEDNOM SCHEМА PARSIRANJE
+  // SVE-U-JEDNOM SCHEМА PARSIRANJE
   // ==========================================
   const schemaScripts = $('script[type="application/ld+json"]');
   const schemaSet = new Set<string>();
@@ -272,7 +272,6 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
         
         const typedObj = obj as Record<string, unknown>;
         
-        // 1. Ekstrakcija tipova (uključujući nizove u @type)
         if (typedObj["@type"]) {
           const typeValue = typedObj["@type"];
           if (Array.isArray(typeValue)) {
@@ -281,20 +280,17 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
             schemaSet.add(typeValue);
           }
 
-          // Hvatanje varijacija brenda
           if (["Organization", "LocalBusiness", "Brand", "WebSite"].includes(String(typedObj["@type"]))) {
             if (typeof typedObj["name"] === "string" && typedObj["name"].length < 40) {
               brandVariantsSet.add(typedObj["name"].trim());
             }
           }
 
-          // 2. Popravljeno brojanje FAQ stavki (hvata i ugniježđene i direktne)
           if (typedObj["@type"] === "FAQPage" && Array.isArray(typedObj["mainEntity"])) {
             qaBlocksCount += typedObj["mainEntity"].length;
           }
         }
 
-        // Rekurzivno pretraži sve ključeve (rješava @graph i ugniježđene strukture)
         for (const key in typedObj) {
           if (typeof typedObj[key] === "object" && typedObj[key] !== null) {
             deepParseSchema(typedObj[key]);
@@ -327,13 +323,12 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
   }
 
   // ==========================================
-  // POPRAVLJEN BEZBJEDNI ALGORITAMSKI Q&A DETECTOR
+  // ALGORITAMSKI Q&A DETECTOR
   // ==========================================
   if (qaBlocksCount === 0) {
     const textNodes: { text: string; element: ReturnType<typeof $> }[] = [];
     
     $("h1, h2, h3, h4, h5, h6, p, div, li, summary, [aria-expanded], [aria-controls]").each((_, el) => {
-      // POPRAVKA: Koristimo čisti .text() umjesto uklanjanja djece, što je uništavalo spans/linkove unutar headinga
       const text = $(el).text().trim().replace(/\s+/g, " ");
       if (text.length > 5 && text.length < 250) {
         textNodes.push({ text, element: $(el) });
@@ -374,6 +369,41 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
   const bodyText = $("p, li, table tr, blockquote").map((_, el) => $(el).text().trim() ? `${$(el).text().trim()} ` : "").get().join(" ").replace(/\s+/g, " ").substring(0, 5000);
   const wordCount = bodyText.split(/\s+/).filter(Boolean).length;
 
+  // ==========================================
+  // GLOBAL CONTEXTUAL PAGE TYPE DETECTION 🚀
+  // ==========================================
+  let pageType: "Homepage" | "Article" | "FAQ" | "About" | "Commercial" | "General" = "General";
+  const pathname = parsedUrl.pathname.toLowerCase();
+
+  // Čišćenje trailing slash-a i jezičkih direktorija (npr. /en/, /de/, /bs/) radi lakše provere
+  const cleanPath = pathname.replace(/\/$/, "").replace(/^\/(en|de|bs|fr|es|it|hr|sr|nl|pl)(\/|$)/, "/");
+
+  if (cleanPath === "" || cleanPath === "/" || cleanPath === "/index.html") {
+    pageType = "Homepage";
+  } else if (cleanPath.includes("faq") || cleanPath.includes("question") || detectedSchemas.includes("FAQPage")) {
+    pageType = "FAQ";
+  } else if (
+    /(\b)(about|contact|team|legal|info|imprint|contact-us|profile)(\b)/.test(cleanPath) || 
+    detectedSchemas.includes("AboutPage") || 
+    detectedSchemas.includes("ContactPage")
+  ) {
+    pageType = "About";
+  } else if (
+    /(\b)(shop|product|service|pricing|store|cart|checkout|item|p|pricing)(\b)/.test(cleanPath) || 
+    detectedSchemas.includes("Product") || 
+    detectedSchemas.includes("Service")
+  ) {
+    pageType = "Commercial";
+  } else if (
+    $("article").length > 0 || 
+    /(\b)(blog|article|news|post|story|insights)(\b)/.test(cleanPath) ||
+    detectedSchemas.includes("BlogPosting") ||
+    detectedSchemas.includes("TechArticle") ||
+    detectedSchemas.includes("Article")
+  ) {
+    pageType = "Article";
+  }
+
   return {
     title,
     metaDescription,
@@ -391,5 +421,6 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
     aiBotsStatus,
     entityTrustMap,
     semanticLayoutMap,
+    pageType,
   };
 }

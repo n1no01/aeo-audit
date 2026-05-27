@@ -46,11 +46,12 @@ export interface ScrapedData {
   aiBotsStatus: BotStatus;
   entityTrustMap: EntityTrustMap;
   semanticLayoutMap: SemanticLayoutMap;
+  pageType: "Homepage" | "Article" | "FAQ" | "About" | "Commercial" | "General";
 }
 
 export interface AuditData extends ScrapedData {
   score: number;
-  pageCategory: string; // npr. "Personal Portfolio"
+  pageCategory: string; // npr. "Personal Portfolio" ili preslikan gornji pageType
   aiAnalysis: string;
   recommendations: string[];
   bluffScore: number;
