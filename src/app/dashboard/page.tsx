@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, useRef } from "react";
 import { analyzeUrl, getUserStats, getUserAuditHistory } from "../actions";
 import Tooltip from "../components/Tooltip";
 import Footer from "../components/Footer";
@@ -61,6 +61,9 @@ export default function Home() {
   const [brandColor, setBrandColor] = useState("2563eb"); 
   const [authorName, setAuthorName] = useState("Senior AEO Strategist");
   const [logoBase64, setLogoBase64] = useState<string | null>(null);
+
+  // 🛠️ REFEERENCA ZA LOGO INPUT (Zamjena za document.getElementById bug)
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   // 🔗 Držanje UUID share_tokena trenutno učitanog izvještaja i stanja kopiranja
   const [currentAuditId, setCurrentAuditId] = useState<string | null>(null);
@@ -156,6 +159,7 @@ export default function Home() {
   };
 
   const removeLogo = () => {
+    if (logoInputRef.current) logoInputRef.current.value = "";
     setLogoBase64(null);
     localStorage.removeItem("aeo_logo_base64");
   };
@@ -407,7 +411,7 @@ export default function Home() {
                     ) : (
                       <label className="border border-slate-200 hover:border-blue-500 bg-white rounded-xl px-3 py-2 text-xs font-bold text-slate-500 hover:text-blue-600 text-center cursor-pointer transition h-[34px] flex items-center justify-center">
                         Upload Image Logo
-                        <input type="file" accept="image/png, image/jpeg" onChange={handleLogoUpload} className="hidden" disabled={isFreePlan} />
+                        <input ref={logoInputRef} id="logo-upload-input" type="file" accept="image/png, image/jpeg" onChange={handleLogoUpload} className="hidden" disabled={isFreePlan} />
                       </label>
                     )}
                   </div>
@@ -623,6 +627,29 @@ export default function Home() {
                                 {result.data.entityTrustMap?.hasWikidataOrWikipedia ? "VERIFIED" : "MISSING"}
                               </span>
                             </div>
+                            {result.data.pageType === "Commercial" && (
+                            <div className="flex items-center justify-between bg-white border border-slate-100 p-2 rounded-xl text-xs font-semibold animate-in fade-in duration-300">
+                              <span className="text-slate-600 flex items-center">
+                                Google Merchant & AI Product Graph Connectivity
+                                <Tooltip text="Checks if your Product Schema contains explicit core subsets (offers, brand, or aggregateRating) required for rich conversational AI product listings." />
+                              </span>
+                              <span className={`text-[10px] font-black tracking-wider px-2 py-0.5 rounded-md ${result.data.entityTrustMap?.hasDeepProductSchema ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-600"}`}>
+                                {result.data.entityTrustMap?.hasDeepProductSchema ? "MERCHANT GRAPH ACTIVE" : "TRUST PROPERTIES MISSING"}
+                              </span>
+                            </div>
+                          )}
+
+                          {result.data.pageType === "Homepage" && result.data.detectedSchemas.includes("LocalBusiness") && (
+                            <div className="flex items-center justify-between bg-white border border-slate-100 p-2 rounded-xl text-xs font-semibold animate-in fade-in duration-300">
+                              <span className="text-slate-600 flex items-center">
+                                📍 Local Business AI Coordinates Mapping
+                                <Tooltip text="Validates if your LocalBusiness graph contains deep data fields (telephone, address, openingHours) utilized by grounding algorithms to verify offline trust." />
+                              </span>
+                              <span className={`text-[10px] font-black tracking-wider px-2 py-0.5 rounded-md ${result.data.entityTrustMap?.hasDeepLocalBusinessSchema ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-600"}`}>
+                                {result.data.entityTrustMap?.hasDeepLocalBusinessSchema ? "LOCAL GRAPH OPTIMAL" : "CRITICAL MISSING DATA"}
+                              </span>
+                            </div>
+                          )}
 
                             {[
                               { label: "LinkedIn Identity Profile Connection", checked: result.data.entityTrustMap?.hasLinkedIn },
@@ -692,6 +719,17 @@ export default function Home() {
                               </span>
                               <span className={`text-[10px] font-black tracking-wider px-2 py-0.5 rounded-md ${result.data.hasVideoElements ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-600"}`}>
                                 {result.data.hasVideoElements ? "OPTIMIZED" : "NO VIDEO FOUND"}
+                              </span>
+                            </div>
+
+                            {/* 🤖 NESTALI PANEL: PODRŠKA ZA AUTONOMNE AI AGENTE */}
+                            <div className="flex items-center justify-between bg-white border border-slate-100 p-2 rounded-xl text-xs font-semibold">
+                              <span className="text-slate-600 flex items-center">
+                                Autonomous AI Agent Readiness (ARIA Tree)
+                                <Tooltip text="Evaluates if your interactive models, buttons, and checkout elements use ARIA attributes. Crucial for browser-based AI agents executing tasks for users." />
+                              </span>
+                              <span className={`text-[10px] font-black tracking-wider px-2 py-0.5 rounded-md ${result.data.semanticLayoutMap?.hasAriaLabels ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-600"}`}>
+                                {result.data.semanticLayoutMap?.hasAriaLabels ? "AGENT READY" : "OPTIMIZATION REQUIRED"}
                               </span>
                             </div>
                           </div>
@@ -778,7 +816,7 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* PANEL 2: AI SEMANTIC INSIGHTS */}
+                {/* PANEL 2: AI SEMANTIC INSIGHTS (SADA SA 5 STRUČNIH METRIKA) */}
                 {activeTab === "analysis" && (
                   <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
                     <div>
@@ -833,6 +871,33 @@ export default function Home() {
                           </div>
                           <p className="text-[10px] font-medium text-slate-400 mt-2 leading-snug">Measures sentence structural speed. Favors declarative Subject-Verb-Object models carrying exactly one idea.</p>
                         </div>
+
+                        {/* ✅ INTEGRISANI PETI STRUČNI STUB: GOOGLE NON-COMMODITY STANDARD */}
+                        <div className="bg-white p-4 rounded-xl sm:rounded-2xl border border-slate-100 md:col-span-2">
+                          <div className="flex justify-between items-center mb-1.5">
+                            <span className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                              ⭐ Google Non-Commodity Score
+                              <span className="bg-slate-900 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">Official 2026 Guideline</span>
+                            </span>
+                            <span className={`text-xs font-black px-2 py-0.5 rounded-md ${
+                              (result.data.commodityContentScore || 5) >= 7 ? "text-emerald-600 bg-emerald-50" : "text-amber-600 bg-amber-50"
+                            }`}>
+                              {result.data.commodityContentScore || 5}/10
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-2">
+                            <div 
+                              className={`h-full rounded-full transition-all duration-500 ${
+                                (result.data.commodityContentScore || 5) >= 7 ? "bg-emerald-500" : "bg-amber-500"
+                              }`} 
+                              style={{ width: `${(result.data.commodityContentScore || 5) * 10}%` }} 
+                            />
+                          </div>
+                          <p className="text-[10px] font-medium text-slate-400 leading-snug">
+                            Defines content authenticity according to Google Search requirements. Low scores indicate heavily recycled, generic text easily scraped by basic automation. High scores ensure unique first-hand experience, data tables, or specialized expert perspectives favored by RAG search models.
+                          </p>
+                        </div>
+
                       </div>
                     </div>
 
@@ -872,11 +937,11 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* 🚀 PANEL 4: AI SERP SIMULATOR [UPGRADED ON GROUNDED CONTENT SIGNALS] */}
+                {/* 🚀 PANEL 4: AI SERP SIMULATOR [SA INKORPORISANIM GOOGLE NON-COMMODITY METRIKAMA] */}
                 {activeTab === "simulator" && (
                   <div className="space-y-6 animate-in fade-in duration-300">
                     <div className="p-4 bg-slate-900/5 border border-slate-950/10 rounded-2xl">
-                        <p className="text-xs font-medium text-slate-500 leading-relaxed">
+                      <p className="text-xs font-medium text-slate-500 leading-relaxed">
                         <strong>AEO LIVE PARAGRAPH ANALYSIS:</strong> Language Models evaluate content density and syntactic speed row-by-row. Below is a real-time extraction preview showing exactly which sections of your page pass LLM citation filters and which are flagged as &apos;low-potential fluff&apos;.
                       </p>
                     </div>
@@ -923,15 +988,19 @@ export default function Home() {
                                 <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${result.data.sentenceSimplicityScore >= 6 ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
                                   Syntax Simplicity: {result.data.sentenceSimplicityScore || 5}/10
                                 </span>
+                                {/* ✅ INTEGRISANA OZNAKA UNUTAR SIMULATORA */}
+                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${result.data.commodityContentScore >= 7 ? "bg-indigo-100 text-indigo-800" : "bg-amber-100 text-amber-700"}`}>
+                                  Google Non-Commodity: {result.data.commodityContentScore || 5}/10
+                                </span>
                               </div>
                               <p className="text-sm text-slate-700 leading-relaxed font-medium italic border-l-2 border-slate-300 pl-3">
                                 {result.data.aiAnalysis ? result.data.aiAnalysis.split("\n\n")[0] : "Extracting main layout text variables..."}
                               </p>
                               <div className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5">
-                                {result.data.entityDensityScore >= 7 ? (
-                                  <span className="text-emerald-600">✅ High Citation Potential: Rich network of concrete entities detected.</span>
+                                {result.data.entityDensityScore >= 7 && (result.data.commodityContentScore || 5) >= 7 ? (
+                                  <span className="text-emerald-600">✅ High Citation Potential: Highly specific expert-led textual nodes recognized.</span>
                                 ) : (
-                                  <span className="text-rose-600">⚠️ Low Citation Potential: Paragraph contains filler language / low specificity.</span>
+                                  <span className="text-rose-600">⚠️ Low Citation Potential: Block flagged as commodity/recycled context. AI filters may link-strip this segment.</span>
                                 )}
                               </div>
                             </div>

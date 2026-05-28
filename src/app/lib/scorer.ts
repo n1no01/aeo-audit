@@ -1,6 +1,14 @@
 import { ScrapedData } from "./types";
 
-export function calculateScore(data: Omit<ScrapedData, "bodyText">): number {
+// Proširujemo interfejs unutar funkcije ako types.ts još nije ažuriran na frontendu
+interface ExtendedScrapedData extends Omit<ScrapedData, "bodyText"> {
+  commodityContentScore?: number;
+  semanticLayoutMap: ScrapedData["semanticLayoutMap"] & {
+    hasAriaLabels?: boolean; // Spremno za AI Agente
+  };
+}
+
+export function calculateScore(data: ExtendedScrapedData): number {
   let score = 0;
 
   // ==========================================
@@ -11,31 +19,39 @@ export function calculateScore(data: Omit<ScrapedData, "bodyText">): number {
   if (data.h1 && data.h1 !== "No H1 Found") score += 10;
 
   // ==========================================
-  // 2. SADRŽAJ I FORMATI (Max 25 bodova)
+  // 2. AI CONTENT BLUEPRINT & AGENT READINESS (Max 25 bodova)
   // ==========================================
-  // Dužina teksta - Kontekstualno prilagođena (FAQ stranice ne kažnjavamo za kratak tekst)
-  if (data.pageType === "FAQ") {
-    score += 5; 
+  // 2a. Google Non-Commodity Evaluacija (10 bodova) - Direktno iz Google Doc-a
+  // Pošto Gemini računa ovu ocjenu od 1 do 10, ovdje je skaliramo na bodove
+  const commodityScore = data.commodityContentScore ?? 5; // Fallback na 5 ako još nije izračunato
+  if (commodityScore >= 8) {
+    score += 10; // Izuzetan, unikatni sadržaj (Non-Commodity)
+  } else if (commodityScore >= 5) {
+    score += 5;  // Prosječan sadržaj
   } else {
-    if (data.wordCount >= 500) {
-      score += 5; 
-    } else if (data.wordCount >= 200) {
-      score += 2;
-    }
+    score -= 5;  // Penalizacija za čisti "Commodity Content" (recyled tekst)
   }
-  
-  // Tabele i liste (Listicles) -> Esencijalno za ChatGPT/Perplexity ekstrakciju fragmenata
-  if (data.hasTablesOrLists) score += 10;
 
-  // Q&A Struktura - Kritična za FAQ i Articles, opciona za Homepage/Commercial
+  // 2b. Tabele i liste (5 bodova) - Važno za LLM fragmentaciju
+  if (data.hasTablesOrLists) score += 5;
+
+  // 2c. Q&A Struktura (5 bodova) - Kritična za RAG i Query Fan-out
   if (data.qaBlocksCount >= 2) {
-    score += 10;
-  } else if (data.qaBlocksCount === 1) {
     score += 5;
+  } else if (data.qaBlocksCount === 1) {
+    score += 2;
   } else {
     if (data.pageType === "Homepage" || data.pageType === "Commercial") {
-      score += 5; 
+      score += 2; 
     }
+  }
+
+  // 2d. AI Agent Accessibility - ARIA podrška (5 bodova)
+  // Ako stranica ima bazičnu ARIA strukturu, AI agenti je mogu lakše izvršavati
+  if (data.semanticLayoutMap.hasAriaLabels) {
+    score += 5;
+  } else if (data.pageType === "Commercial") {
+    score -= 3; // Komercijalne stranice (shop/pricing) gube bodove ako AI agent ne može kupiti uslugu
   }
 
   // ==========================================
@@ -44,13 +60,13 @@ export function calculateScore(data: Omit<ScrapedData, "bodyText">): number {
   if (data.robotsStatus === "Valid" || data.robotsStatus === "Missing") {
     score += 10; 
   } else if (data.robotsStatus === "Blocking AI") {
-    score -= 25; // Teška penalizacija ako je pristup botovima eksplicitno zabranjen
+    score -= 25; // Teška penalizacija ako sajt eksplicitno izbacuje AI botove
   }
 
   if (data.javascriptDependency === "Low") {
     score += 5;
   } else if (data.javascriptDependency === "Critical") {
-    score -= 10; // Penalizacija jer Client-Side Rendering drastično smanjuje šanse za RAG indeksiranje
+    score -= 10; 
   }
 
   // ==========================================
@@ -68,14 +84,10 @@ export function calculateScore(data: Omit<ScrapedData, "bodyText">): number {
 
   const expectedSchemas = schemaValidationMap[data.pageType] || [];
   const hasContextualHighValueSchema = data.detectedSchemas.some(schema => {
-    // 1. Direktno podudaranje iz mape (Homepage traži Organizaciju, Commercial traži Product/SaaS itd.)
     if (expectedSchemas.includes(schema)) return true;
-    
-    // 2. Fallback za standardne tipove članaka ili FAQ stranica
     if (data.pageType === "Article" && (schema.endsWith("Article") || schema.endsWith("Posting"))) return true;
     if (data.pageType === "FAQ" && schema.endsWith("Page")) return true;
 
-    // 3. ULTIMATE AEO FILTER: Pokriva SVE specifične niše (Recepti, Knjige, Kursevi...) na bazi eliminacije generičkih šema
     if (data.pageType === "Article") {
       const genericSchemas = ["WebPage", "Thing", "WebSite", "BreadcrumbList"];
       if (!genericSchemas.includes(schema)) return true;
@@ -93,7 +105,6 @@ export function calculateScore(data: Omit<ScrapedData, "bodyText">): number {
   // ==========================================
   if (data.entityTrustMap.hasWikidataOrWikipedia) score += 2;
   
-  // Socijalni signali se striktno zahtijevaju samo na Homepage i About zonama
   if (data.pageType === "Homepage" || data.pageType === "About") {
     if (data.entityTrustMap.hasLinkedIn) {
       score += 2;
@@ -107,7 +118,7 @@ export function calculateScore(data: Omit<ScrapedData, "bodyText">): number {
       score -= 2; 
     }
   } else {
-    score += 3; // Neutralni bodovi za duboke stranice koje ne moraju imati ove linkove u kodu
+    score += 3; 
   }
   
   if (data.entityTrustMap.brandDisambiguationStatus === "Optimal") {
@@ -117,9 +128,9 @@ export function calculateScore(data: Omit<ScrapedData, "bodyText">): number {
     score -= 5; 
   } else if (data.entityTrustMap.brandDisambiguationStatus === "Critical Missing") {
     if (data.pageType === "Article" || data.pageType === "FAQ") {
-      score -= 3; // Blaži penal za duboki sadržaj
+      score -= 3; 
     } else {
-      score -= 10; // Teški penal ako na Homepage nema brand sidra
+      score -= 10; 
     }
   }
 

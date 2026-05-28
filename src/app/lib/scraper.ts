@@ -175,7 +175,6 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
           }
         }
       } catch {
-        // Tek ako sve mrežno padne, baci sistemski mrežni Error
         robotsStatus = "Error";
         robotsRawContent = "Could not fetch or locate robots.txt file due to a network error.";
       }
@@ -229,13 +228,37 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
   const h2Count = $("h2").length;
   const hasTablesOrLists = $("table").length > 0 || $("ul").length > 0 || $("ol").length > 0;
 
-  const semanticLayoutMap: SemanticLayoutMap = {
+  // 🤖 INICIJALIZACIJA SEMANTIČKE MAPE SA UKLJUČENOM ARIA DETEKCIJOM ZA AI AGENTE
+  const semanticLayoutMap: SemanticLayoutMap & { hasAriaLabels: boolean } = {
     hasMainTag: $("main").length === 1,
     hasArticleTag: $("article").length > 0,
     hasHeadingLeap: false,
     totalImages: $("img").length,
     missingAltCount: 0,
+    hasAriaLabels: false,
   };
+
+  // 🧠 EVALUACIJA STRUKTURE ZA AI BROWSING AGENTE (ARIA & ACCESSIBILITY TREE)
+  let totalInteractiveElements = 0;
+  let elementsWithAria = 0;
+
+  $("button, form, input, select, textarea, [role], [aria-label], [aria-expanded]").each((_, el) => {
+    totalInteractiveElements++;
+    const hasLabel = $(el).attr("aria-label") || $(el).attr("aria-labelledby");
+    const hasDescribed = $(el).attr("aria-describedby");
+    const hasRole = $(el).attr("role");
+    const hasExpanded = $(el).attr("aria-expanded");
+
+    if (hasLabel || hasDescribed || hasRole || hasExpanded) {
+      elementsWithAria++;
+    }
+  });
+
+  if (totalInteractiveElements > 0 && (elementsWithAria / totalInteractiveElements) >= 0.20) {
+    semanticLayoutMap.hasAriaLabels = true;
+  } else if (totalInteractiveElements === 0) {
+    semanticLayoutMap.hasAriaLabels = true;
+  }
 
   $("img").each((_, el) => {
     if (!$(el).attr("alt")?.trim()) semanticLayoutMap.missingAltCount++;
@@ -258,6 +281,8 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
     hasPhysicalSignals: false,
     brandDisambiguationStatus: "Optimal",
     detectedBrandVariants: [],
+    hasDeepLocalBusinessSchema: false,
+    hasDeepProductSchema: false,
   };
 
   const brandVariantsSet = new Set<string>();
@@ -305,7 +330,7 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
   }
 
   // ==========================================
-  // SCHEMA PARSING
+  // SCHEMA PARSING (DUBOKO RAZDVAJANJE ENTITETA)
   // ==========================================
   const schemaScripts = $('script[type="application/ld+json"]');
   const schemaSet = new Set<string>();
@@ -333,6 +358,28 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
             typeValue.forEach((t) => { if (typeof t === "string") schemaSet.add(t); });
           } else if (typeof typeValue === "string") {
             schemaSet.add(typeValue);
+          }
+
+          // 🏢 1. DUBOKI LOCAL BUSINESS AUDIT
+          if (["LocalBusiness", "Store", "Restaurant", "AutomotiveBusiness", "MedicalBusiness"].includes(String(typedObj["@type"]))) {
+            const hasPhone = !!typedObj["telephone"];
+            const hasAddress = !!typedObj["address"];
+            const hasHours = !!typedObj["openingHours"] || !!typedObj["openingHoursSpecification"];
+            
+            if ((hasPhone && hasAddress) || (hasAddress && hasHours)) {
+              entityTrustMap.hasDeepLocalBusinessSchema = true;
+            }
+          }
+
+          // 🛒 2. DUBOKI E-COMMERCE PRODUCT AUDIT
+          if (typedObj["@type"] === "Product") {
+            const hasOffers = !!typedObj["offers"];
+            const hasRating = !!typedObj["aggregateRating"] || !!typedObj["review"];
+            const hasBrand = !!typedObj["brand"];
+
+            if (hasOffers && (hasBrand || hasRating)) {
+              entityTrustMap.hasDeepProductSchema = true;
+            }
           }
 
           if (["Organization", "LocalBusiness", "Brand", "WebSite"].includes(String(typedObj["@type"]))) {

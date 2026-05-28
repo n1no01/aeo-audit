@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getDodoCheckoutUrl } from "@/app/actions/checkout";
 
-interface CheckoutButtonProps {
+// Proširujemo interfejs tako da prihvata sve standardne HTML atribute za button (uključujući aria-label)
+interface CheckoutButtonProps extends React.ComponentPropsWithRef<"button"> {
   productId: string;
   userId: string | null;
   userEmail: string;
@@ -12,7 +13,14 @@ interface CheckoutButtonProps {
   className: string;
 }
 
-export function CheckoutButton({ productId, userId, userEmail, text, className }: CheckoutButtonProps) {
+export function CheckoutButton({ 
+  productId, 
+  userId, 
+  userEmail, 
+  text, 
+  className,
+  ...props // 👈 Hvata sve preostale proslijeđene atribute poput aria-label
+}: CheckoutButtonProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -47,6 +55,7 @@ export function CheckoutButton({ productId, userId, userEmail, text, className }
       onClick={handleCheckout}
       disabled={loading}
       className={`${className} ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
+      {...props} // 👈 Automatski lijepi aria-label direktno na HTML <button> tag u browseru
     >
       {loading ? "REDIRECTING..." : text}
     </button>

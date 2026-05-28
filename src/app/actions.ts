@@ -110,6 +110,7 @@ export async function analyzeUrl(formData: FormData) {
         atomicStructureScore: aiData.atomicStructureScore || 5,
         entityDensityScore: aiData.entityDensityScore || 5,
         sentenceSimplicityScore: aiData.sentenceSimplicityScore || 5,
+        commodityContentScore: aiData.commodityContentScore || 5,
       };
     } catch (apiError) {
       console.error("External API Error (Scraper/Gemini):", apiError);

@@ -19,6 +19,8 @@ export interface EntityTrustMap {
   hasPhysicalSignals: boolean;
   brandDisambiguationStatus: "Optimal" | "Inconsistent" | "Critical Missing";
   detectedBrandVariants: string[];
+  hasDeepLocalBusinessSchema: boolean; 
+  hasDeepProductSchema: boolean;
 }
 
 export interface SemanticLayoutMap {
@@ -27,6 +29,7 @@ export interface SemanticLayoutMap {
   hasHeadingLeap: boolean;
   totalImages: number;
   missingAltCount: number;
+  hasAriaLabels: boolean;
 }
 
 export interface ScrapedData {
@@ -60,6 +63,7 @@ export interface AuditData extends ScrapedData {
   sentenceSimplicityScore: number;
   hasListsOrTables: boolean;
   website_url?: string;
+  commodityContentScore: number;
 }
 
 export type TabId = "metrics" | "analysis" | "recommendations" | "robots" | "simulator";
