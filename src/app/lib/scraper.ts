@@ -25,13 +25,21 @@ function isValidSocialProfile(url: string, platform: 'linkedin' | 'x' | 'faceboo
   }
 
   if (platform === 'x') {
-    const xRegex = /(x|twitter)\.com\/(?!(home|intent|share|widgets|privacy|tos|search|i)([/?#]|$))[a-zA-Z0-9-_]+/i;
-    return xRegex.test(cleanUrl);
+    const xRegex = /(x|twitter)\.com\/([a-zA-Z0-9-_]+)/i;
+    const match = cleanUrl.match(xRegex);
+    if (!match) return false;
+    const username = match[2];
+    const ignored = ["home", "intent", "share", "widgets", "privacy", "tos", "search", "i"];
+    return !ignored.includes(username);
   }
 
   if (platform === 'facebook') {
-    const fbRegex = /facebook\.com\/(?!(sharer|share|plugins|policies)([/?#]|$))[a-zA-Z0-9-_\.]+/i;
-    return fbRegex.test(cleanUrl);
+    const fbRegex = /facebook\.com\/([a-zA-Z0-9-_\.]+)/i;
+    const match = cleanUrl.match(fbRegex);
+    if (!match) return false;
+    const pageName = match[1];
+    const ignored = ["sharer", "share", "plugins", "policies", "pages"];
+    return !ignored.includes(pageName);
   }
 
   return false;
@@ -61,68 +69,115 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
   };
 
   const parseRobotsConfig = (content: string) => {
-    const cleanContent = content.toLowerCase().replace(/\s*:\s*/g, ":");
+    const lines = content.split(/\r?\n/);
+    let currentAgents: string[] = [];
     
-    const checkBot = (agentToken: string): "Allowed" | "Blocked" => {
-      const fullSiteBlockRegex = /disallow:\/\s*($|\s)/;
-      const hasGlobalBlock = cleanContent.includes("user-agent:*") && fullSiteBlockRegex.test(cleanContent.split("user-agent:*")[1]?.split("user-agent:")[0] || "");
-      const hasSpecificBlock = cleanContent.includes(`user-agent:${agentToken}`) && fullSiteBlockRegex.test(cleanContent.split(`user-agent:${agentToken}`)[1]?.split("user-agent:")[0] || "");
-      return (hasGlobalBlock || hasSpecificBlock) ? "Blocked" : "Allowed";
+    const botTokens = {
+      "*": ["gptBot", "claudeBot", "perplexityBot", "oaiSearchBot", "googleExtended", "anthropicAi", "deepSeekBot", "appleBotExtended", "bingbot", "cohereAi"],
+      "gptbot": ["gptBot"],
+      "claudebot": ["claudeBot"],
+      "perplexitybot": ["perplexityBot"],
+      "oai-searchbot": ["oaiSearchBot"],
+      "google-extended": ["googleExtended"],
+      "anthropic-ai": ["anthropicAi"],
+      "deepseekbot": ["deepSeekBot"],
+      "applebot-extended": ["appleBotExtended"],
+      "cohere-ai": ["cohereAi"],
+      "bingbot": ["bingbot"]
     };
 
-    aiBotsStatus.gptBot = checkBot("gptbot");
-    aiBotsStatus.claudeBot = checkBot("claudebot");
-    aiBotsStatus.perplexityBot = checkBot("perplexitybot");
-    aiBotsStatus.oaiSearchBot = checkBot("oai-searchbot");
-    aiBotsStatus.googleExtended = checkBot("google-extended");
-    aiBotsStatus.anthropicAi = checkBot("anthropic-ai");
-    aiBotsStatus.deepSeekBot = checkBot("deepseekbot");
-    aiBotsStatus.appleBotExtended = checkBot("applebot-extended");
-    aiBotsStatus.cohereAi = checkBot("cohere-ai");
-    aiBotsStatus.bingbot = checkBot("bingbot");
+    for (let line of lines) {
+      line = line.split("#")[0].trim().toLowerCase();
+      if (!line) continue;
+
+      if (line.startsWith("user-agent:")) {
+        const agent = line.replace("user-agent:", "").trim();
+        if (!lines[lines.indexOf(line) - 1]?.toLowerCase().startsWith("user-agent:")) {
+          currentAgents = [];
+        }
+        currentAgents.push(agent);
+      } else if (line.startsWith("disallow:")) {
+        const path = line.replace("disallow:", "").trim();
+        if (path === "/" || path === "/*") {
+          for (const agent of currentAgents) {
+            if (agent in botTokens) {
+              const targets = botTokens[agent as keyof typeof botTokens];
+              targets.forEach(target => {
+                aiBotsStatus[target as keyof BotStatus] = "Blocked";
+              });
+            }
+          }
+        }
+      }
+    }
 
     const isAnyBlocked = Object.values(aiBotsStatus).includes("Blocked");
     robotsStatus = isAnyBlocked ? "Blocking AI" : "Valid";
   };
 
   try {
-    const robotsResponse = await axios.get(robotsUrl, { timeout: 5000 });
+    // TIER 1: Direktan Axios poziv sa dozvolom za 404 status
+    const robotsResponse = await axios.get(robotsUrl, { 
+      timeout: 5000,
+      validateStatus: (status) => status === 200 || status === 404 
+    });
+
     if (robotsResponse.status === 200 && typeof robotsResponse.data === "string") {
       robotsRawContent = robotsResponse.data;
       parseRobotsConfig(robotsRawContent);
+    } else if (robotsResponse.status === 404) {
+      robotsStatus = "Missing";
+      robotsRawContent = "No robots.txt file found (404 Not Found).";
     }
   } catch {
     try {
+      // TIER 2: Fallback Scraper API bez JS renderovanja
       const scraperRobotsResponse = await axios.get("https://api.webscraping.ai/html", {
         params: { api_key: scrapingApiKey, url: robotsUrl, render: "false" },
         timeout: 10000,
+        validateStatus: (status) => status === 200 || status === 404
       });
-      const htmlOrText = typeof scraperRobotsResponse.data === "string" 
-        ? scraperRobotsResponse.data 
-        : (scraperRobotsResponse.data as ScraperResponseData)?.html || "";
 
-      if (htmlOrText && !htmlOrText.includes("<html")) {
-        robotsRawContent = htmlOrText;
-        parseRobotsConfig(htmlOrText);
-      } else {
+      if (scraperRobotsResponse.status === 404) {
         robotsStatus = "Missing";
-      }
-    } catch {
-      try {
-        const ultraRobotsResponse = await axios.get("https://api.webscraping.ai/html", {
-          params: { api_key: scrapingApiKey, url: robotsUrl, proxy: "residential", render: "false" },
-          timeout: 12000,
-        });
-        const finalHtmlOrText = typeof ultraRobotsResponse.data === "string" ? ultraRobotsResponse.data : "";
-        if (finalHtmlOrText && !finalHtmlOrText.includes("<html")) {
-          robotsRawContent = finalHtmlOrText;
-          parseRobotsConfig(finalHtmlOrText);
+        robotsRawContent = "No robots.txt file found via proxy (404 Not Found).";
+      } else {
+        const htmlOrText = typeof scraperRobotsResponse.data === "string" 
+          ? scraperRobotsResponse.data 
+          : (scraperRobotsResponse.data as ScraperResponseData)?.html || "";
+
+        if (htmlOrText && !htmlOrText.includes("<html")) {
+          robotsRawContent = htmlOrText;
+          parseRobotsConfig(htmlOrText);
         } else {
           robotsStatus = "Missing";
         }
+      }
+    } catch {
+      try {
+        // TIER 3: Fallback sa rezidencijalnim proksijem
+        const ultraRobotsResponse = await axios.get("https://api.webscraping.ai/html", {
+          params: { api_key: scrapingApiKey, url: robotsUrl, proxy: "residential", render: "false" },
+          timeout: 12000,
+          validateStatus: (status) => status === 200 || status === 404
+        });
+
+        if (ultraRobotsResponse.status === 404) {
+          robotsStatus = "Missing";
+          robotsRawContent = "No robots.txt file found via residential proxy (404 Not Found).";
+        } else {
+          const finalHtmlOrText = typeof ultraRobotsResponse.data === "string" ? ultraRobotsResponse.data : "";
+          if (finalHtmlOrText && !finalHtmlOrText.includes("<html")) {
+            robotsRawContent = finalHtmlOrText;
+            parseRobotsConfig(finalHtmlOrText);
+          } else {
+            robotsStatus = "Missing";
+          }
+        }
       } catch {
+        // Tek ako sve mrežno padne, baci sistemski mrežni Error
         robotsStatus = "Error";
-        robotsRawContent = "Could not fetch or locate robots.txt file.";
+        robotsRawContent = "Could not fetch or locate robots.txt file due to a network error.";
       }
     }
   }
@@ -250,7 +305,7 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
   }
 
   // ==========================================
-  // SVE-U-JEDNOM SCHEМА PARSIRANJE
+  // SCHEMA PARSING
   // ==========================================
   const schemaScripts = $('script[type="application/ld+json"]');
   const schemaSet = new Set<string>();
@@ -370,12 +425,10 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
   const wordCount = bodyText.split(/\s+/).filter(Boolean).length;
 
   // ==========================================
-  // GLOBAL CONTEXTUAL PAGE TYPE DETECTION 🚀
+  // GLOBAL CONTEXTUAL PAGE TYPE DETECTION
   // ==========================================
   let pageType: "Homepage" | "Article" | "FAQ" | "About" | "Commercial" | "General" = "General";
   const pathname = parsedUrl.pathname.toLowerCase();
-
-  // Čišćenje trailing slash-a i jezičkih direktorija (npr. /en/, /de/, /bs/) radi lakše provere
   const cleanPath = pathname.replace(/\/$/, "").replace(/^\/(en|de|bs|fr|es|it|hr|sr|nl|pl)(\/|$)/, "/");
 
   if (cleanPath === "" || cleanPath === "/" || cleanPath === "/index.html") {
@@ -389,7 +442,7 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
   ) {
     pageType = "About";
   } else if (
-    /(\b)(shop|product|service|pricing|store|cart|checkout|item|p|pricing)(\b)/.test(cleanPath) || 
+    /(\b)(shop|product|service|pricing|store|cart|checkout|item|p)(\b)/.test(cleanPath) || 
     detectedSchemas.includes("Product") || 
     detectedSchemas.includes("Service")
   ) {
