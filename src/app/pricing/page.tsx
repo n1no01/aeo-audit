@@ -197,6 +197,52 @@ export default async function PricingPage() {
             </div>
 
           </div>
+
+          {/* 🚀 AI PRODUCT GRAPH SUBSETS (JSON-LD Grounding) */}
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@graph": [
+                  {
+                    "@type": "Product",
+                    "@id": "https://aeoaudit-pro.com/pricing#starter",
+                    "name": "AEO Audit Pro - Starter Plan",
+                    "description": "Answer Engine Optimization auditing for solopreneurs and bloggers. Includes 50 audits per month and full white-label toolkit.",
+                    "brand": {
+                      "@type": "Brand",
+                      "name": "AEO Audit Pro"
+                    },
+                    "offers": {
+                      "@type": "Offer",
+                      "price": "59.00",
+                      "priceCurrency": "USD",
+                      "availability": "https://schema.org/InStock",
+                      "url": "https://aeoaudit-pro.com/pricing"
+                    }
+                  },
+                  {
+                    "@type": "Product",
+                    "@id": "https://aeoaudit-pro.com/pricing#agency",
+                    "name": "AEO Audit Pro - Agency Pro Plan",
+                    "description": "High volume Answer Engine Optimization auditing tier for agencies. Includes 200 audits per month, full white-label toolkit, and unlimited document exports.",
+                    "brand": {
+                      "@type": "Brand",
+                      "name": "AEO Audit Pro"
+                    },
+                    "offers": {
+                      "@type": "Offer",
+                      "price": "159.00",
+                      "priceCurrency": "USD",
+                      "availability": "https://schema.org/InStock",
+                      "url": "https://aeoaudit-pro.com/pricing"
+                    }
+                  }
+                ]
+              })
+            }}
+          />
         </main>
 
         {/* FOOTER */}
