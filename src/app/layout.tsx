@@ -16,6 +16,29 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'AEO Audit Pro | Answer Engine Optimization Auditing',
   description: 'Enterprise-grade Answer Engine Optimization auditing platform powered by AI semantic analysis.',
+  openGraph: {
+    title: 'AEO Audit Pro | Answer Engine Optimization Auditing',
+    description: 'Enterprise-grade Answer Engine Optimization auditing platform powered by AI semantic analysis.',
+    url: 'https://aeoaudit-pro.com',
+    siteName: 'AEO Audit Pro',
+    images: [
+      {
+        url: 'https://aeoaudit-pro.com/assets/twitter-preview-image.png', // Apsolutna putanja do slike
+        width: 1200,
+        height: 628,
+        alt: 'AEO Audit Pro Preview',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+
+  twitter: {
+    card: 'summary_large_image',
+    title: 'AEO Audit Pro | Answer Engine Optimization Auditing',
+    description: 'Enterprise-grade Answer Engine Optimization auditing platform powered by AI semantic analysis.',
+    images: ['https://aeoaudit-pro.com/screenshot.jpg'],
+  },
 }
 
 export default function RootLayout({
