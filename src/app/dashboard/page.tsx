@@ -293,6 +293,9 @@ export default function Home() {
           <Link href="/how-it-works" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer">
             How It Works
           </Link>
+           <Link href="/about" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer">
+            About Us
+          </Link>
           <Link href="/pricing" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer">
             Pricing
           </Link>
