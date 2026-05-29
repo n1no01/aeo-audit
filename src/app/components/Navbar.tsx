@@ -18,6 +18,9 @@ export default function Navbar({ userId }: NavbarProps) {
         <Link href="/how-it-works" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition">
           How It Works
         </Link>
+        <Link href="/about" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition">
+          About Us
+        </Link>
         <Link href="/pricing" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition">
           Pricing
         </Link>

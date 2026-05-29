@@ -3,6 +3,7 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 // Definiši koje rute su javne
 const isPublicRoute = createRouteMatcher([
   '/', 
+  '/about',
   '/pricing',
   '/how-it-works',
   '/privacy',
