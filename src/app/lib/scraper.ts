@@ -72,39 +72,55 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
     const lines = content.split(/\r?\n/);
     let currentAgents: string[] = [];
     
+    // Čisti tokeni mapirani na odgovarajuće izlazne ključeve
     const botTokens = {
-      "*": ["gptBot", "claudeBot", "perplexityBot", "oaiSearchBot", "googleExtended", "anthropicAi", "deepSeekBot", "appleBotExtended", "bingbot", "cohereAi"],
       "gptbot": ["gptBot"],
-      "claudebot": ["claudeBot"],
-      "perplexitybot": ["perplexityBot"],
       "oai-searchbot": ["oaiSearchBot"],
       "google-extended": ["googleExtended"],
+      "claudebot": ["claudeBot"],
       "anthropic-ai": ["anthropicAi"],
+      "perplexitybot": ["perplexityBot"],
       "deepseekbot": ["deepSeekBot"],
       "applebot-extended": ["appleBotExtended"],
       "cohere-ai": ["cohereAi"],
       "bingbot": ["bingbot"]
     };
 
-    for (let line of lines) {
-      line = line.split("#")[0].trim().toLowerCase();
+    for (const rawLine of lines) {
+      const line = rawLine.split("#")[0].trim().toLowerCase();
       if (!line) continue;
 
       if (line.startsWith("user-agent:")) {
         const agent = line.replace("user-agent:", "").trim();
-        if (!lines[lines.indexOf(line) - 1]?.toLowerCase().startsWith("user-agent:")) {
+        
+        // Ako prethodna linija u robots.txt nije bila User-Agent, kreće nova grupa definisanja blokova
+        if (currentAgents.length > 0 && !lines[lines.indexOf(rawLine) - 1]?.split("#")[0].trim().toLowerCase().startsWith("user-agent:")) {
           currentAgents = [];
         }
-        currentAgents.push(agent);
+        if (agent) currentAgents.push(agent);
       } else if (line.startsWith("disallow:")) {
         const path = line.replace("disallow:", "").trim();
-        if (path === "/" || path === "/*") {
+        
+        // Zvanične varijacije globalnih blokada celog sajta ("/", "/*" ili prazan prostor)
+        const isGlobalBlock = path === "/" || path === "/*" || path === "";
+
+        if (isGlobalBlock && currentAgents.length > 0) {
           for (const agent of currentAgents) {
-            if (agent in botTokens) {
-              const targets = botTokens[agent as keyof typeof botTokens];
-              targets.forEach(target => {
+            // Slučaj A: Globalna zvezdica (*) - blokira sve AI botove u našem sistemu
+            if (agent === "*") {
+              Object.keys(aiBotsStatus).forEach(target => {
                 aiBotsStatus[target as keyof BotStatus] = "Blocked";
               });
+              continue;
+            }
+
+            // Slučaj B: Pametna provera podstringa (.includes) - hvata divlju sintaksu, zareze i džokere poput *gptbot*
+            for (const [token, targets] of Object.entries(botTokens)) {
+              if (agent.includes(token)) {
+                targets.forEach(target => {
+                  aiBotsStatus[target as keyof BotStatus] = "Blocked";
+                });
+              }
             }
           }
         }
@@ -228,8 +244,8 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
   const h2Count = $("h2").length;
   const hasTablesOrLists = $("table").length > 0 || $("ul").length > 0 || $("ol").length > 0;
 
-  // 🤖 INICIJALIZACIJA SEMANTIČKE MAPE SA UKLJUČENOM ARIA DETEKCIJOM ZA AI AGENTE
-  const semanticLayoutMap: SemanticLayoutMap & { hasAriaLabels: boolean } = {
+  // INICIJALIZACIJA SEMANTIČKE MAPE SA UKLJUČENOM ARIA DETEKCIJOM ZA AI AGENTE
+  const semanticLayoutMap: SemanticLayoutMap = {
     hasMainTag: $("main").length === 1,
     hasArticleTag: $("article").length > 0,
     hasHeadingLeap: false,
@@ -238,11 +254,11 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
     hasAriaLabels: false,
   };
 
-  // 🧠 EVALUACIJA STRUKTURE ZA AI BROWSING AGENTE (ARIA & ACCESSIBILITY TREE)
+  // EVALUACIJA STRUKTURE ZA AI BROWSING AGENTE (ARIA & ACCESSIBILITY TREE)
   let totalInteractiveElements = 0;
   let elementsWithAria = 0;
 
-  $("button, form, input, select, textarea, [role], [aria-label], [aria-expanded]").each((_, el) => {
+  $("button, form, input, select, textarea, [role], [aria-label], [aria-labelledby]").each((_, el) => {
     totalInteractiveElements++;
     const hasLabel = $(el).attr("aria-label") || $(el).attr("aria-labelledby");
     const hasDescribed = $(el).attr("aria-describedby");
