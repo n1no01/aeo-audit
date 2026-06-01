@@ -158,7 +158,7 @@ export default function AEORadarPage() {
 
   const shareOnLinkedIn = () => {
     if (!currentRadarShareToken || !results) return;
-    const shareUrl = `${window.location.origin}/radar-share/${currentRadarShareToken}`;
+    const shareUrl = `${window.location.origin}/share-radar/${currentRadarShareToken}`;
     
     // Koristimo zaključani scannedUrl i scannedKeyword umjesto dinamičkih inputa
     const cleanDisplayUrl = scannedUrl.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
@@ -175,7 +175,7 @@ export default function AEORadarPage() {
 
   const shareOnX = () => {
     if (!currentRadarShareToken || !results) return;
-    const shareUrl = `${window.location.origin}/radar-share/${currentRadarShareToken}`;
+    const shareUrl = `${window.location.origin}/share-radar/${currentRadarShareToken}`;
     
     // Koristimo zaključani scannedUrl i scannedKeyword umjesto dinamičkih inputa
     const cleanDisplayUrl = scannedUrl.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
@@ -577,7 +577,7 @@ export default function AEORadarPage() {
                             alert("⚠️ This historical record is missing a share token.");
                             return;
                           }
-                          const shareUrl = `${window.location.origin}/radar-share/${scan.share_token}`;
+                          const shareUrl = `${window.location.origin}/share-radar/${scan.share_token}`;
                           try {
                             await navigator.clipboard.writeText(shareUrl);
                             alert(`🔗 Share link successfully copied for: ${scan.website_url}`);
