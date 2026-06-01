@@ -293,8 +293,9 @@ export default function Home() {
         <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
           {/* DODAN GRADIENT BEDŽ LINK ZA NOVI ALAT */}
           <Link href="/aeo-radar" className="text-xs sm:text-sm font-black text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full hover:bg-blue-100 transition cursor-pointer flex items-center gap-1 shadow-sm">
-            📡 AI <Visibility></Visibility> Radar
+            📡 AI Visibility Radar
           </Link>
+          
           
           <div className="h-4 w-px bg-slate-200 hidden sm:block" />
           
