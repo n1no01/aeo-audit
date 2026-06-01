@@ -9,6 +9,42 @@ import { generateAiAnalysis } from "./lib/gemini";
 import { ScrapedData, AuditData } from "./lib/types";
 import { PostgrestError } from "@supabase/supabase-js"; // ✅ Bezbjedna tipizacija Supabase grešaka
 
+// ===================================================================
+// STRUKTURE I TIPIZACIJA ZA AI RADAR (Čisti tipovi bez 'any')
+// ===================================================================
+interface RadarAuditResult {
+  isMentioned: boolean;
+  mentionContext: string;
+  aiAnswerSummary: string;
+  topCompetitors: string[];
+}
+
+interface RadarResultData {
+  auditResult: RadarAuditResult;
+  allSourcesCrawled: string[];
+}
+
+interface DBRadarHistoryItem {
+  id: number;
+  website_url: string;
+  keyword: string;
+  created_at: string;
+  share_token: string; // ✅ Bezbjedno mapiranje stringifikovanog UUID-a iz baze
+  result_data: RadarResultData;
+}
+
+interface DBHistoryItem {
+  id: number;
+  website_url: string;
+  created_at: string;
+  share_token: string;
+  result_data: Record<string, unknown>; 
+}
+
+// ===================================================================
+// CORE AEO AUDIT AKCIJE
+// ===================================================================
+
 export async function analyzeUrl(formData: FormData) {
   // 🛡️ 1. SIGURNA VALIDACIJA INPUTA
   const rawUrlInput = formData.get("url");
@@ -200,13 +236,20 @@ export async function getUserStats() {
       .maybeSingle();
 
     if (!dbUser) {
-      return { plan: "FREE", limit: 1, used: 0 };
+      return { plan: "FREE", limit: 1, used: 0, radar_limit: 1, radar_used: 0 };
     }
+
+    // Proračun za dinamički fallback ukoliko tabela nije odmah osvježena
+    const defaultRadarLimit = 
+      dbUser.plan === "FREE" ? 1 : 
+      dbUser.plan === "STARTER" ? 100 : 500;
 
     return {
       plan: dbUser.plan,
       limit: dbUser.audit_limit, 
-      used: dbUser.used_audits || 0
+      used: dbUser.used_audits || 0,
+      radar_limit: dbUser.radar_limit ?? defaultRadarLimit, // ✅ Ispravna kolona
+      radar_used: dbUser.radar_used || 0                    // ✅ Ispravna kolona
     };
   } catch (error) {
     console.error("Error fetching user stats:", error);
@@ -259,16 +302,7 @@ export async function getSharedAudit(shareToken: string) {
   }
 }
 
-interface DBHistoryItem {
-  id: number;
-  website_url: string;
-  created_at: string;
-  share_token: string;
-  result_data: Record<string, unknown>; 
-}
-
 // 📜 SERVER AKCIJA ZA DOHVATANJE ISTORIJE - SADA SA OPTIMIZOVANIM LIMITOM
-// 📜 POPRAVLJENA SERVER AKCIJA ZA DOHVATANJE ISTORIJE
 export async function getUserAuditHistory(limit?: number): Promise<{ 
   success?: boolean; 
   error?: string; 
@@ -300,5 +334,117 @@ export async function getUserAuditHistory(limit?: number): Promise<{
   } catch (error) {
     console.error("Critical error in getUserAuditHistory:", error);
     return { error: "An unexpected error occurred." };
+  }
+}
+
+// ===================================================================
+// 📡 NOVE NAMJENSKE AKCIJE ZA AI VISIBILITY RADAR POTROŠNJU I SHARE
+// ===================================================================
+
+export async function incrementRadarCount(userId: string) {
+  try {
+    // 1. Povuci trenutni broj skeniranja koristeći tačnu kolonu radar_used
+    const { data: user, error: fetchError } = await supabase
+      .from("users")
+      .select("radar_used")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (fetchError || !user) {
+      console.error("⚠️ Supabase error prefetching radar metrics:", fetchError);
+      return false;
+    }
+
+    // 2. Bezbjedno uvećaj vrijednost u koloni radar_used
+    const currentCount = user.radar_used || 0;
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({ radar_used: currentCount + 1 }) // ✅ Tačna kolona
+      .eq("id", userId);
+
+    if (updateError) {
+      console.error("❌ Supabase update error incrementing radar count:", updateError.message);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Critical crash inside incrementRadarCount:", error);
+    return false;
+  }
+}
+
+// 📜 SERVER AKCIJA ZA DOHVATANJE RADAR ISTORIJE - UKLJUČEN SHARE_TOKEN
+export async function getUserRadarHistory(limit?: number): Promise<{ 
+  success?: boolean; 
+  error?: string; 
+  history?: DBRadarHistoryItem[]; 
+}> {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized access." };
+
+  try {
+    let query = supabase
+      .from("radar_scans")
+      .select("id, website_url, keyword, created_at, share_token, result_data") // ✅ Povlačimo i share_token za klijent logove
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Error fetching radar history:", error.message);
+      return { error: "Failed to load radar history." };
+    }
+
+    const typedHistory = (data as unknown as DBRadarHistoryItem[]) || [];
+    return { success: true, history: typedHistory };
+  } catch (error) {
+    console.error("Critical error in getUserRadarHistory:", error);
+    return { error: "An unexpected error occurred." };
+  }
+}
+
+// 🌐 JAVNA SERVER AKCIJA ZA UČITAVANJE JAVNIH IZVJEŠTAJA AI RADARA PREKO UUID-A
+export async function getSharedRadarScan(shareToken: string) {
+  if (!shareToken) return { error: "Invalid radar identifier." };
+
+  // 🛡️ Validacija formata UUID-a
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(shareToken);
+  if (!isUuid) return { error: "This radar report format is invalid." };
+
+  try {
+    const { data, error } = await supabase
+      .from("radar_scans")
+      .select("website_url, keyword, created_at, result_data")
+      .eq("share_token", shareToken)
+      .maybeSingle();
+
+    if (error) {
+      console.error("❌ Supabase radar fetch failed:", error.message);
+      return { error: "Database communication failure." };
+    }
+
+    if (!data) {
+      return { error: "This radar report was not found or has been deleted." };
+    }
+
+    // Kastovanje podataka iz baze u naš strogi tip za bezbjedan povratak klijentu
+    const formattedData = data.result_data as unknown as RadarResultData;
+
+    return {
+      success: true,
+      url: data.website_url,
+      keyword: data.keyword,
+      createdAt: data.created_at,
+      data: formattedData
+    };
+  } catch (error) {
+    console.error("Critical error in getSharedRadarScan:", error);
+    return { error: "An error occurred while retrieving the shared radar report." };
   }
 }

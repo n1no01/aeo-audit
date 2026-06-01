@@ -280,25 +280,22 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white relative overflow-x-hidden">
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_0.75px,transparent_0.75px),linear-gradient(to_bottom,#e2e8f0_0.75px,transparent_0.75px)] bg-[size:4rem_4rem] pointer-events-none opacity-40 z-0" />
       
       {/* NAVBAR */}
-      <nav className="w-full max-w-6xl mx-auto p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-transparent border-b border-slate-200/40 sm:border-none">
+      <nav className="w-full max-w-6xl mx-auto p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-transparent border-b border-slate-200/40 sm:border-none relative z-10">
         <Link href="/" className="group cursor-pointer select-none">
           <div className="text-2xl font-black tracking-tight italic">
             AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200">Audit</span> Pro
           </div>
         </Link>
         <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
-          <Link href="/how-it-works" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer">
-            How It Works
+          {/* DODAN GRADIENT BEDŽ LINK ZA NOVI ALAT */}
+          <Link href="/aeo-radar" className="text-xs sm:text-sm font-black text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full hover:bg-blue-100 transition cursor-pointer flex items-center gap-1 shadow-sm">
+            📡 AI <Visibility></Visibility> Radar
           </Link>
-           <Link href="/about" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer">
-            About Us
-          </Link>
-          <Link href="/pricing" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer">
-            Pricing
-          </Link>
+          
           <div className="h-4 w-px bg-slate-200 hidden sm:block" />
           
           {userStats && (
@@ -332,7 +329,7 @@ export default function Home() {
       </nav>
 
       {/* MAIN CONTENT WRAPPER */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-8 md:px-12 flex-1 w-full mt-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 md:px-12 flex-1 w-full mt-6 relative z-10">
         
         {/* HEADER */}
         <header className="text-center mb-10 sm:mb-14 md:mb-16 px-2">
@@ -365,11 +362,16 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="pt-2 border-t border-slate-100">
+            {/* DODAN POMOĆNI SUB-LINK ISPOD PRETRAGE ZA DIREKTAN PRELAZ NA RADAR */}
+            <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <button type="button" onClick={() => setShowBranding(!showBranding)} className="text-xs font-bold text-slate-500 hover:text-blue-600 flex items-center gap-2 transition">
                 <span className={`transform transition duration-200 ${showBranding ? "rotate-90" : ""}`}>▶</span>
                 {showBranding ? "Hide Agency Branding Options" : "Show Agency White-Label Options"}
               </button>
+              
+              <Link href="/aeo-radar" className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition self-start sm:self-center">
+                👉 Want real-time LLM recommendation checks? Try the AI Visibility Radar &rarr;
+              </Link>
             </div>
 
             {showBranding && (
@@ -469,7 +471,7 @@ export default function Home() {
                     : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200"
                 }`}
               >
-                {copied ? "🔗 LINK COPIED!" : "🔗 COPY SHARE LINK"}
+                {copied ? "LINK COPIED!" : "COPY SHARE LINK"}
               </button>
 
               <button 
@@ -519,7 +521,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* TABS HEADER WITH ADDED SIMULATOR */}
+              {/* TABS HEADER WITH ACCENTED RECONGNITION DIRECTIVES */}
               <div className="flex flex-wrap border-b border-slate-100 bg-slate-50/50 p-1.5 sm:p-2 gap-1">
                 {(
                   [
@@ -725,7 +727,6 @@ export default function Home() {
                               </span>
                             </div>
 
-                            {/* 🤖 NESTALI PANEL: PODRŠKA ZA AUTONOMNE AI AGENTE */}
                             <div className="flex items-center justify-between bg-white border border-slate-100 p-2 rounded-xl text-xs font-semibold">
                               <span className="text-slate-600 flex items-center">
                                 Autonomous AI Agent Readiness (ARIA Tree)
@@ -819,7 +820,7 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* PANEL 2: AI SEMANTIC INSIGHTS (SADA SA 5 STRUČNIH METRIKA) */}
+                {/* PANEL 2: AI SEMANTIC INSIGHTS */}
                 {activeTab === "analysis" && (
                   <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
                     <div>
@@ -875,7 +876,6 @@ export default function Home() {
                           <p className="text-[10px] font-medium text-slate-400 mt-2 leading-snug">Measures sentence structural speed. Favors declarative Subject-Verb-Object models carrying exactly one idea.</p>
                         </div>
 
-                        {/* ✅ INTEGRISANI PETI STRUČNI STUB: GOOGLE NON-COMMODITY STANDARD */}
                         <div className="bg-white p-4 rounded-xl sm:rounded-2xl border border-slate-100 md:col-span-2">
                           <div className="flex justify-between items-center mb-1.5">
                             <span className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
@@ -931,7 +931,7 @@ export default function Home() {
                           <span className="bg-amber-500 text-white rounded-xl w-7 h-7 flex items-center justify-center text-xs font-black shrink-0 mt-0.5">🚨</span>
                           <div className="leading-relaxed">
                             <span className="font-black text-amber-900 block mb-1">Critical Architecture Fix: High JavaScript Framework Dependency</span>
-                            Our crawl engine detected that your DOM structure loads empty initial templates and relies on heavy Client-Side JavaScript hydration. According to Google&apos;s 2026 AI guidelines, this significantly increases RAG parser timeouts. 
+                            Our crawl engine detected that your DOM structure loads empty initial templates and relies on heavy Client-Side JavaScript hydration. According to Google&apos;s AI guidelines, this significantly increases RAG parser timeouts. 
                             <strong className="block mt-2 font-bold text-amber-950">Required Action:</strong> Migrating to Server-Side Rendering (Next.js/Nuxt.js) or deploying an aggressive static pre-rendering middleware layer (Prerender.io) is highly recommended to make content readable for rapid AI indexers.
                           </div>
                         </div>
@@ -940,7 +940,7 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* 🚀 PANEL 4: AI SERP SIMULATOR [SA INKORPORISANIM GOOGLE NON-COMMODITY METRIKAMA] */}
+                {/* PANEL 4: AI SERP SIMULATOR */}
                 {activeTab === "simulator" && (
                   <div className="space-y-6 animate-in fade-in duration-300">
                     <div className="p-4 bg-slate-900/5 border border-slate-950/10 rounded-2xl">
@@ -991,7 +991,6 @@ export default function Home() {
                                 <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${result.data.sentenceSimplicityScore >= 6 ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
                                   Syntax Simplicity: {result.data.sentenceSimplicityScore || 5}/10
                                 </span>
-                                {/* ✅ INTEGRISANA OZNAKA UNUTAR SIMULATORA */}
                                 <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${result.data.commodityContentScore >= 7 ? "bg-indigo-100 text-indigo-800" : "bg-amber-100 text-amber-700"}`}>
                                   Google Non-Commodity: {result.data.commodityContentScore || 5}/10
                                 </span>

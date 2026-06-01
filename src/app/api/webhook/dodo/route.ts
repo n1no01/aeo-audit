@@ -123,7 +123,7 @@ export async function POST(req: Request) {
         const sub = await client.subscriptions.retrieve(String(data.subscription_id));
         
         // Bezbedno čitanje iz SDK odgovora bez korišćenja 'any' keywords-a
-      // ✅ POPRAVLJENI KOD (Prvo kroz unknown, pa u Record):
+        // ✅ POPRAVLJENI KOD (Prvo kroz unknown, pa u Record):
         const planId = (sub as unknown as Record<string, unknown>)["plan_id"] as string | undefined;
         if (planId) return planId;
       } catch (e) {
@@ -134,9 +134,18 @@ export async function POST(req: Request) {
   }
 
   async function setPlan(plan: "STARTER" | "AGENCY", limit: number) {
+    // 🔄 KORISNIK JE PLATIO / OBNOVIO PRETPLATU: Resetujemo used_audits i radar_used na nulu
+
+    const radarLimit = plan === "AGENCY" ? 500 : 100;
     const { error: dbError } = await supabaseAdmin
       .from("users")
-      .update({ plan, audit_limit: limit, used_audits: 0 })
+      .update({ 
+        plan, 
+        audit_limit: limit, 
+        used_audits: 0,
+        radar_used: 0,
+        radar_limit: radarLimit
+      })
       .eq("id", clerkUserId);
 
     if (dbError) {
@@ -169,10 +178,18 @@ export async function POST(req: Request) {
   }
 
   if (evt.type === "subscription.cancelled" || evt.type === "subscription.on_hold") {
+    // 🔄 KORISNIK OTKAZAO PRETPLATU: Vraćamo ga na FREE plan i resetujemo sve kredite
     const { error: dbError } = await supabaseAdmin
       .from("users")
-      .update({ plan: "FREE", audit_limit: 1, used_audits: 0 })
+      .update({ 
+        plan: "FREE", 
+        audit_limit: 1, 
+        used_audits: 0,
+        radar_used: 0,
+        radar_limit: 1
+      })
       .eq("id", clerkUserId);
+
     if (dbError) {
       console.error("Supabase update failed:", dbError.message);
       return NextResponse.json({ error: "Database update failed" }, { status: 500 });
