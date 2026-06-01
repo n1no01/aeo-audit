@@ -146,7 +146,7 @@ export default function AEORadarPage() {
   // 🔄 5. Funkcije za generisanje i slanje linkova na mreže
   const copyShareLink = async () => {
     if (!currentRadarShareToken) return;
-    const shareUrl = `${window.location.origin}/radar-share/${currentRadarShareToken}`;
+    const shareUrl = `${window.location.origin}/share-radar/${currentRadarShareToken}`;
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
