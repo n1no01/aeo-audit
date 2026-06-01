@@ -295,6 +295,9 @@ export default function Home() {
           <Link href="/aeo-radar" className="text-xs sm:text-sm font-black text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full hover:bg-blue-100 transition cursor-pointer flex items-center gap-1 shadow-sm">
             📡 AI Visibility Radar
           </Link>
+           <Link href="/pricing" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition m-0">
+             Pricing
+          </Link>
           
           
           <div className="h-4 w-px bg-slate-200 hidden sm:block" />
