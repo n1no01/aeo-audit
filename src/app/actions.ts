@@ -236,12 +236,12 @@ export async function getUserStats() {
       .maybeSingle();
 
     if (!dbUser) {
-      return { plan: "FREE", limit: 1, used: 0, radar_limit: 1, radar_used: 0 };
+      return { plan: "FREE", limit: 1, used: 0, radar_limit: 0, radar_used: 0 };
     }
 
     // Proračun za dinamički fallback ukoliko tabela nije odmah osvježena
     const defaultRadarLimit = 
-      dbUser.plan === "FREE" ? 1 : 
+      dbUser.plan === "FREE" ? 0 : 
       dbUser.plan === "STARTER" ? 100 : 500;
 
     return {
@@ -374,7 +374,7 @@ export async function incrementRadarCount(userId: string) {
   }
 }
 
-// 📜 SERVER AKCIJA ZA DOHVATANJE RADAR ISTORIJE - UKLJUČEN SHARE_TOKEN
+// 📜 SERVER AKCIJA ZA DOHVATANJE RADAR ISTORIJE - UKLJUČEN SHARE_TOKEN + BACKEND PLAN PROTEKCIJA
 export async function getUserRadarHistory(limit?: number): Promise<{ 
   success?: boolean; 
   error?: string; 
@@ -384,6 +384,17 @@ export async function getUserRadarHistory(limit?: number): Promise<{
   if (!userId) return { error: "Unauthorized access." };
 
   try {
+    // 🔒 BACKEND ZAŠTITA: Prvo provjeri plan korisnika prije nego što uopšte otvoriš bazu za radar istoriju
+    const { data: dbUser } = await supabase
+      .from("users")
+      .select("plan")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!dbUser || dbUser.plan?.toUpperCase() === "FREE") {
+      return { error: "🔒 AI Radar features and histories are exclusive to premium subscription tiers." };
+    }
+
     let query = supabase
       .from("radar_scans")
       .select("id, website_url, keyword, created_at, share_token, result_data") // ✅ Povlačimo i share_token za klijent logove

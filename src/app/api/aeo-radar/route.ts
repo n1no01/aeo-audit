@@ -22,6 +22,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Could not retrieve user profile data.' }, { status: 500 });
     }
 
+    // 🔒 EKSTREMNA BLOKADA: Ako je korisnik na besplatnom planu, saseci zahtev odmah
+    if (stats.plan === "FREE") {
+      return NextResponse.json({ 
+        error: "🔒 AI Visibility Radar is a Premium feature. Please upgrade your plan to unlock live web scanning." 
+      }, { status: 403 });
+    }
+
     // Blokada na backendu ako je korisnik ispucao svoj namjenski limit (1, 100, ili 500)
     if (stats.radar_used >= stats.radar_limit) {
       return NextResponse.json({ 
