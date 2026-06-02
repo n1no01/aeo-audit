@@ -56,28 +56,22 @@ export default function Home() {
 
   const [showBranding, setShowBranding] = useState(false);
   
-  // 🎨 WHITE-LABEL AGENCIJSKE POSTAVKE SA LOCALSTORAGE PODRŠKOM
   const [agencyName, setAgencyName] = useState("AEO Audit Pro");
   const [brandColor, setBrandColor] = useState("2563eb"); 
   const [authorName, setAuthorName] = useState("Senior AEO Strategist");
   const [logoBase64, setLogoBase64] = useState<string | null>(null);
 
-  // 🛠️ REFEERENCA ZA LOGO INPUT (Zamjena za document.getElementById bug)
   const logoInputRef = useRef<HTMLInputElement>(null);
 
-  // 🔗 Držanje UUID share_tokena trenutno učitanog izvještaja i stanja kopiranja
   const [currentAuditId, setCurrentAuditId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // 📜 Stanja za dinamičko učitavanje i paginaciju istorije logova
   const [history, setHistory] = useState<AuditHistoryItem[]>([]);
   const [hasMoreHistory, setHasMoreHistory] = useState(false);
   const [isLoadingAllHistory, setIsLoadingAllHistory] = useState(false);
 
-  // 🛡️ Provera da li je korisnik na besplatnom planu
   const isFreePlan = !userStats || userStats.plan === "FREE";
 
-  // Dobijanje čistog URL hostnam-a za simulaciju pitanja u SERP-u
   const getCleanHostname = () => {
     let targetUrl = result?.data?.website_url || "";
     if (!targetUrl && currentAuditId) {
@@ -93,7 +87,6 @@ export default function Home() {
     }
   };
 
-  // 🔄 Učitaj statse, istoriju, ali i SAČUVANI BRAND KIT iz localStorage-a
   useEffect(() => {
     async function loadInitialData() {
       const stats = await getUserStats();
@@ -291,14 +284,18 @@ export default function Home() {
           </div>
         </Link>
         <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
-          {/* DODAN GRADIENT BEDŽ LINK ZA NOVI ALAT */}
           <Link href="/aeo-radar" className="text-xs sm:text-sm font-black text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full hover:bg-blue-100 transition cursor-pointer flex items-center gap-1 shadow-sm">
             📡 AI Visibility Radar
           </Link>
-           <Link href="/pricing" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition m-0">
+          
+          {/* Dodata nova ruta za Knowledge Graph Alat */}
+          <Link href="/entity-checker"  className="text-xs sm:text-sm font-black text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full hover:bg-blue-100 transition cursor-pointer flex items-center gap-1 shadow-sm">
+            🔍 Entity Checker
+          </Link>
+
+          <Link href="/pricing" className="text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition m-0">
              Pricing
           </Link>
-          
           
           <div className="h-4 w-px bg-slate-200 hidden sm:block" />
           
@@ -366,7 +363,6 @@ export default function Home() {
               </button>
             </div>
 
-            {/* DODAN POMOĆNI SUB-LINK ISPOD PRETRAGE ZA DIREKTAN PRELAZ NA RADAR */}
             <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <button type="button" onClick={() => setShowBranding(!showBranding)} className="text-xs font-bold text-slate-500 hover:text-blue-600 flex items-center gap-2 transition">
                 <span className={`transform transition duration-200 ${showBranding ? "rotate-90" : ""}`}>▶</span>
@@ -525,7 +521,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* TABS HEADER WITH ACCENTED RECONGNITION DIRECTIVES */}
+              {/* TABS HEADER */}
               <div className="flex flex-wrap border-b border-slate-100 bg-slate-50/50 p-1.5 sm:p-2 gap-1">
                 {(
                   [
@@ -552,6 +548,9 @@ export default function Home() {
                 {/* PANEL 1: CORE METRICS */}
                 {activeTab === "metrics" && (
                   <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+                    
+                    {/* OVDJE JE BIO KNOWLEDGE GRAPH WIDGET - USPIJEŠNO UKLONJEN */}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                       <div className="border border-slate-200/60 rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-slate-50/50 flex flex-col justify-between">
                         <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3 flex items-center">
@@ -748,67 +747,65 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
-                        <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col justify-between shadow-sm">
-                          <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center gap-1">
-                            Word Count
-                            <Tooltip text={result?.data?.wordCount?.toString() || "0"} />
-                          </div>
-                          <div className="font-bold text-slate-800 text-xs sm:text-sm break-words">{result.data.wordCount} words</div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+                      <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col justify-between shadow-sm">
+                        <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center gap-1">
+                          Word Count
+                          <Tooltip text={result?.data?.wordCount?.toString() || "0"} />
                         </div>
-
-                        <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col justify-between shadow-sm">
-                          <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center gap-1">
-                            Conversational Q&A Loops
-                            <Tooltip text={AEO_EXPLANATIONS.qaLoops} />
-                          </div>
-                          <div className="font-bold text-slate-800 text-xs sm:text-sm break-words">{result.data.qaBlocksCount} Blocks</div>
-                        </div>
-
-                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 text-xs font-bold flex flex-col justify-between shadow-sm">
-                          <span className="text-[9px] sm:text-[10px] uppercase text-slate-400 tracking-wider mb-2 flex items-center gap-1">
-                            Robots.txt Architecture
-                            <Tooltip text="Verifies AI agent clearance and crawling directives in the root robots.txt layout." />
-                          </span>
-                          <span className="text-slate-700 font-bold text-xs sm:text-sm break-words">{result.data.robotsStatus}</span>
-                        </div>
+                        <div className="font-bold text-slate-800 text-xs sm:text-sm break-words">{result.data.wordCount} words</div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                        <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col justify-between shadow-sm relative">
-                          <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center gap-1">
-                            Semantic Layout Density
-                            <Tooltip text={AEO_EXPLANATIONS.layoutDensity} />
-                          </div>
-                          <div className="text-xs sm:text-sm font-bold text-slate-800 leading-relaxed">
-                            Status: <span className={result.data.hasTablesOrLists ? "text-emerald-700" : "text-amber-700"}>
-                              {result.data.hasTablesOrLists ? "Rich Layout (Tables / Lists Active)" : "Low Density Text Blocks"}
-                            </span>
-                          </div>
-                          <p className="text-[10px] font-medium text-slate-400 mt-2 leading-normal">
-                            Data tables and HTML lists allow structured RAG pipelines to parse data arrays efficiently without relying on text chunking inferences.
-                          </p>
+                      <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col justify-between shadow-sm">
+                        <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center gap-1">
+                          Conversational Q&A Loops
+                          <Tooltip text={AEO_EXPLANATIONS.qaLoops} />
                         </div>
+                        <div className="font-bold text-slate-800 text-xs sm:text-sm break-words">{result.data.qaBlocksCount} Blocks</div>
+                      </div>
 
-                        <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col justify-between shadow-sm relative">
-                          <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center gap-1">
-                            JS Rendering Index
-                            <Tooltip text="Measures if your content requires heavy Client-Side JavaScript execution for AI crawlers to read it." />
-                          </div>
-                          <div className="text-xs sm:text-sm font-bold text-slate-800 leading-relaxed flex items-center gap-2">
-                            Engine State: 
-                            <span className={`inline-flex items-center gap-1.5 font-bold ${result.data.javascriptDependency === "Low" ? "text-emerald-700" : "text-amber-700"}`}>
-                              <span className={`w-2 h-2 rounded-full ${result.data.javascriptDependency === "Low" ? "bg-emerald-500" : "bg-amber-500 animate-pulse"}`} />
-                              {result.data.javascriptDependency === "Low" ? "SSR Optimized (AI-Friendly)" : "CSR Dependency (High Timeout Risk)"}
-                            </span>
-                          </div>
-                          <p className="text-[10px] font-medium text-slate-400 mt-2 leading-normal">
-                            {result.data.javascriptDependency === "Low"
-                              ? "Content is directly baked into the initial HTML server payload. Fast, lightweight, and perfectly optimized for strict AI crawler timeouts."
-                              : "Critical Warning: Google guidelines note heavy JS architectures are complex for AI. Crawlers may time out on hydration, leaving your site invisible."}
-                          </p>
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 text-xs font-bold flex flex-col justify-between shadow-sm">
+                        <span className="text-[9px] sm:text-[10px] uppercase text-slate-400 tracking-wider mb-2 flex items-center gap-1">
+                          Robots.txt Architecture
+                          <Tooltip text="Verifies AI agent clearance and crawling directives in the root robots.txt layout." />
+                        </span>
+                        <span className="text-slate-700 font-bold text-xs sm:text-sm break-words">{result.data.robotsStatus}</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                      <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col justify-between shadow-sm relative">
+                        <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center gap-1">
+                          Semantic Layout Density
+                          <Tooltip text={AEO_EXPLANATIONS.layoutDensity} />
                         </div>
+                        <div className="text-xs sm:text-sm font-bold text-slate-800 leading-relaxed">
+                          Status: <span className={result.data.hasTablesOrLists ? "text-emerald-700" : "text-amber-700"}>
+                            {result.data.hasTablesOrLists ? "Rich Layout (Tables / Lists Active)" : "Low Density Text Blocks"}
+                          </span>
+                        </div>
+                        <p className="text-[10px] font-medium text-slate-400 mt-2 leading-normal">
+                          Data tables and HTML lists allow structured RAG pipelines to parse data arrays efficiently without relying on text chunking inferences.
+                        </p>
+                      </div>
+
+                      <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col justify-between shadow-sm relative">
+                        <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2 flex items-center gap-1">
+                          JS Rendering Index
+                          <Tooltip text="Measures if your content requires heavy Client-Side JavaScript execution for AI crawlers to read it." />
+                        </div>
+                        <div className="text-xs sm:text-sm font-bold text-slate-800 leading-relaxed flex items-center gap-2">
+                          Engine State: 
+                          <span className={`inline-flex items-center gap-1.5 font-bold ${result.data.javascriptDependency === "Low" ? "text-emerald-700" : "text-amber-700"}`}>
+                            <span className={`w-2 h-2 rounded-full ${result.data.javascriptDependency === "Low" ? "bg-emerald-500" : "bg-amber-500 animate-pulse"}`} />
+                            {result.data.javascriptDependency === "Low" ? "SSR Optimized (AI-Friendly)" : "CSR Dependency (High Timeout Risk)"}
+                          </span>
+                        </div>
+                        <p className="text-[10px] font-medium text-slate-400 mt-2 leading-normal">
+                          {result.data.javascriptDependency === "Low"
+                            ? "Content is directly baked into the initial HTML server payload. Fast, lightweight, and perfectly optimized for strict AI crawler timeouts."
+                            : "Critical Warning: Google guidelines note heavy JS architectures are complex for AI. Crawlers may time out on hydration, leaving your site invisible."}
+                        </p>
                       </div>
                     </div>
 
@@ -883,7 +880,7 @@ export default function Home() {
                         <div className="bg-white p-4 rounded-xl sm:rounded-2xl border border-slate-100 md:col-span-2">
                           <div className="flex justify-between items-center mb-1.5">
                             <span className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
-                              ⭐ Google Non-Commodity Score
+                              | Google Non-Commodity Score
                               <span className="bg-slate-900 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">Official 2026 Guideline</span>
                             </span>
                             <span className={`text-xs font-black px-2 py-0.5 rounded-md ${
@@ -954,7 +951,6 @@ export default function Home() {
                     </div>
 
                     <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden flex flex-col min-h-[400px]">
-                      {/* Zaglavlje četa */}
                       <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
                           <div className="h-6 w-6 rounded-lg bg-emerald-600 flex items-center justify-center text-white text-xs font-bold">
@@ -969,16 +965,13 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {/* Telo četa (Poruke) */}
                       <div className="p-6 flex-1 space-y-6 bg-gradient-to-b from-white to-slate-50/30">
-                        {/* Korisničko Pitanje */}
                         <div className="flex justify-end">
                           <div className="bg-slate-100 text-slate-800 text-sm px-4 py-3 rounded-2xl rounded-tr-sm max-w-md font-medium shadow-sm">
                             Extract the core value proposition and analytical claims from {getCleanHostname()}.
                           </div>
                         </div>
 
-                        {/* AI Odgovor - Segmentirana analiza */}
                         <div className="flex gap-4 max-w-3xl">
                           <div className="h-8 w-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-sm font-black flex-shrink-0 shadow-md shadow-emerald-600/10">
                             🤖
@@ -1036,7 +1029,6 @@ export default function Home() {
                               </div>
                             </div>
 
-                            {/* Generisanje RAG Izvora */}
                             <div className="pt-2">
                               <span className="text-[10px] uppercase tracking-wider font-black text-slate-400 block mb-2">
                                 RAG Citation Engine Status:
@@ -1056,7 +1048,6 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {/* Lažni input bar na dnu četa */}
                       <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-2 items-center">
                         <div className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-400 font-medium">
                           Ask follow up questions...

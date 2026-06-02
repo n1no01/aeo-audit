@@ -33,7 +33,7 @@ export default async function PricingPage() {
               Simple, Transparent <span className="text-blue-600">Pricing</span>
             </h1>
             <p className="text-slate-500 text-sm sm:text-lg max-w-xl mx-auto font-medium leading-relaxed">
-              Empower your agency to run advanced semantic diagnostics and sell high-ticket AEO Audits in 30 seconds.
+              Empower your agency to run advanced semantic diagnostics, map brand entities, and sell high-ticket AEO Audits in 30 seconds.
             </p>
           </div>
 
@@ -56,15 +56,16 @@ export default async function PricingPage() {
                 </div>
                 <div className="text-blue-600 text-xs font-black tracking-wide mb-6 uppercase space-y-1">
                   <p>⚡ 1 audit total</p>
-                  <p className="text-slate-400">🔒 No Radar Scans</p>
+                  <p>⚡ 1 radar scan total</p>
+
                 </div>
 
                 <ul className="space-y-3 text-sm font-medium text-slate-600 border-t border-slate-100 pt-6">
+                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Knowledge Graph Entity Checker</strong></li>
                   <li className="flex items-center gap-2">✔ Advanced Semantic Diagnostics</li>
-                  <li className="flex items-center gap-2 text-slate-400 line-through">❌ AI Visibility Radar (Premium Only)</li>
+                  <li className="flex items-center gap-2 text-slate-400 line-through">❌ AI Visibility Radar Tracking</li>
                   <li className="flex items-center gap-2 text-slate-400 line-through">❌ Full White-Label Toolkit</li>
                   <li className="flex items-center gap-2 text-slate-400 line-through">❌ Unlimited .DOCX Document Exports</li>
-                  <li className="flex items-center gap-2 text-slate-400 line-through">❌ Custom Brand Color Selection</li>
                 </ul>
               </div>
               
@@ -99,11 +100,11 @@ export default async function PricingPage() {
                 </div>
 
                 <ul className="space-y-3 text-sm font-medium text-slate-600 border-t border-slate-100 pt-6">
+                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Knowledge Graph Entity Checker</strong></li>
                   <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">AI Visibility Radar Tracking</strong></li>
                   <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Full White-Label Toolkit</strong></li>
                   <li className="flex items-center gap-2">✔ Advanced Semantic Diagnostics</li>
                   <li className="flex items-center gap-2">✔ Unlimited .DOCX Document Exports</li>
-                  <li className="flex items-center gap-2">✔ Custom Brand Color Selection</li>
                 </ul>
               </div>
               
@@ -133,7 +134,7 @@ export default async function PricingPage() {
                 POPULAR
               </div>
               <div>
-                <h3 className="text-xl font-black tracking-tight mb-1 text-slate-900">Agency Pro</h3>
+                <h3 className="text-xl font-black tracking-tight mb-1 text-slate-900">Agency</h3>
                 <p className="text-blue-600 text-xs font-bold uppercase tracking-wider mb-6">High Volume Agency</p>
                 
                 <div className="flex items-baseline mb-2">
@@ -146,11 +147,11 @@ export default async function PricingPage() {
                 </div>
 
                 <ul className="space-y-3 text-sm font-medium text-slate-600 border-t border-slate-100 pt-6">
+                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Knowledge Graph Entity Checker</strong></li>
                   <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">AI Visibility Radar Tracking</strong></li>
                   <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Full White-Label Toolkit</strong></li>
                   <li className="flex items-center gap-2">✔ Advanced Semantic Diagnostics</li>
                   <li className="flex items-center gap-2">✔ Unlimited .DOCX Document Exports</li>
-                  <li className="flex items-center gap-2">✔ Custom Brand Color Selection</li>
                 </ul>
               </div>
               
@@ -185,11 +186,11 @@ export default async function PricingPage() {
                 </div>
 
                 <ul className="space-y-3 text-sm font-medium text-slate-600 border-t border-slate-100 pt-6">
+                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Knowledge Graph Entity Checker</strong></li>
                   <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">AI Visibility Radar Tracking</strong></li>
                   <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Full White-Label Toolkit</strong></li>
                   <li className="flex items-center gap-2">✔ Advanced Semantic Diagnostics</li>
                   <li className="flex items-center gap-2">✔ Unlimited .DOCX Document Exports</li>
-                  <li className="flex items-center gap-2">✔ Custom Brand Color Selection</li>
                 </ul>
               </div>
               
@@ -217,7 +218,7 @@ export default async function PricingPage() {
                     "@type": "Product",
                     "@id": "https://aeoaudit-pro.com/pricing#starter",
                     "name": "AEO Audit Pro - Starter Plan",
-                    "description": "Answer Engine Optimization auditing for solopreneurs and bloggers. Includes 50 audits and 100 AI Visibility Radar scans per month, plus full white-label toolkit.",
+                    "description": "Answer Engine Optimization auditing for solopreneurs and bloggers. Includes Google Knowledge Graph Entity Checker, 50 audits, and 100 AI Visibility Radar scans per month, plus full white-label toolkit.",
                     "brand": {
                       "@type": "Brand",
                       "name": "AEO Audit Pro"
@@ -234,7 +235,7 @@ export default async function PricingPage() {
                     "@type": "Product",
                     "@id": "https://aeoaudit-pro.com/pricing#agency",
                     "name": "AEO Audit Pro - Agency Pro Plan",
-                    "description": "High volume Answer Engine Optimization auditing tier for agencies. Includes 200 audits and 500 AI Visibility Radar scans per month, full white-label toolkit, and unlimited document exports.",
+                    "description": "High volume Answer Engine Optimization auditing tier for agencies. Includes Google Knowledge Graph Entity Checker, 200 audits and 500 AI Visibility Radar scans per month, full white-label toolkit, and unlimited document exports.",
                     "brand": {
                       "@type": "Brand",
                       "name": "AEO Audit Pro"
