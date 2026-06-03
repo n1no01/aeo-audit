@@ -48,7 +48,7 @@ export default async function AboutPage() {
                 <h2 className="text-xl font-black text-slate-900 mb-6 tracking-tight">Meet the Founder</h2>
                 
                 <div className="flex flex-col sm:flex-row items-center gap-6 bg-slate-50 p-6 rounded-[20px] border border-slate-200/60">
-                  {/* AVATAR PLACEHOLDER - Možeš zamijeniti sa <img /> elementom ako želiš */}
+                  {/* AVATAR */}
                   <div className="w-20 h-20 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-md shrink-0 select-none">
                     <Image src="/Nino.jpeg" alt="Nino Herenda Avatar" width={80} height={80} className="rounded-full object-cover" />
                   </div>
@@ -74,6 +74,26 @@ export default async function AboutPage() {
                 </div>
               </div>
 
+              {/* THE CAPITAL BADGE SECTION */}
+              <div className="border-t border-slate-100 mt-10 pt-10 flex flex-col items-center text-center space-y-4">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Recognized Excellence</h4>
+                <a 
+                  href="https://aitoolscapital.com/the-capital?utm_source=capital_badge&utm_medium=embed&utm_campaign=week_2026-06-01&utm_content=aeo-audit-pro" 
+                  target="_blank" 
+                  rel="noopener nofollow" 
+                  title="AEO Audit Pro on The Capital"
+                  className="inline-block transition transform hover:scale-[1.02] duration-200"
+                >
+                  <img 
+                    src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22260%22%20height%3D%2280%22%20viewBox%3D%220%200%20260%2080%22%20role%3D%22img%22%20aria-label%3D%22AEO%20Audit%20Pro%20%E2%80%94%20%231%20ON%20THE%20CAPITAL%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%230F172A%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%231E293B%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22ring%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23FFD86B%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23B8860B%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22260%22%20height%3D%2280%22%20rx%3D%2212%22%20fill%3D%22url(%23bg)%22%20stroke%3D%22%23F5C242%22%20stroke-opacity%3D%220.5%22%2F%3E%0A%20%20%3Cg%20transform%3D%22translate(14%2C14)%22%3E%0A%20%20%20%20%3Crect%20width%3D%2252%22%20height%3D%2252%22%20rx%3D%2210%22%20fill%3D%22url(%23ring)%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%2226%22%20y%3D%2236%22%20text-anchor%3D%22middle%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2CRoboto%2Csans-serif%22%20font-size%3D%2226%22%20font-weight%3D%22800%22%20fill%3D%22%230F172A%22%3E%231%3C%2Ftext%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Cg%20transform%3D%22translate(80%2C22)%22%3E%0A%20%20%20%20%3Ctext%20font-family%3D%22-apple-system%2CSegoe%20UI%2CRoboto%2Csans-serif%22%20font-size%3D%229%22%20font-weight%3D%22700%22%20fill%3D%22%23FFD86B%22%20letter-spacing%3D%221.2%22%3E%231%20ON%20THE%20CAPITAL%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20y%3D%2218%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2CRoboto%2Csans-serif%22%20font-size%3D%2213%22%20font-weight%3D%22700%22%20fill%3D%22%23F8FAFC%22%3E%231%20ai-business%3C%2Ftext%3E%0A%20%20%20%20%3Ctext%20y%3D%2234%22%20font-family%3D%22-apple-system%2CSegoe%20UI%2CRoboto%2Csans-serif%22%20font-size%3D%2210%22%20fill%3D%22%2394A3B8%22%3Eaitoolscapital.com%20%2F%20The%20Capital%3C%2Ftext%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E" 
+                    alt="AEO Audit Pro — #1 ON THE CAPITAL" 
+                    width={260} 
+                    height={80} 
+                    loading="lazy" 
+                  />
+                </a>
+              </div>
+
               <p className="text-xs text-slate-400 text-center pt-8 border-t border-slate-50">
                 Have questions or want to discuss enterprise AEO frameworks? Reach out directly at <span className="text-slate-700 font-bold">hello@aeoaudit-pro.com</span>.
               </p>
@@ -96,7 +116,7 @@ export default async function AboutPage() {
                     "description": "Learn more about AEO Audit Pro, the Answer Engine Optimization diagnostic toolkit built for agencies and modern SEO professionals.",
                     "mainEntity": {
                       "@type": "Person",
-                      "name": "[Tvoje Ime i Prezime]",
+                      "name": "Nino Herenda",
                       "jobTitle": "Founder & Lead Engineer",
                       "address": {
                         "@type": "PostalAddress",
@@ -107,7 +127,8 @@ export default async function AboutPage() {
                   }
                 ]
               })
-            }}
+            }
+          }
           />
         </main>
 

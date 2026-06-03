@@ -6,23 +6,6 @@ export default function Footer() {
   return (
     <footer className="border-t border-slate-200/50 py-8 text-center text-xs font-bold text-slate-400 bg-white w-full px-4 leading-relaxed flex flex-col items-center gap-4 relative z-10">
       <div>&copy; 2026 AEO Audit Pro. All rights reserved.</div>
-      
-      {/* NICK LAUNCHES BADGE */}
-      <div className="my-2 hover:opacity-90 transition-opacity">
-        <a 
-          href="https://nicklaunches.com/products/aeo-audit-pro/?utm_source=aeoaudit-pro.com&utm_medium=badge&utm_campaign=featured" 
-          target="_blank" 
-          rel="noopener"
-        >
-          <img 
-            src="https://nicklaunches.com/badges/featured.svg" 
-            alt="AEO Audit Pro on Nick Launches" 
-            width="244" 
-            height="56" 
-            className="mx-auto"
-          />
-        </a>
-      </div>
 
       <div className="mt-1 text-slate-400/80">
         📬 For enterprise inquiries or support:{" "}
