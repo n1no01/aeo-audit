@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition, useRef } from "react";
 import { analyzeUrl, getUserStats, getUserAuditHistory } from "../actions";
+import PageSpeedCard from "../components/PageSpeedCard"; // Prilagodi putanju ako treba
 import Tooltip from "../components/Tooltip";
 import Footer from "../components/Footer";
 import { AuditData, TabId, AEO_EXPLANATIONS } from "../lib/types"; 
@@ -52,7 +53,9 @@ export default function Home() {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isPending, startTransition] = useTransition();
   const [loadingIndex, setLoadingIndex] = useState(0);
-  const [activeTab, setActiveTab] = useState<TabId | "simulator">("metrics");
+  
+  // POPRAVLJENO: Stanje sada eksplicitno podržava i tvoj TabId i unikatne stringove bez 'any'
+  const [activeTab, setActiveTab] = useState<TabId | "simulator" | "speed">("metrics");
 
   const [showBranding, setShowBranding] = useState(false);
   
@@ -522,20 +525,21 @@ export default function Home() {
               </div>
 
               {/* TABS HEADER */}
-              <div className="flex flex-wrap border-b border-slate-100 bg-slate-50/50 p-1.5 sm:p-2 gap-1">
+              <div className="flex flex-wrap w-full border-b border-slate-100 bg-slate-50/50 p-1.5 sm:p-2 gap-1.5">
                 {(
                   [
                     { id: "metrics", label: "Core Metrics" },
                     { id: "analysis", label: "AI Semantic Insights" },
                     { id: "recommendations", label: "Strategic Actions" },
                     { id: "simulator", label: "AI SERP Simulator" }, 
+                    { id: "speed", label: "Page Speed & UX" },
                     { id: "robots", label: "Robots.txt" },
-                  ] as const 
+                  ] as const satisfies readonly { id: TabId | "simulator" | "speed"; label: string }[]
                 ).map((tab) => (
                   <button 
                     key={tab.id} 
                     onClick={() => setActiveTab(tab.id)} 
-                    className={`flex-1 md:flex-none px-3 sm:px-5 py-2.5 sm:py-3 text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-xl transition ${activeTab === tab.id ? "bg-white text-blue-600 shadow-sm border border-slate-200/60" : "text-slate-400 hover:text-slate-600"}`}
+                    className={`flex-1 min-w-[150px] sm:min-w-[180px] text-center whitespace-nowrap px-4 py-2.5 sm:py-3 text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-xl transition ${activeTab === tab.id ? "bg-white text-blue-600 shadow-sm border border-slate-200/60" : "text-slate-400 hover:text-slate-600"}`}
                   >
                     {tab.label}
                   </button>
@@ -1060,7 +1064,12 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* PANEL 5: ROBOTS.TXT */}
+                 {/* PANEL 5: PAGESPEED & UX */}
+                {activeTab === "speed" && result.data.website_url && (
+                  <PageSpeedCard url={result.data.website_url} />
+                )}
+
+                {/* PANEL 6: ROBOTS.TXT */}
                 {activeTab === "robots" && (
                   <div className="space-y-6 animate-in fade-in duration-300">
                     <div className="flex items-center gap-3 mb-2"><div className="w-2 h-6 bg-slate-700 rounded-full" /><h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Raw Crawl Directives Content Mapping</h3></div>

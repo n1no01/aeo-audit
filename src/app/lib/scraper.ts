@@ -69,7 +69,12 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
   };
 
   const parseRobotsConfig = (content: string) => {
-    const lines = content.split(/\r?\n/);
+    // 1. Korak: Pretvaramo tekst u niz čistih linija (bez komentara i praznog prostora)
+    const cleanLines = content
+      .split(/\r?\n/)
+      .map(rawLine => rawLine.split("#")[0].trim()) // Uklanja sve iza # i trimuje space
+      .filter(line => line.length > 0); // Izbacuje potpuno prazne linije
+
     let currentAgents: string[] = [];
     
     // Čisti tokeni mapirani na odgovarajuće izlazne ključeve
@@ -86,40 +91,45 @@ export async function scrapeWebsite(url: string, scrapingApiKey: string): Promis
       "bingbot": ["bingbot"]
     };
 
-    for (const rawLine of lines) {
-      const line = rawLine.split("#")[0].trim().toLowerCase();
-      if (!line) continue;
+    // 2. Korak: Prolazimo isključivo kroz strukturirana pravila
+    for (const line of cleanLines) {
+      const lowerLine = line.toLowerCase();
 
-      if (line.startsWith("user-agent:")) {
-        const agent = line.replace("user-agent:", "").trim();
+      if (lowerLine.startsWith("user-agent:")) {
+        const agent = lowerLine.replace("user-agent:", "").trim();
         
-        // Ako prethodna linija u robots.txt nije bila User-Agent, kreće nova grupa definisanja blokova
-        if (currentAgents.length > 0 && !lines[lines.indexOf(rawLine) - 1]?.split("#")[0].trim().toLowerCase().startsWith("user-agent:")) {
+        // Ako smo već imali agente, a prethodna čista linija NIJE bila user-agent,
+        // znači da je počela potpuno nova grupa pravila u datoteci
+        const trenutniIndeks = cleanLines.indexOf(line);
+        if (currentAgents.length > 0 && trenutniIndeks > 0 && !cleanLines[trenutniIndeks - 1].toLowerCase().startsWith("user-agent:")) {
           currentAgents = [];
         }
-        if (agent) currentAgents.push(agent);
-      } else if (line.startsWith("disallow:")) {
-        const path = line.replace("disallow:", "").trim();
         
-        // Zvanične varijacije globalnih blokada celog sajta ("/", "/*" ili prazan prostor)
-        const isGlobalBlock = path === "/" || path === "/*" || path === "";
+        if (agent) currentAgents.push(agent);
 
-        if (isGlobalBlock && currentAgents.length > 0) {
-          for (const agent of currentAgents) {
-            // Slučaj A: Globalna zvezdica (*) - blokira sve AI botove u našem sistemu
-            if (agent === "*") {
-              Object.keys(aiBotsStatus).forEach(target => {
-                aiBotsStatus[target as keyof BotStatus] = "Blocked";
-              });
-              continue;
-            }
-
-            // Slučaj B: Pametna provera podstringa (.includes) - hvata divlju sintaksu, zareze i džokere poput *gptbot*
-            for (const [token, targets] of Object.entries(botTokens)) {
-              if (agent.includes(token)) {
-                targets.forEach(target => {
+      } else if (lowerLine.startsWith("disallow:")) {
+        const path = lowerLine.replace("disallow:", "").trim();
+        
+        // Ako je iza "disallow:" ostao prazan string, to znači ALLOW ALL (dozvoli sve)
+        // Ako je "/", "/*", onda je u pitanju BLOKADA
+        if (path === "/" || path === "/*") {
+          if (currentAgents.length > 0) {
+            for (const agent of currentAgents) {
+              // Slučaj A: Globalna zvezdica (*) - blokira sve AI botove
+              if (agent === "*") {
+                Object.keys(aiBotsStatus).forEach(target => {
                   aiBotsStatus[target as keyof BotStatus] = "Blocked";
                 });
+                continue;
+              }
+
+              // Slučaj B: Provjera podstringa za specifične AI botove
+              for (const [token, targets] of Object.entries(botTokens)) {
+                if (agent.includes(token)) {
+                  targets.forEach(target => {
+                    aiBotsStatus[target as keyof BotStatus] = "Blocked";
+                  });
+                }
               }
             }
           }
