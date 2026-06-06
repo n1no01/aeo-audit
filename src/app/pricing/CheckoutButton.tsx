@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getDodoCheckoutUrl } from "@/app/actions/checkout";
 
-// Proširujemo interfejs tako da prihvata sve standardne HTML atribute za button (uključujući aria-label)
 interface CheckoutButtonProps extends React.ComponentPropsWithRef<"button"> {
   productId: string;
   userId: string | null;
@@ -19,33 +18,39 @@ export function CheckoutButton({
   userEmail, 
   text, 
   className,
-  ...props // 👈 Hvata sve preostale proslijeđene atribute poput aria-label
+  ...props
 }: CheckoutButtonProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
 
+  // Auto-trigger checkout if user just signed in/up and came back with autoCheckout param
+  useEffect(() => {
+    const autoCheckout = searchParams.get("autoCheckout");
+    if (autoCheckout === productId && userId) {
+      getDodoCheckoutUrl(productId, userId, userEmail).then((checkoutUrl) => {
+        if (checkoutUrl) window.location.href = checkoutUrl;
+      });
+    }
+  }, []);
+
   const handleCheckout = async () => {
-    // 1. Ako korisnik nije ulogovan, šaljemo ga na Clerk sign-up
     if (!userId) {
-      router.push("/sign-up?redirect_url=/pricing");
+      router.push(`/sign-up?redirect_url=/pricing?autoCheckout=${productId}`);
       return;
     }
 
     try {
       setLoading(true);
-      
-      // 2. Pozivamo našu bezbjednu Fetch akciju tek na klik!
       const checkoutUrl = await getDodoCheckoutUrl(productId, userId, userEmail);
-
       if (checkoutUrl) {
-        // 3. 🚨 PREUSMJERAVANJE: Šaljemo browser direktno na generisani Dodo link
         window.location.href = checkoutUrl;
       } else {
-        alert("Greška pri kreiranju sesije za plaćanje. Pokušajte ponovo.");
+        alert("Error creating payment session. Please try again.");
         setLoading(false);
       }
     } catch (error) {
-      console.error("Checkout click error:", error);
+      console.error("Checkout error:", error);
       setLoading(false);
     }
   };
@@ -55,7 +60,7 @@ export function CheckoutButton({
       onClick={handleCheckout}
       disabled={loading}
       className={`${className} ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
-      {...props} // 👈 Automatski lijepi aria-label direktno na HTML <button> tag u browseru
+      {...props}
     >
       {loading ? "REDIRECTING..." : text}
     </button>

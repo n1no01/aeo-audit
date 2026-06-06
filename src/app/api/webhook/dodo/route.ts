@@ -17,7 +17,7 @@ type WebhookPayload = {
     metadata?: {
       clerkUserId?: string;
     };
-    [key: string]: unknown; // Zamena za any
+    [key: string]: unknown;
   };
 };
 

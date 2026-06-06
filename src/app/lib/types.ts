@@ -50,6 +50,7 @@ export interface ScrapedData {
   entityTrustMap: EntityTrustMap;
   semanticLayoutMap: SemanticLayoutMap;
   pageType: "Homepage" | "Article" | "FAQ" | "About" | "Commercial" | "General";
+  aiAccessibility: AIAccessibilityResult;
 }
 
 export interface AuditData extends ScrapedData {
@@ -64,6 +65,7 @@ export interface AuditData extends ScrapedData {
   hasListsOrTables: boolean;
   website_url?: string;
   commodityContentScore: number;
+  aiAccessibility: AIAccessibilityResult;
 }
 
 export type TabId = "metrics" | "analysis" | "recommendations" | "robots" | "simulator";
@@ -80,3 +82,19 @@ export const AEO_EXPLANATIONS = {
   qaLoops: "Detects structural Question & Answer block formatting directly in the DOM. This is the single most valuable asset for AEO, as it aligns perfectly with conversational long-tail queries.",
   layoutDensity: "Checks for data parsed into tables, bullet points, or numbered lists. AI engines love structured layouts because they can copy-paste and render them directly as clear text fragments."
 };
+
+export interface AIAccessibilityResult {
+  userAgentTests: Record<
+    string,
+    {
+      status: number;
+      blocked: boolean;
+      cloudflareDetected: boolean;
+      blockedReason?: "cloudflare" | "robots.txt";
+    }
+  >;
+  cloudflareDetected: boolean;
+  cloudflareSeverity: "None" | "Soft" | "Hard"; 
+  possibleCrawlerBlocking: boolean;
+  accessibilityStatus: "Accessible" | "Warning" | "Blocked";
+}

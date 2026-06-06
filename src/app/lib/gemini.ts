@@ -15,7 +15,6 @@ export async function generateAiAnalysis(
   atomicStructureScore: number;
   entityDensityScore: number;
   sentenceSimplicityScore: number;
-  // NOVI STUB UKLJUČEN U RETURN:
   commodityContentScore: number;
 }> {
   const genAI = new GoogleGenerativeAI(geminiApiKey);
@@ -24,7 +23,6 @@ export async function generateAiAnalysis(
     NonNullable<Parameters<typeof genAI.getGenerativeModel>[0]["generationConfig"]>["responseSchema"]
   >;
 
-  // PROŠIRENA ŠEMA SA 5 METRIKA (DODAT GOOGLE NON-COMMODITY STUB)
   const aeoResponseSchema = {
     type: "OBJECT",
     properties: {
@@ -88,7 +86,19 @@ export async function generateAiAnalysis(
     },
   });
 
-  // DODAT I KORIGOVAN PROMPT SA PETIM STUBOM DIREKTNO IZ GOOGLE SMJERNICA
+  // Derive bot access context before building the prompt
+  const botDetected = data.aiAccessibility?.cloudflareDetected ?? false;
+  const botSeverity = data.aiAccessibility?.cloudflareSeverity ?? "None";
+  const botAccessStatus = data.aiAccessibility?.accessibilityStatus ?? "Unknown";
+  const robotsBlockingAI = data.robotsStatus === "Blocking AI";
+
+  const completelyBlocked = robotsBlockingAI || (botDetected && botSeverity === "Hard");
+  const partiallyBlocked = !completelyBlocked && botDetected && botSeverity === "Soft";
+
+  const botProtectionLine = botDetected
+    ? `DETECTED — ${botSeverity} block (${botAccessStatus})`
+    : "None detected";
+
   const prompt = `
 You are an expert Senior Answer Engine Optimisation (AEO) strategist.
 Analyze the target website data context provided and perform a highly specific structural alignment audit tailored strictly to the website's industry and business model.
@@ -96,6 +106,8 @@ Analyze the target website data context provided and perform a highly specific s
 WEBSITE: ${url}
 DETECTOR CONTEXT: The scraper has algorithmically identified this page layout as a **${data.pageType}**.
 ROBOTS.TXT STATUS: ${data.robotsStatus}
+BOT PROTECTION STATUS: ${botProtectionLine}
+BOT ACCESSIBILITY STATUS: ${botAccessStatus}
 TITLE: ${data.title}
 META DESCRIPTION: ${data.metaDescription}
 H1: ${data.h1}
@@ -127,20 +139,36 @@ CRITICAL CONTEXTUAL SCORING RULES:
 1. You MUST evaluate the website quality based on the detected layout context (**${data.pageType}**).
 2. If the pageType is 'Homepage' or 'Commercial' and it explicitly represents an online software tool or a purely digital SaaS platform (like an AI auditing platform), do NOT penalize the final visibility score or authority metrics for missing physical signals (address/phone) or brand-owned social profile links (LinkedIn/X profile maps) IF the JSON-LD schema graph layout is clean, valid, and present.
 3. If it is a Homepage, focus your evaluation heavily on brand identity token consistency across metadata, headings, and code. Do NOT expect or penalize for the lack of long-form editorial content.
+4. ${completelyBlocked
+    ? `CRITICAL ACCESS OVERRIDE: This site is COMPLETELY BLOCKED to AI crawlers — either by robots.txt directive or a confirmed Hard bot protection wall. The final score MUST be 20 or below, regardless of any other positive signals. Schema quality, content depth, semantic markup — none of it matters if AI cannot access the site. Your top recommendation MUST address fixing bot access as the single most urgent priority before anything else.`
+    : partiallyBlocked
+    ? `PARTIAL ACCESS WARNING: A Soft bot protection block has been detected. Most AI crawlers operate from datacenter IPs and will be blocked in practice. Cap the final score at 50 regardless of other positive signals. Your top recommendation MUST address resolving the bot protection wall before any content or schema optimizations.`
+    : `Bot access is clean. Evaluate and score normally based on content, schema, and semantic structure.`
+  }
+5. If BOT PROTECTION STATUS shows any block, do NOT recommend schema tweaks, content improvements, or semantic optimizations as the primary fix. Bot access resolution must always be recommendation #1 when a block is present.
 
 INSTRUCTIONS:
 1. Evaluate the context and determine the exact "pageCategory".
-2. Refine and confirm the final "score" based on how well this page adheres to its specific category standards.
+2. Refine and confirm the final "score" based on how well this page adheres to its specific category standards, strictly respecting the scoring rules above.
 3. Rigidly score the content sample from 1 to 10 against the 5 core pillars of AEO writing (including Google's Official Core Standards):
    - bluffScore (Bottom Line Up Front): Do sections give direct answers immediately, or is the core point buried in introductory paragraphs?
    - atomicStructureScore: Can sections survive independently if chunked into vector databases by an LLM?
    - entityDensityScore: Does it use precise entities (brands, concrete concepts) instead of vague/generic filler wording?
    - sentenceSimplicityScore: Are sentences short, declarative, following a simple Subject-Verb-Object structure (one idea per sentence)?
    - commodityContentScore: Grade the uniqueness based on official Google Search standards. Is this 'Commodity Content' (common knowledge, recycled tips, easily generated by low-tier AI models) which gets a LOW score, or is it 'Non-Commodity Content' (expert takes, original case studies, data-backed personal experience) which gets a HIGH score?
-4. Write an authoritative 3-paragraph "aiAnalysis" focusing on how conversational AI models (ChatGPT, Perplexity, Gemini) tokenize and perceive this specific brand entity.
+4. Write an authoritative 3-paragraph "aiAnalysis" focusing on how conversational AI models (ChatGPT, Perplexity, Gemini) tokenize and perceive this specific brand entity. ${completelyBlocked
+    ? "Since bot access is completely blocked, the first paragraph MUST clearly explain that AI crawlers cannot reach this site and what that means for AEO visibility. The remaining paragraphs may cover what could be improved once access is restored."
+    : partiallyBlocked
+    ? "Since a partial bot protection block is active, the first paragraph MUST address the access limitation and its practical impact on AI crawler indexing."
+    : ""
+  }
 5. Generate exactly 5 prioritized, tactical "recommendations" hyper-targeted to the detected pageCategory.
    - CRITICAL REQUIREMENT: Look at the "DETECTED SCHEMA ENTITIES" provided above (${data.detectedSchemas.join(", ") || "None"}). 
    - You are STRICTLY FORBIDDEN from recommending the implementation of any Schema.org types that are ALREADY detected on the page. If a schema is present, focus your recommendation on optimizing its specific internal properties or other missing AEO components instead.
+   - ${completelyBlocked || partiallyBlocked
+      ? "Recommendation #1 MUST be about resolving the bot access block. The remaining 4 recommendations may cover other AEO improvements."
+      : "Order recommendations by highest AEO impact for this specific pageCategory."
+    }
 `;
 
   const aiResult = await model.generateContent(prompt);
