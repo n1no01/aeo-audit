@@ -38,7 +38,13 @@ export default async function LandingPage() {
         "name": "AEO Audit Pro",
         "publisher": {
           "@id": "https://www.aeoaudit-pro.com/#organization"
-        }
+        },
+        "knowsAbout": [
+          "https://en.wikipedia.org/wiki/Artificial_intelligence",
+          "https://en.wikipedia.org/wiki/Search_engine_optimization",
+          "https://en.wikipedia.org/wiki/Web_scraping",
+          "https://en.wikipedia.org/wiki/Cloudflare"
+        ]
       },
       {
         "@type": "SoftwareApplication",
@@ -49,6 +55,9 @@ export default async function LandingPage() {
         "applicationCategory": "BusinessApplication",
         "browserRequirements": "Requires HTML5. Requires JavaScript.",
         "url": "https://www.aeoaudit-pro.com",
+        "sameAs": [
+          "https://www.wikidata.org/wiki/Q140136146"
+        ],
         "offers": [
           {
             "@type": "Offer",
