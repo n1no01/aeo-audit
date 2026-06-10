@@ -58,6 +58,12 @@ export default async function LandingPage() {
         "sameAs": [
           "https://www.wikidata.org/wiki/Q140136146"
         ],
+        "featureList": [
+          "AI Visibility Radar",
+          "Knowledge Graph Entity Checker",
+          "Semantic Diagnostics",
+          "White Label Reports"
+        ],
         "offers": [
           {
             "@type": "Offer",

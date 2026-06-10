@@ -52,6 +52,7 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         model: 'sonar',
+        response_format: { type: "json_object" },
         messages: [
           {
             role: 'system',

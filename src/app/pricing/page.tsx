@@ -208,50 +208,52 @@ export default async function PricingPage() {
           </div>
 
           {/* 🚀 AI PRODUCT GRAPH SUBSETS (JSON-LD Grounding) */}
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
-                "@context": "https://schema.org",
-                "@graph": [
-                  {
-                    "@type": "Product",
-                    "@id": "https://aeoaudit-pro.com/pricing#starter",
-                    "name": "AEO Audit Pro - Starter Plan",
-                    "description": "Answer Engine Optimization auditing for solopreneurs and bloggers. Includes Google Knowledge Graph Entity Checker, 50 audits, and 100 AI Visibility Radar scans per month, plus full white-label toolkit.",
-                    "brand": {
-                      "@type": "Brand",
-                      "name": "AEO Audit Pro"
-                    },
-                    "offers": {
-                      "@type": "Offer",
-                      "price": "59.00",
-                      "priceCurrency": "USD",
-                      "availability": "https://schema.org/InStock",
-                      "url": "https://aeoaudit-pro.com/pricing"
-                    }
-                  },
-                  {
-                    "@type": "Product",
-                    "@id": "https://aeoaudit-pro.com/pricing#agency",
-                    "name": "AEO Audit Pro - Agency Pro Plan",
-                    "description": "High volume Answer Engine Optimization auditing tier for agencies. Includes Google Knowledge Graph Entity Checker, 200 audits and 500 AI Visibility Radar scans per month, full white-label toolkit, and unlimited document exports.",
-                    "brand": {
-                      "@type": "Brand",
-                      "name": "AEO Audit Pro"
-                    },
-                    "offers": {
-                      "@type": "Offer",
-                      "price": "159.00",
-                      "priceCurrency": "USD",
-                      "availability": "https://schema.org/InStock",
-                      "url": "https://aeoaudit-pro.com/pricing"
-                    }
-                  }
-                ]
-              })
-            }}
-          />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              "@id": "https://aeoaudit-pro.com/pricing#application",
+              "name": "AEO Audit Pro",
+              "applicationCategory": "BusinessApplication",
+              "operatingSystem": "Web",
+              "url": "https://aeoaudit-pro.com",
+              "description":
+                "AEO Audit Pro helps businesses and agencies improve visibility in AI search engines through semantic diagnostics, entity analysis, AI crawler audits, and knowledge graph optimization.",
+              "provider": {
+                "@type": "Organization",
+                "name": "AEO Audit Pro",
+                "url": "https://aeoaudit-pro.com"
+              },
+              "offers": [
+                {
+                  "@type": "Offer",
+                  "name": "Starter Plan",
+                  "price": "59.00",
+                  "priceCurrency": "USD",
+                  "availability": "https://schema.org/InStock",
+                  "url": "https://aeoaudit-pro.com/pricing"
+                },
+                {
+                  "@type": "Offer",
+                  "name": "Agency Plan",
+                  "price": "159.00",
+                  "priceCurrency": "USD",
+                  "availability": "https://schema.org/InStock",
+                  "url": "https://aeoaudit-pro.com/pricing"
+                }
+              ],
+              "featureList": [
+                "Knowledge Graph Entity Checker",
+                "AI Visibility Radar Tracking",
+                "Advanced Semantic Diagnostics",
+                "White-Label Toolkit",
+                "DOCX Report Exports"
+              ]
+            })
+          }}
+        />
         </main>
 
         {/* FOOTER */}
