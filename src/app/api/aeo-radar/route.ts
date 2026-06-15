@@ -52,7 +52,7 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         model: 'sonar',
-        response_format: { type: "json_object" },
+        stream: false,
         messages: [
           {
             role: 'system',
@@ -77,6 +77,15 @@ export async function POST(req: Request) {
         temperature: 0.1,
       }),
     });
+    if (!response.ok) {
+  const errorData = await response.json();
+  console.error("Perplexity API error:", errorData);
+  return NextResponse.json({ 
+    error: `Perplexity API error: ${errorData.message || response.status}` 
+  }, { status: response.status === 401 ? 401 : 502 });
+}
+
+
 
     const data = await response.json();
     
