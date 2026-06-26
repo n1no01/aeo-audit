@@ -36,5 +36,12 @@
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "dompurify": "^3.4.11",
+    "form-data": "^4.0.6",
+    "js-cookie": "^3.0.6",
+    "postcss": "^8.5.10",
+    "undici": "^7.27.3"
   }
 }
