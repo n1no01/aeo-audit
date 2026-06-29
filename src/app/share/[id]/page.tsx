@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { getSharedAudit } from "../../actions";
 import Tooltip from "../../components/Tooltip";
-import { AuditData, AEO_EXPLANATIONS } from "../../lib/types"; 
+import { AuditData, AEO_EXPLANATIONS, Recommendation } from "../../lib/types"; 
 import Link from "next/link";
 
 interface SharePageProps {
@@ -24,7 +24,7 @@ export default function SharedAuditPage({ params }: SharePageProps) {
       if (res.error || !res.data) {
         setError(res.error || "Failed to retrieve the report.");
       } else {
-        // Kastujemo podatke u AuditData strukturu kako bi odgovaralo dashboard layoutu
+        // Cast external proxy payload tightly to current AuditData structural specifications
         setResult({ data: res.data as unknown as AuditData });
         setTargetUrl(res.url || "");
       }
@@ -57,7 +57,7 @@ export default function SharedAuditPage({ params }: SharePageProps) {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white">
       
-      {/* JAVNI NAVBAR */}
+      {/* PUBLIC NAVBAR */}
       <nav className="w-full max-w-6xl mx-auto p-4 sm:p-6 flex justify-between items-center bg-transparent">
         <div className="text-2xl font-black tracking-tight italic select-none">
           AEO<span className="text-blue-600">Audit</span> Pro
@@ -67,11 +67,11 @@ export default function SharedAuditPage({ params }: SharePageProps) {
         </div>
       </nav>
 
-      {/* GLAVNI OKVIR IZVJEŠTAJA (Preslikan sa Dashboarda) */}
+      {/* MAIN REPORT CONTAINER */}
       <div className="max-w-5xl mx-auto px-4 sm:px-8 md:px-12 flex-1 w-full mt-6 mb-16">
         <div className="bg-white rounded-[24px] md:rounded-[48px] overflow-hidden border border-slate-100 shadow-2xl">
           
-          {/* AUDIT TOP BAR - SA KOREKCIJOM ZA DUGE URL-OVE */}
+          {/* AUDIT TOP BAR */}
           <div className="bg-slate-900 text-white p-5 sm:p-8 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 md:gap-8">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 md:gap-8 w-full md:w-0 md:flex-1 min-w-0">
               <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-[16px] sm:rounded-[20px] bg-white text-slate-900 flex flex-col items-center justify-center shrink-0 shadow-lg mx-auto sm:mx-0">
@@ -96,7 +96,7 @@ export default function SharedAuditPage({ params }: SharePageProps) {
             </div>
           </div>
 
-          {/* SADRŽAJ KARTICA */}
+          {/* CARDS GRID CONTENT */}
           <div className="p-4 sm:p-8 md:p-12 space-y-6 sm:space-y-8">
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
@@ -231,6 +231,16 @@ export default function SharedAuditPage({ params }: SharePageProps) {
 
                     <div className="flex items-center justify-between bg-white border border-slate-100 p-2 rounded-xl text-xs font-semibold">
                       <span className="text-slate-600 flex items-center">
+                        H1 Title Tag Isolation
+                        <Tooltip text="Ensures the page contains exactly one <h1> tag for explicit LLM entity extraction anchoring." />
+                      </span>
+                      <span className={`text-[10px] font-black tracking-wider px-2 py-0.5 rounded-md ${result.data.semanticLayoutMap?.hasSingleH1 ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-600"}`}>
+                        {result.data.semanticLayoutMap?.hasSingleH1 ? "OPTIMAL (1)" : "ANOMALY"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between bg-white border border-slate-100 p-2 rounded-xl text-xs font-semibold">
+                      <span className="text-slate-600 flex items-center">
                         Heading Hierarchy Structural Cascade
                         <Tooltip text={AEO_EXPLANATIONS.headingCascade} />
                       </span>
@@ -266,7 +276,7 @@ export default function SharedAuditPage({ params }: SharePageProps) {
               </div>
             </div>
 
-            {/* HIBRIDNI SPEED & TEHNIČKI GRID */}
+            {/* HYBRID SPEED & TECHNICAL GRID */}
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
                 <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col justify-between shadow-sm">
@@ -352,10 +362,27 @@ export default function SharedAuditPage({ params }: SharePageProps) {
             <div className="space-y-4">
               <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400">Prioritized Optimization Playbook</div>
               <div className="space-y-3 sm:space-y-4">
-                {result.data.recommendations.map((item, idx) => (
-                  <div key={idx} className="bg-blue-50/60 border border-blue-100 rounded-2xl p-4 font-bold text-slate-800 text-sm flex items-start gap-3 sm:gap-4">
+                
+                {/* 🚀 FIXED: Map complex object fields safely instead of compiling raw objects directly as ReactNode items */}
+                {(result.data.recommendations as Recommendation[]).map((item, idx) => (
+                  <div key={idx} className="bg-blue-50/60 border border-blue-100 rounded-2xl p-4 text-slate-800 text-sm flex items-start gap-3 sm:gap-4">
                     <span className="bg-blue-600 text-white rounded-xl w-7 h-7 flex items-center justify-center text-xs font-black shrink-0 mt-0.5">{idx + 1}</span>
-                    <div className="leading-relaxed">{item}</div>
+                    
+                    <div className="leading-relaxed flex flex-col gap-1 w-full">
+                      <div className="font-black text-slate-900 uppercase tracking-wide flex flex-wrap items-center gap-2">
+                        <span>{item.title}</span>
+                        <span className={`text-[9px] font-black tracking-wider px-1.5 py-0.5 rounded-md font-mono ${
+                          item.severity === "CRITICAL" ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"
+                        }`}>
+                          {item.severity}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 font-light mt-0.5">{item.description}</p>
+                      <div className="text-[11px] text-emerald-700 font-bold tracking-wide uppercase mt-1">
+                        Impact: <span className="font-normal normal-case italic text-slate-500">{item.impact}</span>
+                      </div>
+                    </div>
+
                   </div>
                 ))}
 
@@ -364,7 +391,7 @@ export default function SharedAuditPage({ params }: SharePageProps) {
                     <span className="bg-amber-500 text-white rounded-xl w-7 h-7 flex items-center justify-center text-xs font-black shrink-0 mt-0.5">🚨</span>
                     <div className="leading-relaxed">
                       <span className="font-black text-amber-900 block mb-1">Critical Architecture Fix: High JavaScript Framework Dependency</span>
-                      Our crawl engine detected that your DOM structure loads empty initial templates and relies on heavy Client-Side JavaScript hydration. According to Google&apos;s 2026 AI guidelines, this significantly increases RAG parser timeouts. 
+                      Our crawl engine detected that your DOM structure loads empty initial templates and relies on heavy Client-Side JavaScript hydration. According to Google&apos;s AI guidelines, this significantly increases RAG parser timeouts. 
                       <strong className="block mt-2 font-bold text-amber-950">Required Action:</strong> Migrating to Server-Side Rendering (Next.js/Nuxt.js) or deploying an aggressive static pre-rendering middleware layer (Prerender.io) is highly recommended to make content readable for rapid AI indexers.
                     </div>
                   </div>
