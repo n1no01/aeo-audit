@@ -27,6 +27,7 @@ export interface SemanticLayoutMap {
   hasMainTag: boolean;
   hasArticleTag: boolean;
   hasHeadingLeap: boolean;
+  hasSingleH1: boolean;
   totalImages: number;
   missingAltCount: number;
   hasAriaLabels: boolean;
@@ -57,7 +58,7 @@ export interface AuditData extends ScrapedData {
   score: number;
   pageCategory: string; // npr. "Personal Portfolio" ili preslikan gornji pageType
   aiAnalysis: string;
-  recommendations: string[];
+  recommendations: Recommendation[];
   bluffScore: number;
   atomicStructureScore: number;
   entityDensityScore: number;
@@ -97,4 +98,15 @@ export interface AIAccessibilityResult {
   cloudflareSeverity: "None" | "Soft" | "Hard"; 
   possibleCrawlerBlocking: boolean;
   accessibilityStatus: "Accessible" | "Warning" | "Blocked";
+}
+
+export interface Recommendation {
+  id: string;                      // npr. "cf_hard_block", "missing_faq_schema"
+  title: string;                   // npr. "Cloudflare blokira AI botove"
+  severity: "CRITICAL" | "MEDIUM" | "LOW"; 
+  category: "Technical" | "Semantic Layout" | "Entity & Trust" | "Content Optimization";
+  description: string;             // Objašnjenje problema
+  impact: string;                  // Kako ovo utiče na LLM/AEO (poveži sa tvojim AEO_EXPLANATIONS)
+  fixSteps: string[];              // Korak-po-korak uputstvo za popravku
+  codeSnippet?: string;            // Opciono: JSON-LD ili HTML primjer kako popraviti
 }

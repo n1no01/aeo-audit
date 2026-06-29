@@ -135,7 +135,6 @@ if (data.javascriptDependency === "Low") {
   if (data.entityTrustMap.brandDisambiguationStatus === "Optimal") {
     score += 5;
   } else if (data.entityTrustMap.brandDisambiguationStatus === "Inconsistent") {
-    score += 1;
     score -= 5;
   } else if (data.entityTrustMap.brandDisambiguationStatus === "Critical Missing") {
     if (data.pageType === "Article" || data.pageType === "FAQ") {

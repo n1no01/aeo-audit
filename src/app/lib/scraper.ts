@@ -669,10 +669,13 @@ export async function scrapeWebsite(
     $("table").length > 0 || $("ul").length > 0 || $("ol").length > 0;
 
   // ── 6. Semantic layout map ────────────────────────────────────────────────
+  const allH1s = $("h1");
+
   const semanticLayoutMap: SemanticLayoutMap = {
     hasMainTag: $("main").length === 1,
     hasArticleTag: $("article").length > 0,
     hasHeadingLeap: false,
+    hasSingleH1: allH1s.length === 1,
     totalImages: $("img").length,
     missingAltCount: 0,
     hasAriaLabels: false,
@@ -702,13 +705,25 @@ export async function scrapeWebsite(
     if (!$(el).attr("alt")?.trim()) semanticLayoutMap.missingAltCount++;
   });
 
-  let lastHeadingLevel = 1;
+// ── Napredna detekcija Heading Leap anomalija ──────────────────────────────
+  let previousLevel: number | null = null;
+
   $("h1, h2, h3, h4, h5, h6").each((_, el) => {
-    const level = parseInt(el.tagName[1]);
-    if (level > lastHeadingLevel && level - lastHeadingLevel > 1) {
+    const currentLevel = Number(el.tagName.substring(1));
+
+    // Slučaj A: Prvi naslov na stranici preskače H1 (npr. stranica počinje sa H2 ili H3)
+    if (previousLevel === null && currentLevel > 1) {
       semanticLayoutMap.hasHeadingLeap = true;
+      return false;
     }
-    lastHeadingLevel = level;
+
+    // Slučaj B: Standardni leap unutar strukture (npr. H2 -> H4)
+    if (previousLevel !== null && currentLevel > previousLevel + 1) {
+      semanticLayoutMap.hasHeadingLeap = true;
+      return false;
+    }
+
+    previousLevel = currentLevel;
   });
 
   // ── 7. Entity trust map ───────────────────────────────────────────────────

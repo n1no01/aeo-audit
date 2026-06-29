@@ -9,7 +9,7 @@ import {
   ImageRun,
 } from "docx";
 import { saveAs } from "file-saver";
-import { AuditData } from "./types";
+import { AuditData, Recommendation } from "./types";
 
 interface BrandKit {
   agencyName: string;
@@ -36,9 +36,9 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
     atomicStructureScore,
     entityDensityScore,
     sentenceSimplicityScore,
-    commodityContentScore, // 🚀 Dodato
-    pageType,              // 🚀 Dodato za kontekstualnu provjeru šema
-    detectedSchemas        // 🚀 Dodato za kontekstualnu provjeru šema
+    commodityContentScore,
+    pageType,
+    detectedSchemas
   } = data;
 
   const { agencyName, brandColor, authorName, logoBase64 } = brandKit;
@@ -96,7 +96,7 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
     new Paragraph({ text: `• LLM Chunking Readiness (Atomic Structure): ${atomicStructureScore || 5}/10` }),
     new Paragraph({ text: `• Entity Density (vs Generic Fluff): ${entityDensityScore || 5}/10` }),
     new Paragraph({ text: `• Syntactic Simplicity (Declarative Writing): ${sentenceSimplicityScore || 5}/10` }),
-    new Paragraph({ text: `• Google Non-Commodity Score (Content Authenticity): ${commodityContentScore || 5}/10` }), // 🚀 DODATO
+    new Paragraph({ text: `• Google Non-Commodity Score (Content Authenticity): ${commodityContentScore || 5}/10` }),
 
     new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "AI Crawler Access & Entity Token Map", color: "0f172a", bold: true, size: 24 })] }),
     new Paragraph({ text: `• OpenAI GPTBot Clearance: ${aiBotsStatus?.gptBot || "Allowed"}` }),
@@ -109,31 +109,62 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
     new Paragraph({ text: `• Microsoft Bingbot Indexation: ${aiBotsStatus?.bingbot || "Allowed"}` }),
     new Paragraph({ text: `• Brand Disambiguation Alignment: ${entityTrustMap?.brandDisambiguationStatus || "Optimal"}` }),
     new Paragraph({ text: `• Semantic HTML5 Main Tag: ${semanticLayoutMap?.hasMainTag ? "Valid" : "Missing"}` }),
+    new Paragraph({ text: `• H1 Title Tag Isolation: ${semanticLayoutMap?.hasSingleH1 ? "Optimal (Exactly 1 Tag Detected)" : "Anomaly Detected (Missing or Multiple H1s)"}` }),
     new Paragraph({ text: `• Heading Hierarchy Defect (Leap): ${semanticLayoutMap?.hasHeadingLeap ? "Anomaly Detected" : "Healthy Cascade"}` }),
     new Paragraph({ text: `• Visual RAG Video Assets: ${hasVideoElements ? "Optimized (Embedded Video Tracked)" : "Deficit (No Rich Media Found)"}` }), 
     new Paragraph({ text: `• Multimodal Image Alt Coverage: ${semanticLayoutMap ? semanticLayoutMap.totalImages - semanticLayoutMap.missingAltCount : 0}/${semanticLayoutMap ? semanticLayoutMap.totalImages : 0} Images Configured` }),
     new Paragraph({ text: `• JavaScript Framework Dependency: ${javascriptDependency === "Critical" ? "Critical Risk (Heavy Client-Side Rendering)" : "Optimal (Server-Side Rendered / Fast)"}` }),
-    new Paragraph({ text: `• Autonomous AI Agent Readiness (ARIA Tree): ${semanticLayoutMap?.hasAriaLabels ? "Agent Ready (Structure Optimized)" : "Optimization Required (Interactive Fields Blind)"}` }) // 🚀 DODATO
+    new Paragraph({ text: `• Autonomous AI Agent Readiness (ARIA Tree): ${semanticLayoutMap?.hasAriaLabels ? "Agent Ready (Structure Optimized)" : "Optimization Required (Interactive Fields Blind)"}` })
   );
 
-  // 🚀 KONTEKSTUALNI ISPIS: Google Merchant Graph (Samo ako je Commercial)
+  // Google Merchant Graph (Samo ako je Commercial)
   if (pageType === "Commercial") {
     documentChildren.push(
       new Paragraph({ text: `• Google Merchant & AI Product Graph Connectivity: ${entityTrustMap?.hasDeepProductSchema ? "Merchant Graph Active (Offers & Brand Verified)" : "Trust Properties Missing (Schema Deficit)"}` })
     );
   }
 
-  // 🚀 KONTEKSTUALNI ISPIS: Local Business AI Coordinates (Samo ako je Homepage + sadrži LocalBusiness šemu)
+  // Local Business AI Coordinates (Samo ako je Homepage + sadrži LocalBusiness šemu)
   if (pageType === "Homepage" && detectedSchemas?.includes("LocalBusiness")) {
     documentChildren.push(
       new Paragraph({ text: `• Local Business AI Coordinates Mapping: ${entityTrustMap?.hasDeepLocalBusinessSchema ? "Local Graph Optimal (NAP Array Verified)" : "Critical Missing Data (Phone/Address/Hours Deficit)"}` })
     );
   }
 
-  // Nastavak dokumenta sa preostalim sekcijama
+  // Playbook Playbook Section (Sa kompleksnim Recommendation[] tipom podataka)
   documentChildren.push(
     new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "Prioritized Tactical Optimization Playbook", color: "0f172a", bold: true, size: 24 })] }),
-    ...recommendations.map((item) => new Paragraph({ bullet: { level: 0 }, spacing: { after: 100 }, children: [new TextRun({ text: item })] })),
+    
+    ...(recommendations as Recommendation[]).flatMap((item: Recommendation, idx: number) => [
+      // 1. Title with Severity
+      new Paragraph({
+        spacing: { before: 150, after: 60 },
+        children: [
+          new TextRun({ 
+            text: `${idx + 1}. [${item.severity}] ${item.title}`, 
+            bold: true, 
+            color: item.severity === "CRITICAL" ? "b91c1c" : "1e40af", 
+            size: 18 
+          })
+        ]
+      }),
+      // 2. Description
+      new Paragraph({
+        spacing: { after: 60 },
+        children: [
+          new TextRun({ text: "Description: ", bold: true, size: 16 }),
+          new TextRun({ text: item.description, size: 16 })
+        ]
+      }),
+      // 3. AEO Impact
+      new Paragraph({
+        spacing: { after: 150 },
+        children: [
+          new TextRun({ text: "AEO Impact: ", bold: true, size: 16, color: "047857" }),
+          new TextRun({ text: item.impact, size: 16, italics: true })
+        ]
+      })
+    ]),
 
     new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "Executive LLM Diagnostics", color: "0f172a", bold: true, size: 24 })] }),
     new Paragraph({ spacing: { after: 100 }, children: [new TextRun({ text: aiAnalysis || "No custom insights generated." })] }),
