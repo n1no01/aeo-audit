@@ -18,88 +18,10 @@ export default async function LandingPage() {
     redirect("/dashboard");
   }
 
-  // 🚀 POPRAVLJENO: Struktura je prebačena iz @graph u ravan niz objekata radi lakšeg skrejpovanja
-  const jsonLd = [
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "@id": "https://www.aeoaudit-pro.com/#organization",
-      "name": "AEO Audit Pro",
-      "url": "https://www.aeoaudit-pro.com",
-      "logo": "https://www.aeoaudit-pro.com/logo.png",
-      "founder": "Nino Herenda",
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "@id": "https://www.aeoaudit-pro.com/#website",
-      "url": "https://www.aeoaudit-pro.com",
-      "name": "AEO Audit Pro",
-      "publisher": {
-        "@id": "https://www.aeoaudit-pro.com/#organization"
-      },
-      "knowsAbout": [
-        "https://en.wikipedia.org/wiki/Artificial_intelligence",
-        "https://en.wikipedia.org/wiki/Search_engine_optimization",
-        "https://en.wikipedia.org/wiki/Web_scraping",
-        "https://en.wikipedia.org/wiki/Cloudflare"
-      ]
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "@id": "https://www.aeoaudit-pro.com/#application",
-      "name": "AEO Audit Pro Engine",
-      "logo": "https://www.aeoaudit-pro.com/logo.png",
-      "operatingSystem": "All",
-      "applicationCategory": "BusinessApplication",
-      "browserRequirements": "Requires HTML5. Requires JavaScript.",
-      "url": "https://www.aeoaudit-pro.com",
-      "sameAs": [
-        "https://www.wikidata.org/wiki/Q140136146"
-      ],
-      "featureList": [
-        "AI Visibility Radar",
-        "Knowledge Graph Entity Checker",
-        "Semantic Diagnostics",
-        "White Label Reports"
-      ],
-      "offers": [
-        {
-          "@type": "Offer",
-          "name": "Free Plan",
-          "price": "0.00",
-          "priceCurrency": "USD",
-          "category": "FreeTrial",
-          "description": "Includes 1 full AI Search readiness audit."
-        },
-        {
-          "@type": "Offer",
-          "name": "Starter Plan",
-          "price" : "59.00",
-          "priceCurrency": "USD",
-          "description": "Designed for solo entrepreneurs and bloggers."
-        },
-        {
-          "@type": "Offer",
-          "name": "Agency Plan",
-          "price" : "159.00",
-          "priceCurrency": "USD",
-          "description": "Designed for agencies and businesses looking for comprehensive AI Search auditing."
-        }
-      ]
-    }
-  ];
+
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white relative overflow-x-hidden">
-      
-      {/* 🚀 Skripta se ubacuje u HTML izvor koda kao čist niz pojedinačnih entiteta */}
-      <Script
-        id="aeo-homepage-schema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
 
       <div className="w-full bg-slate-900 text-white text-xs sm:text-sm py-2.5 px-4 text-center border-b border-slate-800 relative z-50 flex items-center justify-center gap-2 flex-wrap">
         <span className="inline-flex items-center gap-1.5 font-medium text-slate-300">
