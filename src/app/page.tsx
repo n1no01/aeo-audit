@@ -18,84 +18,83 @@ export default async function LandingPage() {
     redirect("/dashboard");
   }
 
-  // 🚀 DODANO: Čist JS objekat sa strukturiranim podacima za aeoaudit-pro.com
- const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Organization",
-        "@id": "https://www.aeoaudit-pro.com/#organization",
-        "name": "AEO Audit Pro",
-        "url": "https://www.aeoaudit-pro.com",
-        "logo": "https://www.aeoaudit-pro.com/logo.png",
-        "founder": "Nino Herenda",
+  // 🚀 POPRAVLJENO: Struktura je prebačena iz @graph u ravan niz objekata radi lakšeg skrejpovanja
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://www.aeoaudit-pro.com/#organization",
+      "name": "AEO Audit Pro",
+      "url": "https://www.aeoaudit-pro.com",
+      "logo": "https://www.aeoaudit-pro.com/logo.png",
+      "founder": "Nino Herenda",
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "@id": "https://www.aeoaudit-pro.com/#website",
+      "url": "https://www.aeoaudit-pro.com",
+      "name": "AEO Audit Pro",
+      "publisher": {
+        "@id": "https://www.aeoaudit-pro.com/#organization"
       },
-      {
-        "@type": "WebSite",
-        "@id": "https://www.aeoaudit-pro.com/#website",
-        "url": "https://www.aeoaudit-pro.com",
-        "logo": "https://www.aeoaudit-pro.com/logo.png",
-        "name": "AEO Audit Pro",
-        "publisher": {
-          "@id": "https://www.aeoaudit-pro.com/#organization"
+      "knowsAbout": [
+        "https://en.wikipedia.org/wiki/Artificial_intelligence",
+        "https://en.wikipedia.org/wiki/Search_engine_optimization",
+        "https://en.wikipedia.org/wiki/Web_scraping",
+        "https://en.wikipedia.org/wiki/Cloudflare"
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "@id": "https://www.aeoaudit-pro.com/#application",
+      "name": "AEO Audit Pro Engine",
+      "logo": "https://www.aeoaudit-pro.com/logo.png",
+      "operatingSystem": "All",
+      "applicationCategory": "BusinessApplication",
+      "browserRequirements": "Requires HTML5. Requires JavaScript.",
+      "url": "https://www.aeoaudit-pro.com",
+      "sameAs": [
+        "https://www.wikidata.org/wiki/Q140136146"
+      ],
+      "featureList": [
+        "AI Visibility Radar",
+        "Knowledge Graph Entity Checker",
+        "Semantic Diagnostics",
+        "White Label Reports"
+      ],
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Free Plan",
+          "price": "0.00",
+          "priceCurrency": "USD",
+          "category": "FreeTrial",
+          "description": "Includes 1 full AI Search readiness audit."
         },
-        "knowsAbout": [
-          "https://en.wikipedia.org/wiki/Artificial_intelligence",
-          "https://en.wikipedia.org/wiki/Search_engine_optimization",
-          "https://en.wikipedia.org/wiki/Web_scraping",
-          "https://en.wikipedia.org/wiki/Cloudflare"
-        ]
-      },
-      {
-        "@type": "SoftwareApplication",
-        "@id": "https://www.aeoaudit-pro.com/#application",
-        "name": "AEO Audit Pro Engine",
-        "logo": "https://www.aeoaudit-pro.com/logo.png",
-        "operatingSystem": "All",
-        "applicationCategory": "BusinessApplication",
-        "browserRequirements": "Requires HTML5. Requires JavaScript.",
-        "url": "https://www.aeoaudit-pro.com",
-        "sameAs": [
-          "https://www.wikidata.org/wiki/Q140136146"
-        ],
-        "featureList": [
-          "AI Visibility Radar",
-          "Knowledge Graph Entity Checker",
-          "Semantic Diagnostics",
-          "White Label Reports"
-        ],
-        "offers": [
-          {
-            "@type": "Offer",
-            "name": "Free Plan",
-            "price": "0.00",
-            "priceCurrency": "USD",
-            "category": "FreeTrial",
-            "description": "Includes 1 full AI Search readiness audit."
-          },
-          {
-            "@type": "Offer",
-            "name": "Starter Plan",
-            "price" : "59.00",
-            "priceCurrency": "USD",
-            "description": "Designed for solo entrepreneurs and bloggers."
-          },
-          {
-            "@type": "Offer",
-            "name": "Agency Plan",
-            "price" : "159.00",
-            "priceCurrency": "USD",
-            "description": "Designed for agencies and businesses looking for comprehensive AI Search auditing."
-          }
-        ]
-      }
-    ]
-  };
+        {
+          "@type": "Offer",
+          "name": "Starter Plan",
+          "price" : "59.00",
+          "priceCurrency": "USD",
+          "description": "Designed for solo entrepreneurs and bloggers."
+        },
+        {
+          "@type": "Offer",
+          "name": "Agency Plan",
+          "price" : "159.00",
+          "priceCurrency": "USD",
+          "description": "Designed for agencies and businesses looking for comprehensive AI Search auditing."
+        }
+      ]
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white relative overflow-x-hidden">
       
-      {/* 🚀 DODANO: Skripta se ubacuje u HTML izvor koda (izvrsno za AI skrapere) */}
+      {/* 🚀 Skripta se ubacuje u HTML izvor koda kao čist niz pojedinačnih entiteta */}
       <Script
         id="aeo-homepage-schema"
         type="application/ld+json"
@@ -122,10 +121,9 @@ export default async function LandingPage() {
         </a>
       </div>
         
-      {/* ✅ GLOBALNA POZADINSKA MREŽA: Pokriva celu stranicu od vrha do dna */}
+      {/* GLOBAL BACKGROUND GRID */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_0.75px,transparent_0.75px),linear-gradient(to_bottom,#e2e8f0_0.75px,transparent_0.75px)] bg-[size:4rem_4rem] pointer-events-none opacity-40" />
       
-      {/* Pastelni gradijenti ostaju samo na vrhu za vizuelni akcenat iza teksta */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[500px] bg-gradient-to-r from-blue-500/10 to-indigo-500/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute top-[200px] left-[-100px] w-[350px] h-[350px] bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none" />
       <div className="absolute top-[150px] right-[-100px] w-[350px] h-[350px] bg-cyan-500/5 rounded-full blur-[80px] pointer-events-none" />
@@ -174,7 +172,8 @@ export default async function LandingPage() {
 
         {/* THE MANUAL PROMPT FALLACY SECTION */}
         <AiVsManual />
-        {/*WHITE-LABEL SECTION */}
+        
+        {/* WHITE-LABEL SECTION */}
         <WhiteLabelSection />
       </main>
       
