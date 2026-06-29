@@ -453,6 +453,8 @@ async function detectCloudflare(
   }
 }
 
+
+
 // ─────────────────────────────────────────────
 // AI ACCESSIBILITY (robots.txt inference)
 // ─────────────────────────────────────────────
