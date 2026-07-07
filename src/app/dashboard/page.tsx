@@ -549,6 +549,7 @@ export default function Home() {
   else if (result.data?.robotsStatus === "Missing") botAccessScored += 10; // Keeping your +10 baseline logic
   if (jsDep === "Low") botAccessScored += 5;
   else if (jsDep === "Critical") botAccessScored -= 10;
+  botAccessScored = Math.max(0, botAccessScored);
 
   const detectedSchemas = result.data?.detectedSchemas ?? [];
   let structuredDataScored = 0;
@@ -581,6 +582,8 @@ export default function Home() {
   else if (brandStatus === "Critical Missing") {
     if (pageType === "Article" || pageType === "FAQ") entityTrustScored -= 3; else entityTrustScored -= 10;
   }
+  
+  entityTrustScored = Math.max(0, entityTrustScored);
 
   const hasMain = result.data?.semanticLayoutMap?.hasMainTag ?? false;
   const hasArticle = result.data?.semanticLayoutMap?.hasArticleTag ?? false;
