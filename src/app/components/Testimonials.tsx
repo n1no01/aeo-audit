@@ -1,13 +1,26 @@
 export default function Testimonials() {
   const testimonialsData = [
-    { name: "Sarah Jenkins", role: "Head of SEO at Lexis Media", text: "AEO Audit Pro showed us that ChatGPT was completely ignoring our enterprise client. Fixed the schema in 2 days and now we are the top citation.", img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60" },
-    { name: "Marc Verlang", role: "Founder of SaaSify", text: "Traditional SEO tools are blind to AI chat logs. This tool is a lifesaver for tracking our actual AI Share of Voice.", img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=60" },
-    { name: "Amina Koč", role: "Growth Marketer", text: "We discovered that DeepSeek was miscategorizing our brand product lines. The semantic checklist helped us clean up our layout beautifully.", img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60" },
-    { name: "David Chen", role: "Director of Search, Omni Agency", text: "Client pitches became 10x easier. Showing them how invisible they are on Perplexity makes them close the deal instantly.", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60" },
-    { name: "Elena Rostova", role: "Content Strategist", text: "I love the technical accuracy of the RAG pipeline analysis. It stripped away all marketing fluff and gave me cold hard technical fixes.", img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=60" },
-    { name: "Liam O'Connor", role: "E-commerce Founder", text: "If you sell products and AI isn't recommending you, you're losing money. AEO Audit Pro is exactly what the market needed.", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60" },
-    { name: "Jessica Taylor", role: "VP of Marketing at CloudScale", text: "The automated telemetry probes save our dev team hours of manual LLM prompt testing. Truly set-and-forget software.", img: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=60" },
-    { name: "Thomas Mueller", role: "Technical SEO Specialist", text: "The JSON-LD validation and layout tokenization analysis is top-tier. Best product launched this year.", img: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&auto=format&fit=crop&q=60" }
+    { 
+      name: "Darko Bartolović", 
+      role: "Key Account Manager", 
+      text: "AEO Audit Pro helps me bring a fresh perspective to SEO conversations with clients. It makes it easier to explain why AI search visibility matters and where businesses can improve.", 
+      img: "testimonials/darkobartolovic.jpeg",
+      linkedin: "https://www.linkedin.com/in/darko-barth/"
+    },
+    { 
+      name: "Adi Zeljković", 
+      role: "Marketing Assistance Specialist", 
+      text: "AEO Audit Pro is a very promising platform for agencies looking to understand and improve how websites are interpreted by AI search systems. What stands out is not only the relevance of the idea, but also the speed at which the product is evolving based on real agency feedback.", 
+      img: "testimonials/adizeljkovic.jpeg",
+      linkedin: "https://www.linkedin.com/in/adizeljkovic/"
+    },
+    { 
+      name: "Nedim Jamak", 
+      role: "Head of Outreach", 
+      text: "AEO Audit Pro gives our outreach process a stronger angle by helping us identify businesses that are missing opportunities in AI search. It makes conversations with prospects more relevant and data-driven.", 
+      img: "testimonials/nedimjamak.png",
+      linkedin: "https://www.linkedin.com/in/nedim-jamak/"
+    },
   ];
 
   return (
@@ -26,34 +39,50 @@ export default function Testimonials() {
           
           {/* Prva serija kartica */}
           {testimonialsData.map((t, idx) => (
-            <div key={idx} className="w-[320px] bg-white border border-slate-200/60 p-6 rounded-2xl shadow-sm flex flex-col justify-between shrink-0">
-              <p className="text-slate-600 text-sm leading-relaxed font-medium italic mb-6">
-                &ldquo;{t.text}&rdquo;
-              </p>
+            <a 
+              key={idx} 
+              href={t.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-[320px] bg-white border border-slate-200/60 p-6 rounded-2xl shadow-sm flex flex-col justify-between shrink-0 hover:border-slate-300 hover:shadow-md transition-all duration-200"
+            >
+              <div>
+                <p className="text-slate-600 text-sm leading-relaxed font-medium italic mb-6">
+                  &ldquo;{t.text}&rdquo;
+                </p>
+              </div>
               <div className="flex items-center gap-3">
                 <img src={t.img} alt={t.name} className="w-10 h-10 rounded-full object-cover border border-slate-100" />
                 <div className="truncate">
-                  <h4 className="font-black text-sm text-slate-900 truncate">{t.name}</h4>
+                  <h4 className="font-black text-sm text-slate-900 truncate hover:text-blue-600 transition-colors">{t.name}</h4>
                   <p className="text-xs text-slate-400 font-bold truncate">{t.role}</p>
                 </div>
               </div>
-            </div>
+            </a>
           ))}
 
           {/* Duplirana serija za besprekoran beskonačni loop */}
           {testimonialsData.map((t, idx) => (
-            <div key={`dup-${idx}`} className="w-[320px] bg-white border border-slate-200/60 p-6 rounded-2xl shadow-sm flex flex-col justify-between shrink-0">
-              <p className="text-slate-600 text-sm leading-relaxed font-medium italic mb-6">
-                &ldquo;{t.text}&rdquo;
-              </p>
+            <a 
+              key={`dup-${idx}`} 
+              href={t.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-[320px] bg-white border border-slate-200/60 p-6 rounded-2xl shadow-sm flex flex-col justify-between shrink-0 hover:border-slate-300 hover:shadow-md transition-all duration-200"
+            >
+              <div>
+                <p className="text-slate-600 text-sm leading-relaxed font-medium italic mb-6">
+                  &ldquo;{t.text}&rdquo;
+                </p>
+              </div>
               <div className="flex items-center gap-3">
                 <img src={t.img} alt={t.name} className="w-10 h-10 rounded-full object-cover border border-slate-100" />
                 <div className="truncate">
-                  <h4 className="font-black text-sm text-slate-900 truncate">{t.name}</h4>
+                  <h4 className="font-black text-sm text-slate-900 truncate hover:text-blue-600 transition-colors">{t.name}</h4>
                   <p className="text-xs text-slate-400 font-bold truncate">{t.role}</p>
                 </div>
               </div>
-            </div>
+            </a>
           ))}
 
         </div>

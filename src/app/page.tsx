@@ -86,6 +86,7 @@ export default async function LandingPage() {
           </Link>
         </div>
 
+
         {/* Interactive Mockup Component */}
         <InteractiveMockup />
 
@@ -97,6 +98,9 @@ export default async function LandingPage() {
         
         {/* WHITE-LABEL SECTION */}
         <WhiteLabelSection />
+
+        {/* TESTIMONIALS SECTION */}
+        <Testimonials />
       </main>
       
       {/* FOOTER Component */}
