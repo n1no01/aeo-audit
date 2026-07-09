@@ -11,6 +11,7 @@ const isPublicRoute = createRouteMatcher([
   '/how-it-works',
   '/privacy',
   '/academy',
+  '/verify/[token]',
   '/robots.txt',
   '/sitemap.xml',
   '/terms',

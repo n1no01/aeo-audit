@@ -236,9 +236,19 @@ export default function AcademyDashboardClient({ userId, attemptsUsed, hasPassed
     }
   };
 
-  const getLinkedInShareUrl = () => {
+  // 🚀 POPRAVLJENA LOGIKA DELJENJA: Koristi tvoj provereni dynamic feed prozor
+  const handleLinkedInShare = () => {
     const certUrl = `https://www.aeoaudit-pro.com/verify/${userId}`;
-    return `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(certUrl)}`;
+    const nameString = fullName.trim() ? fullName.toUpperCase() : "AN AEO SPECIALIST";
+    
+    const text = `🎓 Certification Update: Official Credential Secured!\n\n` +
+                 `I am proud to announce that I am officially an AEO Certified Technical Specialist. ` +
+                 `I have cleared the technical examination on AEO Audit Pro, validating advanced skills in RAG optimizations, edge proxies, and structured graph injection.\n\n` +
+                 `Verify my live registry token here: ${certUrl}`;
+
+    const linkedinUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`;
+    
+    window.open(linkedinUrl, "_blank", "width=600,height=600,scrollbars=yes,resizable=yes");
   };
 
   return (
@@ -253,9 +263,13 @@ export default function AcademyDashboardClient({ userId, attemptsUsed, hasPassed
               <a href={`/verify/${userId}`} className="inline-block bg-slate-900 hover:bg-slate-800 text-white font-black px-6 py-3 rounded-xl text-xs uppercase tracking-wider transition">
                 View My Certificate 📄
               </a>
-              <a href={getLinkedInShareUrl()} target="_blank" rel="noopener noreferrer" className="inline-block bg-[#0077b5] hover:bg-[#006294] text-white font-black px-6 py-3 rounded-xl text-xs uppercase tracking-wider transition">
+              <button 
+                type="button"
+                onClick={handleLinkedInShare} 
+                className="inline-block bg-[#0077b5] hover:bg-[#006294] text-white font-black px-6 py-3 rounded-xl text-xs uppercase tracking-wider transition cursor-pointer"
+              >
                 Share on LinkedIn 🚀
-              </a>
+              </button>
             </div>
           )}
         </div>
@@ -272,9 +286,13 @@ export default function AcademyDashboardClient({ userId, attemptsUsed, hasPassed
             <a href={`/verify/${userId}`} className="bg-slate-900 hover:bg-slate-800 text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider transition shadow-sm">
               View Public Certificate 📄
             </a>
-            <a href={getLinkedInShareUrl()} target="_blank" rel="noopener noreferrer" className="bg-[#0077b5] hover:bg-[#006294] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider transition shadow-sm">
+            <button 
+              type="button"
+              onClick={handleLinkedInShare} 
+              className="bg-[#0077b5] hover:bg-[#006294] text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider transition shadow-sm cursor-pointer"
+            >
               Share on LinkedIn 🚀
-            </a>
+            </button>
           </div>
         </div>
       )}

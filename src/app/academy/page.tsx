@@ -74,7 +74,7 @@ export default async function AcademyPage() {
         </h1>
 
         <p className="text-slate-500 text-base sm:text-lg text-center max-w-2xl mb-12 font-medium leading-relaxed">
-          Master the physics of AI Search Engines. Learn how to optimize websites for RAG architectures, bypass crawler firewalls, and force ChatGPT, Gemini & Perplexity to cite your brand.
+          Stop optimizing for human clicks and start optimizing for LLM parsers. Learn how to optimize websites for RAG architectures, bypass crawler firewalls, and force ChatGPT, Gemini & Perplexity to cite your brand.
         </p>
 
         {/* Tri ključna stuba programa */}
@@ -96,42 +96,61 @@ export default async function AcademyPage() {
           </div>
         </div>
 
-        {/* Šta se uči */}
+        {/* Šta se uči (Curriculum) */}
         <div className="w-full max-w-2xl bg-white border border-slate-200/60 rounded-3xl p-6 sm:p-8 shadow-sm mb-12">
-          <h2 className="text-xl font-black text-slate-900 mb-6">Certification Curriculum</h2>
-          <div className="space-y-4">
+        <h2 className="text-xl font-black text-slate-900 mb-6">Certification Curriculum</h2>
+        <div className="space-y-4">
+            
+            {/* CH 1 */}
             <div className="flex gap-4 items-start">
-              <span className="font-black text-blue-600 bg-blue-50 text-xs px-2 py-1 rounded">CH 1</span>
-              <div>
-                <h4 className="font-bold text-sm text-slate-800">LLM Search Physics & RAG Core</h4>
-                <p className="text-slate-400 text-xs mt-0.5">Embeddings, context window compression, and the &quot;Lost in the Middle&quot; syndrome.</p>
-              </div>
+            <span className="font-black text-blue-600 bg-blue-50 text-xs px-2 py-1 rounded">CH 1</span>
+            <div>
+                <h4 className="font-bold text-sm text-slate-800">AEO Fundamentals & RAG Infrastructure</h4>
+                <p className="text-slate-400 text-xs mt-0.5">Understanding vector shifts from blue links to direct synthesis, machine-intake timelines, and Retrieval-Augmented Generation.</p>
             </div>
+            </div>
+            
             <div className="border-t border-slate-100 my-2" />
+            
+            {/* CH 2 */}
             <div className="flex gap-4 items-start">
-              <span className="font-black text-blue-600 bg-blue-50 text-xs px-2 py-1 rounded">CH 2</span>
-              <div>
-                <h4 className="font-bold text-sm text-slate-800">Advanced Semantic Graph Architectures</h4>
-                <p className="text-slate-400 text-xs mt-0.5">Deploying custom llms.txt files and deep entity linking using Wikidata graph IDs.</p>
-              </div>
+            <span className="font-black text-blue-600 bg-blue-50 text-xs px-2 py-1 rounded">CH 2</span>
+            <div>
+                <h4 className="font-bold text-sm text-slate-800">Crawler Operations & WAF Operations</h4>
+                <p className="text-slate-400 text-xs mt-0.5">Configuring Robots.txt for AI user-agents, optimizing TTFB latency, and bypassing silent HTTP 403 firewall/captcha blocks.</p>
             </div>
+            </div>
+            
             <div className="border-t border-slate-100 my-2" />
+            
+            {/* CH 3 */}
             <div className="flex gap-4 items-start">
-              <span className="font-black text-blue-600 bg-blue-50 text-xs px-2 py-1 rounded">CH 3</span>
-              <div>
-                <h4 className="font-bold text-sm text-slate-800">The 403 Fallacy & Firewall Operations</h4>
-                <p className="text-slate-400 text-xs mt-0.5">Bypassing stealthy Cloudflare/AWS server blocks for GPTBot and PerplexityBot.</p>
-              </div>
+            <span className="font-black text-blue-600 bg-blue-50 text-xs px-2 py-1 rounded">CH 3</span>
+            <div>
+                <h4 className="font-bold text-sm text-slate-800">DOM Architecture & Semantic Graphs</h4>
+                <p className="text-slate-400 text-xs mt-0.5">Enforcing heading continuity, shields for &quot;Lost in the Middle&quot; anomalies, multi-modal vision tags, and consolidated JSON-LD @graph schemas.</p>
             </div>
-          </div>
+            </div>
+            
+            <div className="border-t border-slate-100 my-2" />
+            
+            {/* CH 4 */}
+            <div className="flex gap-4 items-start">
+            <span className="font-black text-blue-600 bg-blue-50 text-xs px-2 py-1 rounded">CH 4</span>
+            <div>
+                <h4 className="font-bold text-sm text-slate-800">Ingestion Ingestion & AI Scoring Triad</h4>
+                <p className="text-slate-400 text-xs mt-0.5">Optimizing high-density data tables, token budget controls, and passing Google Non-Commodity, Entity Density, and Bluff score metrics.</p>
+            </div>
+            </div>
+
+        </div>
         </div>
 
         {/* CTA CARD */}
         <div className="w-full max-w-md bg-slate-900 text-white rounded-3xl p-8 text-center shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
           <h3 className="text-lg font-black tracking-wide uppercase mb-2">Get Certified Today</h3>
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <span className="text-slate-400 line-through text-lg font-bold">$49</span>
+          <div className="flex items-center justify-center gap-2 mb-6">       
             <span className="text-3xl font-black text-white">$10</span>
             <span className="text-slate-400 text-xs font-semibold">one-time access</span>
           </div>
@@ -143,7 +162,7 @@ export default async function AcademyPage() {
               productId={ACADEMY_PRODUCT_ID}
               userId={userId}
               userEmail={userEmail}
-              text="UNLOCK PROGRAM & PLAYBOOK"
+              text="GET STARTED"
               className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl tracking-wide transition-all duration-200 shadow-lg shadow-blue-600/20 text-sm flex items-center justify-center"
             />
           ) : (
