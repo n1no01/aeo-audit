@@ -16,6 +16,8 @@ type WebhookPayload = {
     plan?: { product_id?: string };
     metadata?: {
       clerkUserId?: string;
+      userId?: string; // Podržavamo oba ključa za svaki slučaj
+      payment_type?: string;
     };
     [key: string]: unknown;
   };
@@ -94,12 +96,14 @@ export async function POST(req: Request) {
 
   const STARTER_ID = process.env.NEXT_PUBLIC_DODO_STARTER_PLAN_ID;
   const AGENCY_ID = process.env.NEXT_PUBLIC_DODO_AGENCY_PLAN_ID;
+  const ACADEMY_PRODUCT_ID = process.env.NEXT_PUBLIC_DODO_ACADEMY_PRODUCT_ID; // 🚀 TVOJ NOVI ONE-TIME ID PROIZVODA
 
   const data = evt.data ?? {};
-  const clerkUserId = data.metadata?.clerkUserId;
+  // Podržavamo oba formata prosljeđivanja ID-ja radi sigurnosti
+  const clerkUserId = data.metadata?.clerkUserId || data.metadata?.userId;
 
   if (!clerkUserId) {
-    console.warn("Webhook missing metadata.clerkUserId; nothing to update.");
+    console.warn("Webhook missing metadata.clerkUserId / metadata.userId; nothing to update.");
     return NextResponse.json({ received: true });
   }
 
@@ -122,8 +126,6 @@ export async function POST(req: Request) {
         });
         const sub = await client.subscriptions.retrieve(String(data.subscription_id));
         
-        // Bezbedno čitanje iz SDK odgovora bez korišćenja 'any' keywords-a
-        // ✅ POPRAVLJENI KOD (Prvo kroz unknown, pa u Record):
         const planId = (sub as unknown as Record<string, unknown>)["plan_id"] as string | undefined;
         if (planId) return planId;
       } catch (e) {
@@ -134,8 +136,6 @@ export async function POST(req: Request) {
   }
 
   async function setPlan(plan: "STARTER" | "AGENCY", limit: number) {
-    // 🔄 KORISNIK JE PLATIO / OBNOVIO PRETPLATU: Resetujemo used_audits i radar_used na nulu
-
     const radarLimit = plan === "AGENCY" ? 500 : 100;
     const { error: dbError } = await supabaseAdmin
       .from("users")
@@ -155,7 +155,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ received: true });
   }
 
-  // Usklađeno sa zvaničnim Dodo eventima (Dodat i created i active za svaki slučaj)
+  // ===================================================================
+  // 📘 OBRADA SIGNALA ZA PRETPLATE (Starter i Agency Planovi)
+  // ===================================================================
   if (
     evt.type === "subscription.created" ||
     evt.type === "subscription.active" ||
@@ -178,7 +180,6 @@ export async function POST(req: Request) {
   }
 
   if (evt.type === "subscription.cancelled" || evt.type === "subscription.on_hold") {
-    // 🔄 KORISNIK OTKAZAO PRETPLATU: Vraćamo ga na FREE plan i resetujemo sve kredite
     const { error: dbError } = await supabaseAdmin
       .from("users")
       .update({ 
@@ -195,6 +196,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Database update failed" }, { status: 500 });
     }
     return NextResponse.json({ received: true });
+  }
+
+  // ===================================================================
+  // 🎓 OBRADA SIGNALA ZA JEDNOKRATNU UPLATU AKADEMIJE ($10 One-time)
+  // ===================================================================
+  if (evt.type === "order.paid") {
+    const resolvedId = await resolvePlanOrProductId();
+
+    // Provjeravamo da li se ID uplaćenog proizvoda poklapa sa ID-jem akademije iz .env-a
+    if (ACADEMY_PRODUCT_ID && resolvedId === ACADEMY_PRODUCT_ID) {
+      console.log(`Unlocking Academy Access for Clerk User: ${clerkUserId}`);
+      
+      const { error: dbError } = await supabaseAdmin
+        .from("users")
+        .update({ 
+          aeo_academy_paid: true,
+          exam_attempts_used: 0, // Resetujemo pokušaje na nulu pri novoj uplatnoj transakciji
+          exam_passed: false
+        })
+        .eq("id", clerkUserId);
+
+      if (dbError) {
+        console.error("Supabase Academy payment unlock failed:", dbError.message);
+        return NextResponse.json({ error: "Database update failed for academy node" }, { status: 500 });
+      }
+
+      return NextResponse.json({ received: true, academy_unlocked: true });
+    }
   }
 
   console.log(`Unhandled Dodo event type: ${evt.type}`);

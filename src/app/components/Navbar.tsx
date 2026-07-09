@@ -94,6 +94,16 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
             Pricing
           </Link>
 
+          {/* 🚀 ACADEMY LINK UNUTAR DASHBOARD-A */}
+          <Link
+            href="/academy"
+            className={`text-xs sm:text-sm font-semibold transition duration-200 flex items-center gap-1 m-0 ${
+              pathname.startsWith("/academy") ? "text-blue-600" : "text-slate-600 hover:text-blue-600"
+            }`}
+          >
+            Academy 🎓
+          </Link>
+
           <div className="h-4 w-px bg-slate-200 hidden sm:block" />
 
           {userStats && (
@@ -232,6 +242,16 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
           }`}
         >
           Pricing
+        </Link>
+
+        {/* 🚀 ACADEMY LINK NA JAVNOM NAVBARU */}
+        <Link
+          href="/academy"
+          className={`text-xs sm:text-sm font-bold transition m-0 ${
+            pathname.startsWith("/academy") ? "text-blue-600" : "text-slate-600 hover:text-blue-600"
+          }`}
+        >
+          Academy 🎓
         </Link>
 
         {userId ? (

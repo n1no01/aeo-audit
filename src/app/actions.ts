@@ -7,10 +7,11 @@ import { scrapeWebsite } from "./lib/scraper";
 import { calculateScore } from "./lib/scorer";
 import { generateAiAnalysis } from "./lib/gemini";
 import { ScrapedData, AuditData } from "./lib/types";
-import { PostgrestError } from "@supabase/supabase-js"; // ✅ Bezbjedna tipizacija Supabase grešaka
+import { PostgrestError } from "@supabase/supabase-js"; 
+import { revalidatePath } from "next/cache";
 
 // ===================================================================
-// STRUKTURE I TIPIZACIJA ZA AI RADAR (Čisti tipovi bez 'any')
+// STRUKTURE I TIPIZACIJA ZA AI RADAR I AKADEMIJU 
 // ===================================================================
 interface RadarAuditResult {
   isMentioned: boolean;
@@ -29,7 +30,7 @@ interface DBRadarHistoryItem {
   website_url: string;
   keyword: string;
   created_at: string;
-  share_token: string; // ✅ Bezbjedno mapiranje stringifikovanog UUID-a iz baze
+  share_token: string;
   result_data: RadarResultData;
 }
 
@@ -41,12 +42,19 @@ interface DBHistoryItem {
   result_data: Record<string, unknown>; 
 }
 
+// 🔑 AŽURIRANI KLJUČ ODGOVORA (Izmiksovane opcije koje prate jednostavniji Playbook)
+const ANSWER_KEY: Record<number, string> = {
+  1: "b", 2: "c", 3: "a", 4: "a", 5: "c",
+  6: "b", 7: "b", 8: "a", 9: "c", 10: "a",
+  11: "a", 12: "c", 13: "a", 14: "b", 15: "a",
+  16: "a", 17: "b", 18: "a", 19: "c", 20: "b"
+};
+
 // ===================================================================
 // CORE AEO AUDIT AKCIJE
 // ===================================================================
 
 export async function analyzeUrl(formData: FormData) {
-  // 🛡️ 1. SIGURNA VALIDACIJA INPUTA
   const rawUrlInput = formData.get("url");
   if (!rawUrlInput || typeof rawUrlInput !== "string") {
     return { error: "Please enter a valid target domain or URL." };
@@ -62,7 +70,6 @@ export async function analyzeUrl(formData: FormData) {
     return { error: "Missing API configuration keys." };
   }
 
-  // 🔒 2. CLERK AUTENTIFIKACIJA
   const { userId } = await auth();
   const clerkUser = await currentUser();
 
@@ -77,7 +84,6 @@ export async function analyzeUrl(formData: FormData) {
   let currentUsedAudits = 0;
 
   try {
-    // 👥 3. LAZY SINHRONIZACIJA KORISNIKA U SUPABASE
     let { data: dbUser } = await supabase
       .from("users")
       .select("*")
@@ -103,7 +109,6 @@ export async function analyzeUrl(formData: FormData) {
     userLimit = dbUser.audit_limit;
     currentUsedAudits = dbUser.used_audits || 0; 
 
-    // 👥 4. PROVJERA LIMITA BROJA AUDITA
     if (currentUsedAudits >= userLimit) {
       const stats = { plan: userPlan, limit: userLimit, used: currentUsedAudits };
       return { 
@@ -114,21 +119,18 @@ export async function analyzeUrl(formData: FormData) {
       };
     }
 
-    // 🔒 4b. BACKEND ZAŠTITA: Osiguraj da besplatni korisnici ne varaju sa White-Label podacima
     const hasSubmittedWhiteLabel = 
       formData.get("agencyName") || 
       formData.get("brandColor") || 
       formData.get("authorName");
 
     if (userPlan === "FREE" && hasSubmittedWhiteLabel) {
-      // Ako besplatni plan pokuša da pošalje modifikaciju brenda, saseci zahtev na backendu
       return { 
         error: "Custom white-label branding options are only available for Premium and Agency tiers.",
         userStats: { plan: userPlan, limit: userLimit, used: currentUsedAudits }
       };
     }
 
-    // 🚀 5. LOGIKA ZA SKREJPOVANJE I GEMINI AI
     let auditOutputData;
     try {
       const scrapedResult = await scrapeWebsite(url, SCRAPING_API_KEY) as ScrapedData;
@@ -137,7 +139,7 @@ export async function analyzeUrl(formData: FormData) {
 
       auditOutputData = {
         ...scrapedResult,
-        website_url: url, // ✨ Sačuvano direktno u JSON unutar result_data
+        website_url: url, 
         score: aiData.score || score,
         pageCategory: aiData.pageCategory || "Uncategorized",
         aiAnalysis: aiData.aiAnalysis || "No analysis provided.",
@@ -156,7 +158,6 @@ export async function analyzeUrl(formData: FormData) {
       };
     }
 
-    // 💾 6. UPIS REZULTATA AUDITA + SELEKTOVANJE GENERISANOG ID-ja
     const { data: insertedAudit, error: auditInsertError } = await supabase
       .from("audits")
       .insert([
@@ -166,7 +167,7 @@ export async function analyzeUrl(formData: FormData) {
           result_data: auditOutputData,
         },
       ])
-      .select("share_token") // Povlačimo share_token iz baze podataka
+      .select("share_token") 
       .single();
 
     if (auditInsertError) {
@@ -177,16 +178,11 @@ export async function analyzeUrl(formData: FormData) {
       };
     }
 
-    // ===================================================================
-    // GLOBALNI BROJAČ
-    // Audit je uspješno upisan u bazu iznad, sada sigurno uvećavamo globalnu statistiku
-    // ===================================================================
     const { error: globalRpcError } = await supabase.rpc("increment_audit_counter");
     if (globalRpcError) {
-      console.error("⚠️ Supabase RPC global counter error:", globalRpcError);
+      console.error("Supabase RPC global counter error:", globalRpcError);
     }
 
-    // 👥 7. ATOMSKO UVEĆAVANJE KREDITA
     const { data: updatedUsers, error: rpcError } = await supabase.rpc("increment_used_audits", {
       row_id: userId,
     });
@@ -195,7 +191,6 @@ export async function analyzeUrl(formData: FormData) {
       console.error("Supabase RPC increment error:", rpcError);
     }
 
-    // Uzimamo svježi 'used_audits' direktno iz baze
     const finalUsedCount = updatedUsers && updatedUsers[0] 
       ? updatedUsers[0].used_audits 
       : currentUsedAudits + 1;
@@ -215,11 +210,7 @@ export async function analyzeUrl(formData: FormData) {
     console.error("CRITICAL AUDIT ERROR CONTROL:", error);
     return { 
       error: "An unexpected system error occurred. Please try again later.",
-      userStats: {
-        plan: userPlan,
-        limit: userLimit,
-        used: currentUsedAudits
-      }
+      userStats: { plan: userPlan, limit: userLimit, used: currentUsedAudits }
     };
   }
 }
@@ -236,10 +227,9 @@ export async function getUserStats() {
       .maybeSingle();
 
     if (!dbUser) {
-      return { plan: "FREE", limit: 1, used: 0, radar_limit: 0, radar_used: 0 };
+      return { plan: "FREE", limit: 1, used: 0, radar_limit: 0, radar_used: 0, aeo_academy_paid: false, exam_attempts_used: 0, exam_passed: false };
     }
 
-    // Proračun za dinamički fallback ukoliko tabela nije odmah osvježena
     const defaultRadarLimit = 
       dbUser.plan === "FREE" ? 0 : 
       dbUser.plan === "STARTER" ? 100 : 500;
@@ -248,8 +238,11 @@ export async function getUserStats() {
       plan: dbUser.plan,
       limit: dbUser.audit_limit, 
       used: dbUser.used_audits || 0,
-      radar_limit: dbUser.radar_limit ?? defaultRadarLimit, // ✅ Ispravna kolona
-      radar_used: dbUser.radar_used || 0                    // ✅ Ispravna kolona
+      radar_limit: dbUser.radar_limit ?? defaultRadarLimit, 
+      radar_used: dbUser.radar_used || 0,                   
+      aeo_academy_paid: dbUser.aeo_academy_paid || false,     
+      exam_attempts_used: dbUser.exam_attempts_used || 0,    
+      exam_passed: dbUser.exam_passed || false                
     };
   } catch (error) {
     console.error("Error fetching user stats:", error);
@@ -257,14 +250,12 @@ export async function getUserStats() {
   }
 }
 
-// 🌐 JAVNA SERVER AKCIJA ZA UČITAVANJE DIJELJENIH IZVJEŠTAJA PREKO SIGURNOG UUID-A
 export async function getSharedAudit(shareToken: string) {
   if (!shareToken) return { error: "Invalid report identifier." };
 
-  // 🛡️ VALIDACIJA: Dozvoli prolaz samo ako je unijeti string validan UUID format
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(shareToken);
   if (!isUuid) {
-    console.warn(`⚠️ BLOKIRAN NAPAD/NEVALIDAN UPIT: Pokušan pristup sa nevalidnim tokenom "${shareToken}".`);
+    console.warn(`BLOKIRAN NAPAD/NEVALIDAN UPIT: Pokušan pristup sa nevalidnim tokenom "${shareToken}".`);
     return { error: "This audit report was not found or has been deleted." };
   }
 
@@ -277,12 +268,12 @@ export async function getSharedAudit(shareToken: string) {
       };
 
     if (error) {
-      console.error("❌ Supabase BAZA PUKLA:", error.message);
+      console.error("Supabase BAZA PUKLA:", error.message);
       return { error: "Database communication failure." };
     }
 
     if (!data) {
-      console.warn(`⚠️ REPORT NIJE PRONAĐEN: Audit sa tokenom "${shareToken}" ne postoji.`);
+      console.warn(`REPORT NIJE PRONAĐEN: Audit sa tokenom "${shareToken}" ne postoji.`);
       return { error: "This audit report was not found or has been deleted." };
     }
 
@@ -292,7 +283,7 @@ export async function getSharedAudit(shareToken: string) {
       createdAt: data.created_at,
       data: {
         ...data.result_data,
-        website_url: data.website_url // 🔐 Pomaže i kod javnih share-ova da imamo url namiren u tipu
+        website_url: data.website_url 
       }
     };
   } catch (error: unknown) {
@@ -302,7 +293,6 @@ export async function getSharedAudit(shareToken: string) {
   }
 }
 
-// 📜 SERVER AKCIJA ZA DOHVATANJE ISTORIJE - SADA SA OPTIMIZOVANIM LIMITOM
 export async function getUserAuditHistory(limit?: number): Promise<{ 
   success?: boolean; 
   error?: string; 
@@ -343,7 +333,6 @@ export async function getUserAuditHistory(limit?: number): Promise<{
 
 export async function incrementRadarCount(userId: string) {
   try {
-    // 1. Povuci trenutni broj skeniranja koristeći tačnu kolonu radar_used
     const { data: user, error: fetchError } = await supabase
       .from("users")
       .select("radar_used")
@@ -351,19 +340,18 @@ export async function incrementRadarCount(userId: string) {
       .maybeSingle();
 
     if (fetchError || !user) {
-      console.error("⚠️ Supabase error prefetching radar metrics:", fetchError);
+      console.error("Supabase error prefetching radar metrics:", fetchError);
       return false;
     }
 
-    // 2. Bezbjedno uvećaj vrijednost u koloni radar_used
     const currentCount = user.radar_used || 0;
     const { error: updateError } = await supabase
       .from("users")
-      .update({ radar_used: currentCount + 1 }) // ✅ Tačna kolona
+      .update({ radar_used: currentCount + 1 }) 
       .eq("id", userId);
 
     if (updateError) {
-      console.error("❌ Supabase update error incrementing radar count:", updateError.message);
+      console.error("Supabase update error incrementing radar count:", updateError.message);
       return false;
     }
 
@@ -374,7 +362,6 @@ export async function incrementRadarCount(userId: string) {
   }
 }
 
-// 📜 SERVER AKCIJA ZA DOHVATANJE RADAR ISTORIJE - UKLJUČEN SHARE_TOKEN + BACKEND PLAN PROTEKCIJA
 export async function getUserRadarHistory(limit?: number): Promise<{ 
   success?: boolean; 
   error?: string; 
@@ -384,7 +371,6 @@ export async function getUserRadarHistory(limit?: number): Promise<{
   if (!userId) return { error: "Unauthorized access." };
 
   try {
-    // 🔒 BACKEND ZAŠTITA: Prvo provjeri plan korisnika prije nego što uopšte otvoriš bazu za radar istoriju
     const { data: dbUser } = await supabase
       .from("users")
       .select("plan")
@@ -392,12 +378,12 @@ export async function getUserRadarHistory(limit?: number): Promise<{
       .maybeSingle();
 
     if (!dbUser || dbUser.plan?.toUpperCase() === "FREE") {
-      return { error: "🔒 AI Radar features and histories are exclusive to premium subscription tiers." };
+      return { error: "AI Radar features and histories are exclusive to premium subscription tiers." };
     }
 
     let query = supabase
       .from("radar_scans")
-      .select("id, website_url, keyword, created_at, share_token, result_data") // ✅ Povlačimo i share_token za klijent logove
+      .select("id, website_url, keyword, created_at, share_token, result_data") 
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
@@ -420,11 +406,9 @@ export async function getUserRadarHistory(limit?: number): Promise<{
   }
 }
 
-// 🌐 JAVNA SERVER AKCIJA ZA UČITAVANJE JAVNIH IZVJEŠTAJA AI RADARA PREKO UUID-A
 export async function getSharedRadarScan(shareToken: string) {
   if (!shareToken) return { error: "Invalid radar identifier." };
 
-  // 🛡️ Validacija formata UUID-a
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(shareToken);
   if (!isUuid) return { error: "This radar report format is invalid." };
 
@@ -436,7 +420,7 @@ export async function getSharedRadarScan(shareToken: string) {
       .maybeSingle();
 
     if (error) {
-      console.error("❌ Supabase radar fetch failed:", error.message);
+      console.error("Supabase radar fetch failed:", error.message);
       return { error: "Database communication failure." };
     }
 
@@ -444,7 +428,6 @@ export async function getSharedRadarScan(shareToken: string) {
       return { error: "This radar report was not found or has been deleted." };
     }
 
-    // Kastovanje podataka iz baze u naš strogi tip za bezbjedan povratak klijentu
     const formattedData = data.result_data as unknown as RadarResultData;
 
     return {
@@ -457,5 +440,96 @@ export async function getSharedRadarScan(shareToken: string) {
   } catch (error) {
     console.error("Critical error in getSharedRadarScan:", error);
     return { error: "An error occurred while retrieving the shared radar report." };
+  }
+}
+
+// ===================================================================
+// 🎓 PREMIUM SUBMISSION AKCIJA ZA AEO TECHNICAL SPECIALIST ISPIT
+// ===================================================================
+export async function submitAeoExam(answers: Record<number, string>, fullName: string) {
+  const { userId } = await auth();
+  if (!userId) return { success: false, message: "Unauthorized access." };
+
+  // 🛡️ Provera da ime nije prazno
+  if (!fullName || fullName.trim() === "") {
+    return { success: false, message: "Please provide your full legal name for certification verification." };
+  }
+
+  try {
+    const { data: userStats, error: fetchError } = await supabase
+      .from("users")
+      .select("aeo_academy_paid, exam_attempts_used, exam_passed")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (fetchError || !userStats) {
+      console.error("Supabase error fetching academy stats:", fetchError);
+      return { success: false, message: "User profile or academy registry not found." };
+    }
+
+    if (!userStats.aeo_academy_paid) {
+      return { success: false, message: "You have not purchased access to the academy program." };
+    }
+
+    if (userStats.exam_passed) {
+      return { success: false, message: "You have already passed this certification exam." };
+    }
+
+    if (userStats.exam_attempts_used >= 2) {
+      return { success: false, message: "Maximum examination attempts reached (2/2)." };
+    }
+
+    let correctCount = 0;
+    const totalQuestions = 20;
+    const requiredToPass = 18;
+
+    for (const [qId, answer] of Object.entries(answers)) {
+      if (answer === ANSWER_KEY[Number(qId)]) {
+        correctCount++;
+      }
+    }
+
+    const passed = correctCount >= requiredToPass;
+    const newAttemptsCount = (userStats.exam_attempts_used || 0) + 1;
+
+    // 🚀 ATOMSKO AŽURIRANJE: Upisujemo i full_name i cert_issued_at timestamp
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({
+        exam_attempts_used: newAttemptsCount,
+        exam_passed: passed,
+        full_name: passed ? fullName.trim() : null, // Čuva ime samo ako je ispit položen
+        cert_issued_at: passed ? new Date().toISOString() : null // Zaključava tačan datum prolaza
+      })
+      .eq("id", userId);
+
+    if (updateError) {
+      console.error("Supabase update error during exam registration:", updateError.message);
+      return { success: false, message: "Database communication failure during score sync." };
+    }
+
+    revalidatePath("/academy/certification");
+
+    if (passed) {
+      return {
+        passed: true,
+        score: correctCount,
+        message: "🎉 Brilliant! You passed the exam and officially earned your AEO Technical Specialist credential."
+      };
+    }
+
+    return {
+      passed: false,
+      score: correctCount,
+      message: `Exam not passed. Score: ${correctCount}/${totalQuestions}. Required: ${requiredToPass}/20. ${
+        newAttemptsCount < 2 
+          ? "You have ONE final attempt remaining. Review the Technical Playbook carefully before retaking the test." 
+          : "You have exhausted both of your official validation attempts."
+      }`
+    };
+
+  } catch (error) {
+    console.error("Critical failure during exam processing action:", error);
+    return { success: false, message: "An unexpected network layer crash occurred." };
   }
 }
