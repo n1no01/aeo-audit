@@ -5,7 +5,7 @@ import { Webhook } from "standardwebhooks";
 
 export const dynamic = "force-dynamic";
 
-// 🛡️ REŠEN PROBLEM SA ANY: Koristimo duboko mapirani unknown tip za maksimalnu bezbednost
+// 🛡️ REŠEN PROBLEM SA ANY: Definisani strogi i prošireni tipovi za Dodo Webhook payload
 type WebhookPayload = {
   type: string;
   data: {
@@ -16,7 +16,7 @@ type WebhookPayload = {
     plan?: { product_id?: string };
     metadata?: {
       clerkUserId?: string;
-      userId?: string; // Podržavamo oba ključa za svaki slučaj
+      userId?: string; 
       payment_type?: string;
     };
     [key: string]: unknown;
@@ -96,10 +96,9 @@ export async function POST(req: Request) {
 
   const STARTER_ID = process.env.NEXT_PUBLIC_DODO_STARTER_PLAN_ID;
   const AGENCY_ID = process.env.NEXT_PUBLIC_DODO_AGENCY_PLAN_ID;
-  const ACADEMY_PRODUCT_ID = process.env.NEXT_PUBLIC_DODO_ACADEMY_PRODUCT_ID; // 🚀 TVOJ NOVI ONE-TIME ID PROIZVODA
+  const ACADEMY_PRODUCT_ID = process.env.NEXT_PUBLIC_DODO_ACADEMY_PRODUCT_ID; 
 
   const data = evt.data ?? {};
-  // Podržavamo oba formata prosljeđivanja ID-ja radi sigurnosti
   const clerkUserId = data.metadata?.clerkUserId || data.metadata?.userId;
 
   if (!clerkUserId) {
@@ -110,13 +109,15 @@ export async function POST(req: Request) {
   const environment = process.env.NODE_ENV === "production" ? "live_mode" : "test_mode";
 
   async function resolvePlanOrProductId(): Promise<string | null> {
-    const direct =
-      data.product_id ||
-      data.plan_id ||
-      data.product?.id ||
-      data.plan?.product_id ||
-      null;
-    if (direct) return String(direct);
+    // 🚀 BEZBJEDNO UZIMANJE BEZ ANY: Prolazimo kroz tipizirane opcije i fallback na siguran kast
+    if (data.product_id) return String(data.product_id);
+    if (data.plan_id) return String(data.plan_id);
+    if (data.product?.id) return String(data.product.id);
+    if (data.plan?.product_id) return String(data.plan.product_id);
+
+    // Ako je objekat raširen, provjeravamo direktno unutar data strukture kao Record
+    const rawData = data as Record<string, unknown>;
+    if (rawData.product_id) return String(rawData.product_id);
 
     if (data.subscription_id && process.env.DODO_PAYMENTS_API_KEY) {
       try {
@@ -204,7 +205,8 @@ export async function POST(req: Request) {
   if (evt.type === "order.paid") {
     const resolvedId = await resolvePlanOrProductId();
 
-    // Provjeravamo da li se ID uplaćenog proizvoda poklapa sa ID-jem akademije iz .env-a
+    console.log(`[DODO WEBHOOK] Processing order.paid. Resolved ID: ${resolvedId}, Expected Academy ID: ${ACADEMY_PRODUCT_ID}`);
+
     if (ACADEMY_PRODUCT_ID && resolvedId === ACADEMY_PRODUCT_ID) {
       console.log(`Unlocking Academy Access for Clerk User: ${clerkUserId}`);
       
@@ -212,7 +214,7 @@ export async function POST(req: Request) {
         .from("users")
         .update({ 
           aeo_academy_paid: true,
-          exam_attempts_used: 0, // Resetujemo pokušaje na nulu pri novoj uplatnoj transakciji
+          exam_attempts_used: 0, 
           exam_passed: false
         })
         .eq("id", clerkUserId);
@@ -223,6 +225,8 @@ export async function POST(req: Request) {
       }
 
       return NextResponse.json({ received: true, academy_unlocked: true });
+    } else {
+      console.warn(`[DODO WEBHOOK] ID Mismatch or unhandled one-time product layout. Resolved: ${resolvedId}`);
     }
   }
 
