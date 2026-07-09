@@ -28,7 +28,8 @@ export async function getDodoCheckoutUrl(
       product_cart: [{ product_id: productId, quantity: 1 }],
       customer: { email },
       metadata: { clerkUserId: String(clerkUserId) },
-      return_url: `${appUrl}/dashboard`,
+      // 🚀 POPRAVLJENO: Vraćamo korisnika direktno na academy uz naš success flag
+      return_url: `${appUrl}/academy?payment=success`, 
     });
 
     const checkoutUrl = (session as { checkout_url?: string }).checkout_url ?? null;
