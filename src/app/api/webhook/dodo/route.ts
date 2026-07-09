@@ -5,7 +5,7 @@ import { Webhook } from "standardwebhooks";
 
 export const dynamic = "force-dynamic";
 
-// 🛡️ REŠEN PROBLEM SA ANY: Definisani strogi i prošireni tipovi za Dodo Webhook payload
+// 🛡️ REŠEN PROBLEM SA ANY: Precizno tipiziran payload prema Dodo JSON strukturi
 type WebhookPayload = {
   type: string;
   data: {
@@ -14,6 +14,7 @@ type WebhookPayload = {
     subscription_id?: string;
     product?: { id?: string };
     plan?: { product_id?: string };
+    product_cart?: Array<{ product_id: string; quantity: number }>; // 🚀 Dodato za jednokratne korpe
     metadata?: {
       clerkUserId?: string;
       userId?: string; 
@@ -109,13 +110,18 @@ export async function POST(req: Request) {
   const environment = process.env.NODE_ENV === "production" ? "live_mode" : "test_mode";
 
   async function resolvePlanOrProductId(): Promise<string | null> {
-    // 🚀 BEZBJEDNO UZIMANJE BEZ ANY: Prolazimo kroz tipizirane opcije i fallback na siguran kast
+    // 1. Provjera direktnih ID polja
     if (data.product_id) return String(data.product_id);
     if (data.plan_id) return String(data.plan_id);
     if (data.product?.id) return String(data.product.id);
     if (data.plan?.product_id) return String(data.plan.product_id);
 
-    // Ako je objekat raširen, provjeravamo direktno unutar data strukture kao Record
+    // 2. 🚀 POPRAVLJENO: Izvlačenje iz Dodo product_cart niza za jednokratne uplate
+    if (data.product_cart && data.product_cart.length > 0 && data.product_cart[0]?.product_id) {
+      return String(data.product_cart[0].product_id);
+    }
+
+    // Fallback na sirovo mapiranje strukture
     const rawData = data as Record<string, unknown>;
     if (rawData.product_id) return String(rawData.product_id);
 
@@ -202,10 +208,11 @@ export async function POST(req: Request) {
   // ===================================================================
   // 🎓 OBRADA SIGNALA ZA JEDNOKRATNU UPLATU AKADEMIJE ($10 One-time)
   // ===================================================================
-  if (evt.type === "order.paid") {
+  // 🚀 POPRAVLJENO: Hvata zvanični Dodo 'payment.succeeded' event tip
+  if (evt.type === "payment.succeeded") {
     const resolvedId = await resolvePlanOrProductId();
 
-    console.log(`[DODO WEBHOOK] Processing order.paid. Resolved ID: ${resolvedId}, Expected Academy ID: ${ACADEMY_PRODUCT_ID}`);
+    console.log(`[DODO WEBHOOK] Processing payment.succeeded. Resolved ID: ${resolvedId}, Expected Academy ID: ${ACADEMY_PRODUCT_ID}`);
 
     if (ACADEMY_PRODUCT_ID && resolvedId === ACADEMY_PRODUCT_ID) {
       console.log(`Unlocking Academy Access for Clerk User: ${clerkUserId}`);
