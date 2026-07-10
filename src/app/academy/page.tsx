@@ -107,10 +107,12 @@ export default async function AcademyPage({ searchParams }: PageProps) {
           </span>
         </div>
 
-        {/* Headline */}
-        <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-center max-w-3xl leading-[1.15] mb-6 text-slate-900">
-          Become a Certified <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 italic">AEO Specialist</span>
-        </h1>
+      <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-center max-w-3xl leading-[1.15] mb-6 text-slate-900">
+  Become a Certified{" "}
+  <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+    AEO Specialist
+    </span>
+</h1>
 
         <p className="text-slate-500 text-base sm:text-lg text-center max-w-2xl mb-12 font-medium leading-relaxed">
           Stop optimizing for human clicks and start optimizing for LLM parsers. Learn how to optimize websites for RAG architectures, bypass crawler firewalls, and force ChatGPT, Gemini & Perplexity to cite your brand.
@@ -119,71 +121,112 @@ export default async function AcademyPage({ searchParams }: PageProps) {
         {/* Tri ključna stuba programa */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mb-16">
           <div className="bg-white border border-slate-200/60 p-6 rounded-2xl shadow-sm">
-            <div className="text-xl mb-3">📘</div>
             <h3 className="font-black text-sm uppercase tracking-wider text-slate-900 mb-2">Technical Playbook</h3>
             <p className="text-slate-500 text-sm leading-relaxed">Complete text-based, documentation-style guide optimized for fast, in-depth learning.</p>
           </div>
           <div className="bg-white border border-slate-200/60 p-6 rounded-2xl shadow-sm">
-            <div className="text-xl mb-3">📝</div>
-            <h3 className="font-black text-sm uppercase tracking-wider text-slate-900 mb-2">Rigorous Exam</h3>
+            <h3 className="font-black text-sm uppercase tracking-wider text-slate-900 mb-2">Final Assessment</h3>
             <p className="text-slate-500 text-sm leading-relaxed">20 expert-level engineering & SEO questions. Requires 18/20 (90%) score to pass.</p>
           </div>
           <div className="bg-white border border-slate-200/60 p-6 rounded-2xl shadow-sm">
-            <div className="text-xl mb-3">💼</div>
             <h3 className="font-black text-sm uppercase tracking-wider text-slate-900 mb-2">LinkedIn Authority</h3>
-            <p className="text-slate-500 text-sm leading-relaxed">Get a unique verification URL and verifiable badge to display on your professional profiles.</p>
+            <p className="text-slate-500 text-sm leading-relaxed">Get a unique verification URL to instantly validate your credentials on your professional profiles.</p>
           </div>
         </div>
 
-        {/* Šta se uči (Curriculum) */}
-        <div className="w-full max-w-2xl bg-white border border-slate-200/60 rounded-3xl p-6 sm:p-8 shadow-sm mb-12">
-          <h2 className="text-xl font-black text-slate-900 mb-6">Certification Curriculum</h2>
-          <div className="space-y-4">
-              
-              {/* CH 1 */}
-              <div className="flex gap-4 items-start">
-                <span className="font-black text-blue-600 bg-blue-50 text-xs px-2 py-1 rounded">CH 1</span>
-                <div>
-                    <h4 className="font-bold text-sm text-slate-800">AEO Fundamentals & RAG Infrastructure</h4>
-                    <p className="text-slate-400 text-xs mt-0.5">Understanding vector shifts from blue links to direct synthesis, machine-intake timelines, and Retrieval-Augmented Generation.</p>
-                </div>
-              </div>
-              
-              <div className="border-t border-slate-100 my-2" />
-              
-              {/* CH 2 */}
-              <div className="flex gap-4 items-start">
-                <span className="font-black text-blue-600 bg-blue-50 text-xs px-2 py-1 rounded">CH 2</span>
-                <div>
-                    <h4 className="font-bold text-sm text-slate-800">Crawler Operations & WAF Operations</h4>
-                    <p className="text-slate-400 text-xs mt-0.5">Configuring Robots.txt for AI user-agents, optimizing TTFB latency, and bypassing silent HTTP 403 firewall/captcha blocks.</p>
-                </div>
-              </div>
-              
-              <div className="border-t border-slate-100 my-2" />
-              
-              {/* CH 3 */}
-              <div className="flex gap-4 items-start">
-                <span className="font-black text-blue-600 bg-blue-50 text-xs px-2 py-1 rounded">CH 3</span>
-                <div>
-                    <h4 className="font-bold text-sm text-slate-800">DOM Architecture & Semantic Graphs</h4>
-                    <p className="text-slate-400 text-xs mt-0.5">Enforcing heading continuity, shields for &quot;Lost in the Middle&quot; anomalies, multi-modal vision tags, and consolidated JSON-LD @graph schemas.</p>
-                </div>
-              </div>
-              
-              <div className="border-t border-slate-100 my-2" />
-              
-              {/* CH 4 */}
-              <div className="flex gap-4 items-start">
-                <span className="font-black text-blue-600 bg-blue-50 text-xs px-2 py-1 rounded">CH 4</span>
-                <div>
-                    <h4 className="font-bold text-sm text-slate-800">Ingestion Formatting & AI Scoring Triad</h4>
-                    <p className="text-slate-400 text-xs mt-0.5">Optimizing high-density data tables, token budget controls, and passing Google Non-Commodity, Entity Density, and Bluff score metrics.</p>
-                </div>
-              </div>
-
-          </div>
+       {/* Šta se uči (Curriculum) */}
+<div className="w-full max-w-2xl bg-white border border-slate-200/60 rounded-3xl p-6 sm:p-8 shadow-sm mb-12">
+  <h2 className="text-xl font-black text-slate-900 mb-6">Certification Curriculum</h2>
+  <div className="space-y-4">
+      
+      {/* CH 1 */}
+      <div className="flex gap-4 items-start">
+        <span className="font-black text-blue-600 bg-blue-50 text-xs px-2 py-1 rounded shrink-0">CH 1</span>
+        <div>
+            <h4 className="font-bold text-sm text-slate-800">Introduction to Answer Engine Optimization (AEO)</h4>
+            <p className="text-slate-500 text-xs mt-0.5">Understand the fundamentals of AEO vs traditional SEO, how AI answer engines work at a high level, and why semantic understanding is critical for next-gen search visibility.</p>
         </div>
+      </div>
+      
+      <div className="border-t border-slate-100 my-2" />
+      
+      {/* CH 2 */}
+      <div className="flex gap-4 items-start">
+        <span className="font-black text-blue-600 bg-blue-50 text-xs px-2 py-1 rounded shrink-0">CH 2</span>
+        <div>
+            <h4 className="font-bold text-sm text-slate-800">Technical Foundations of AEO: Crawling, Rendering & AI Accessibility</h4>
+            <p className="text-slate-500 text-xs mt-0.5">Learn how AI systems discover and process website data. Master HTML structure, server performance, rendering pipelines, and eliminate technical barriers to AI visibility.</p>
+        </div>
+      </div>
+      
+      <div className="border-t border-slate-100 my-2" />
+      
+      {/* CH 3 */}
+      <div className="flex gap-4 items-start">
+        <span className="font-black text-blue-600 bg-blue-50 text-xs px-2 py-1 rounded shrink-0">CH 3</span>
+        <div>
+            <h4 className="font-bold text-sm text-slate-800">AI Crawlers, Robots.txt & Website Accessibility</h4>
+            <p className="text-slate-500 text-xs mt-0.5">Configure robots.txt for specialized AI user-agents, manage firewall restrictions, and eliminate silent HTTP blocks preventing AI systems from discovering your content.</p>
+        </div>
+      </div>
+      
+      <div className="border-t border-slate-100 my-2" />
+      
+      {/* CH 4 */}
+      <div className="flex gap-4 items-start">
+        <span className="font-black text-blue-600 bg-blue-50 text-xs px-2 py-1 rounded shrink-0">CH 4</span>
+        <div>
+            <h4 className="font-bold text-sm text-slate-800">Semantic HTML, Content Structure & Heading Architecture</h4>
+            <p className="text-slate-500 text-xs mt-0.5">Enforce clean heading hierarchy and logical DOM structure to map your data cleanly, optimizing how automated systems segment and interpret information layout.</p>
+        </div>
+      </div>
+      
+      <div className="border-t border-slate-100 my-2" />
+      
+      {/* CH 5 */}
+      <div className="flex gap-4 items-start">
+        <span className="font-black text-blue-600 bg-blue-50 text-xs px-2 py-1 rounded shrink-0">CH 5</span>
+        <div>
+            <h4 className="font-bold text-sm text-slate-800">Multimodal AI, Image Optimization & Visual Accessibility</h4>
+            <p className="text-slate-500 text-xs mt-0.5">Explore how modern LLMs process visual content. Optimize images, alt attributes, and multimedia token ingestion for multi-modal context recognition.</p>
+        </div>
+      </div>
+      
+      <div className="border-t border-slate-100 my-2" />
+      
+      {/* CH 6 */}
+      <div className="flex gap-4 items-start">
+        <span className="font-black text-blue-600 bg-blue-50 text-xs px-2 py-1 rounded shrink-0">CH 6</span>
+        <div>
+            <h4 className="font-bold text-sm text-slate-800">Structured Data, JSON-LD & Entity Optimization</h4>
+            <p className="text-slate-500 text-xs mt-0.5">Implement machine-readable metadata via JSON-LD, deploy Schema.org vocabularies, map knowledge graphs, and secure crystal-clear brand disambiguation.</p>
+        </div>
+      </div>
+      
+      <div className="border-t border-slate-100 my-2" />
+      
+      {/* CH 7 */}
+      <div className="flex gap-4 items-start">
+        <span className="font-black text-blue-600 bg-blue-50 text-xs px-2 py-1 rounded shrink-0">CH 7</span>
+        <div>
+            <h4 className="font-bold text-sm text-slate-800">AI-Friendly Content Architecture & Information Formatting</h4>
+            <p className="text-slate-500 text-xs mt-0.5">Master advanced content chunking, frame high-confidence entity-rich definitions, and design highly scannable semantic data patterns using tables, lists, and FAQs.</p>
+        </div>
+      </div>
+      
+      <div className="border-t border-slate-100 my-2" />
+      
+      {/* CH 8 */}
+      <div className="flex gap-4 items-start">
+        <span className="font-black text-blue-600 bg-blue-50 text-xs px-2 py-1 rounded shrink-0">CH 8</span>
+        <div>
+            <h4 className="font-bold text-sm text-slate-800">AEO Auditing, Performance Monitoring & Continuous Optimization</h4>
+            <p className="text-slate-500 text-xs mt-0.5">Learn how to execute full AEO audits, build repeatable workflow optimization templates, prioritize fixes, and maintain long-term AI-engine engine search metrics.</p>
+        </div>
+      </div>
+
+  </div>
+</div>
 
         {/* CTA CARD */}
         <div className="w-full max-w-md bg-slate-900 text-white rounded-3xl p-8 text-center shadow-xl relative overflow-hidden">
@@ -201,12 +244,12 @@ export default async function AcademyPage({ searchParams }: PageProps) {
               userId={userId}
               userEmail={userEmail}
               text="GET STARTED"
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl tracking-wide transition-all duration-200 shadow-lg shadow-blue-600/20 text-sm flex items-center justify-center cursor-pointer"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl tracking-wide transition-all duration-200 shadow-lg shadow-blue-600/20 text-sm flex items-center justify-center cursor-pointer"
             />
           ) : (
             <Link 
               href="/sign-in?redirectUrl=/academy" 
-              className="block w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl tracking-wide transition-all duration-200 shadow-lg shadow-blue-600/20 text-sm"
+              className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl tracking-wide transition-all duration-200 shadow-lg shadow-blue-600/20 text-sm"
             >
               SIGN IN TO UNLOCK ACCESS
             </Link>

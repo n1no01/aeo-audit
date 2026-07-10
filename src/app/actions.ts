@@ -514,7 +514,7 @@ export async function submitAeoExam(answers: Record<number, string>, fullName: s
       return {
         passed: true,
         score: correctCount,
-        message: "🎉 Brilliant! You passed the exam and officially earned your AEO Technical Specialist credential."
+        message: "🎉 Brilliant! You passed the exam and officially earned your AEO Specialist credential."
       };
     }
 
