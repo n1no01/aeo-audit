@@ -294,7 +294,7 @@ export default function Home() {
             </span>
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight italic">
-            AEO<span className="text-blue-600">Audit</span> Pro
+            AEO<span className="text-blue-600"> Audit</span> Pro
           </h1>
           <p className="text-slate-500 mt-4 sm:mt-5 text-sm sm:text-lg max-w-2xl mx-auto font-medium">
             Enterprise-grade Answer Engine Optimization auditing platform powered by AI semantic analysis.

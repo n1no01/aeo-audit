@@ -1,7 +1,7 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 
-// Definiši koje rute su javne
-const isPublicRoute = createRouteMatcher([
+// 🚀 Umjesto createRouteMatcher, definišemo obični JS niz sa javnim putanjama
+const publicPaths = [
   '/', 
   '/tools/ai-schema-generator',
   '/tools/ai-robots-generator',
@@ -11,18 +11,26 @@ const isPublicRoute = createRouteMatcher([
   '/how-it-works',
   '/privacy',
   '/academy',
-  '/verify/[token]',
+  '/verify',         
   '/robots.txt',
   '/sitemap.xml',
   '/terms',
-  '/sign-in(.*)', 
-  '/sign-up(.*)', 
-  '/api/webhook(.*)' // Obavezno za Stripe kasniji webhook
-]);
+  '/sign-in',           
+  '/sign-up',          
+  '/api/webhook'     
+];
 
 export default clerkMiddleware(async (auth, request) => {
+  const { pathname } = request.nextUrl;
+
+  // Provjeravamo da li trenutna putanja tačno odgovara nekoj iz niza 
+  // ili počinje sa njom (što je JS zamjena za regex-e i parametre poput (.*) ili [token])
+  const isPublicRoute = publicPaths.some(path => 
+    pathname === path || pathname.startsWith(path + '/')
+  );
+
   // Ako ruta NIJE javna, zaštiti je
-  if (!isPublicRoute(request)) {
+  if (!isPublicRoute) {
     // Ispravan način za v5+ unutar middleware callback-a:
     const authObj = await auth();
     

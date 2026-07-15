@@ -59,7 +59,7 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
       <nav className="w-full max-w-6xl mx-auto p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-transparent border-b border-slate-200/40 sm:border-none relative z-10">
         <Link href="/dashboard" className="group cursor-pointer select-none">
           <div className="text-2xl font-black tracking-tight italic">
-            AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200">Audit</span> Pro
+            AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200"> Audit</span> Pro
           </div>
         </Link>
 
@@ -145,7 +145,7 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
     <nav className="w-full max-w-5xl mx-auto p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-transparent z-50 relative">
       <Link href={userId ? "/dashboard" : "/"} className="group cursor-pointer select-none">
         <div className="text-2xl font-black tracking-tight italic">
-          AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200">Audit</span> Pro
+          AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200"> Audit</span> Pro
         </div>
       </Link>
 
