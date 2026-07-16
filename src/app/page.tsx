@@ -18,30 +18,8 @@ export default async function LandingPage() {
     redirect("/dashboard");
   }
 
-
-
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white relative overflow-x-hidden">
-
-      <div className="w-full bg-slate-900 text-white text-xs sm:text-sm py-2.5 px-4 text-center border-b border-slate-800 relative z-50 flex items-center justify-center gap-2 flex-wrap">
-        <span className="inline-flex items-center gap-1.5 font-medium text-slate-300">
-          <span className="flex h-2 w-2 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-          </span>
-          <strong className="text-white font-semibold">Looking for early partners 🤝</strong> 
-          We just launched. Build your first few AI Search audits completely free.
-        </span>
-        <span className="text-blue-400 font-medium">
-          Help us test the engine, keep the white-label DOCX reports.
-        </span>
-        <a 
-          href="mailto:hello@aeoaudit-pro.com"
-          className="text-blue-400 font-semibold hover:text-blue-300 underline underline-offset-4 transition-colors duration-200"
-        >
-          Send us an email to get access &rarr;
-        </a>
-      </div>
         
       {/* GLOBAL BACKGROUND GRID */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_0.75px,transparent_0.75px),linear-gradient(to_bottom,#e2e8f0_0.75px,transparent_0.75px)] bg-[size:4rem_4rem] pointer-events-none opacity-40" />
