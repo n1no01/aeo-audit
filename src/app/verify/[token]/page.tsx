@@ -141,7 +141,7 @@ export default async function VerifyCertificatePage({ params }: VerifyPageProps)
             has successfully completed the AEO Audit Pro Academy certification program and demonstrated practical knowledge of modern AI Search Optimization principles.
           </p>
 
-          {/* CERTIFICATE TITLE & STAMP SPLIT (Sada stoje uporedo radi uštede prostora) */}
+          {/* CERTIFICATE TITLE & STAMP SPLIT */}
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-6 bg-slate-50 border border-slate-200/60 rounded-2xl p-4 max-w-xl mx-auto shadow-inner">
             <div className="text-center sm:text-left">
               <span className="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase block">
@@ -229,7 +229,7 @@ export default async function VerifyCertificatePage({ params }: VerifyPageProps)
       </main>
 
       {/* FOOTER */}
-      <footer className="max-w-3xl w-full mx-auto border-t border-slate-200 pt-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-[11px] font-bold text-slate-400">
+      <footer className="no-print max-w-3xl w-full mx-auto border-t border-slate-200 pt-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-[11px] font-bold text-slate-400">
         <p>© 2026 AEO Audit Pro Academy. All rights reserved.</p>
         <Link href="/" className="text-slate-600 hover:text-blue-600 transition">
           Audit Your Domain →

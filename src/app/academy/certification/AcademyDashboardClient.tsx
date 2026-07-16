@@ -223,6 +223,7 @@ export default function AcademyDashboardClient({ userId, attemptsUsed, hasPassed
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [examResult, setExamResult] = useState<{ passed: boolean; score: number; message: string } | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
   
   // State za tajmer: 30 minuta = 1800 sekundi
   const [timeLeft, setTimeLeft] = useState(1800);
@@ -304,6 +305,37 @@ export default function AcademyDashboardClient({ userId, attemptsUsed, hasPassed
     window.open(linkedinUrl, "_blank", "width=600,height=600,scrollbars=yes,resizable=yes");
   };
 
+  // 🚀 NOVOKREIRANI SIGURNI PREUZIMAČ KOJI KORISTI SKRIVENI IFRAME ZA ŠTAMPANJE
+  const handleDownloadPDF = () => {
+    if (typeof window === "undefined") return;
+    setIsDownloading(true);
+
+    // Kreiramo dinamički i nevidljivi iframe
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.src = `/verify/${userId}`;
+
+    document.body.appendChild(iframe);
+
+    iframe.onload = () => {
+      // Čekamo 500ms da se Next.js stranica i slike unutar iframe-a potpuno učitaju
+      setTimeout(() => {
+        if (iframe.contentWindow) {
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+        }
+        // Čistimo DOM i uklanjamo iframe nakon printanja
+        document.body.removeChild(iframe);
+        setIsDownloading(false);
+      }, 500);
+    };
+  };
+
   return (
     <div className="space-y-12">
       {/* EXAM RESULT NOTIFICATION OVERLAY */}
@@ -313,8 +345,16 @@ export default function AcademyDashboardClient({ userId, attemptsUsed, hasPassed
           <p className="text-sm font-medium leading-relaxed">{examResult.message}</p>
           {examResult.passed && (
             <div className="mt-5 flex flex-wrap gap-3">
-              <a href={`/verify/${userId}`} className="inline-block bg-slate-900 hover:bg-slate-800 text-white font-black px-6 py-3 rounded-xl text-xs uppercase tracking-wider transition">
-                View My Certificate 📄
+              <button 
+                type="button"
+                onClick={handleDownloadPDF} 
+                disabled={isDownloading}
+                className="inline-block bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-black px-6 py-3 rounded-xl text-xs uppercase tracking-wider transition cursor-pointer"
+              >
+                {isDownloading ? "Preparing PDF..." : "Download Certificate 📄"}
+              </button>
+              <a href={`/verify/${userId}`} target="_blank" className="inline-block border border-slate-300 hover:bg-slate-100 text-slate-700 font-black px-6 py-3 rounded-xl text-xs uppercase tracking-wider transition">
+                View Public Registry 🔍
               </a>
               <button 
                 type="button"
@@ -336,8 +376,16 @@ export default function AcademyDashboardClient({ userId, attemptsUsed, hasPassed
             <p className="text-sm opacity-80">Your specialized technical credential is fully active and verified in our central registry.</p>
           </div>
           <div className="flex justify-center gap-3">
-            <a href={`/verify/${userId}`} className="bg-slate-900 hover:bg-slate-800 text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider transition shadow-sm">
-              View Public Certificate 📄
+            <button 
+              type="button"
+              onClick={handleDownloadPDF} 
+              disabled={isDownloading}
+              className="bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider transition shadow-sm cursor-pointer"
+            >
+              {isDownloading ? "Preparing PDF..." : "Download Certificate 📄"}
+            </button>
+            <a href={`/verify/${userId}`} target="_blank" className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-black px-6 py-2.5 rounded-xl text-xs uppercase tracking-wider transition shadow-sm">
+              View Public Registry 🔍
             </a>
             <button 
               type="button"

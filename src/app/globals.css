@@ -1,8 +1,31 @@
 @import "tailwindcss";
 
+/* 🚀 Registrujemo selector varijantu za dark mode u Tailwind v4 */
+@variant dark (&:where(.dark, .dark *));
+
+/* ==========================================================================
+   1. REGISTRACIJA CSS VARIJABLI (Svijetla vs Tamno-plava tema)
+   ========================================================================== */
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+  --text-muted: #64748b;
+  --grid-color: #e2e8f0; /* Standardna svijetlo-siva boja za linije mrežice */
+  --grid-opacity: 0.4;   /* Prozirnost mrežice na svijetloj temi */
+}
+
+/* TAMNA TEMA (Prelijepa duboka tamno-plava "Midnight Blue" tema) */
+html.dark {
+  --background: #0b1329;    /* 🌌 Duboka ponoćno-plava za pozadinu aplikacije */
+  --foreground: #f1f5f9;    /* Ultra-svijetla sivo-plava za maksimalnu čitljivost teksta */
+  --card-bg: #1c2541;       /* 💳 Nešto svjetlija teget-plava za kartice, daje dubinu */
+  --card-border: #2a3a5f;   /* Jasna, ali suptilna plavičasta granica za kartice */
+  --text-muted: #94a3b8;    /* Blaga sivo-plava za prigušene tekstove (savršen kontrast) */
+  --grid-color: #3b82f6;    /* 🌐 Plave linije za mrežicu koje se stapaju sa pozadinom */
+  --grid-opacity: 0.08;     /* Vrlo niska prozirnost mrežice u mraku da ne odvlači pažnju */
 }
 
 @theme inline {
@@ -12,18 +35,167 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* ==========================================================================
+   2. BAZIČNI STILOVI & TRANZICIJE
+   ========================================================================== */
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease; /* Glatka promjena teme */
 }
+
+/* ==========================================================================
+   3. GLOBALNE AUTOMATSKE KOREKCIJE ZA DARK MODE
+   ========================================================================== */
+
+/* 🌌 Automatsko prigušivanje i bojenje mrežaste pozadine u mraku */
+html.dark [class*="bg-[linear-gradient"] {
+  background-image: linear-gradient(to right, var(--grid-color) 0.75px, transparent 0.75px),
+                    linear-gradient(to bottom, var(--grid-color) 0.75px, transparent 0.75px) !important;
+  opacity: var(--grid-opacity) !important;
+}
+
+/* 💳 Automatsko pretvaranje svih bijelih kartica u tamno-plave */
+html.dark .bg-white {
+  background-color: var(--card-bg) !important;
+  border-color: var(--card-border) !important;
+}
+
+/* 🌍 Automatsko prilagođavanje sivo-plave pozadine cijele stranice */
+html.dark .bg-\[\#f8fafc\] {
+  background-color: var(--background) !important;
+}
+
+/* 📝 Automatsko posvjetljivanje svih tamno-sivih tekstova (naslovi, opisi) */
+html.dark .text-slate-900,
+html.dark .text-slate-800 {
+  color: var(--foreground) !important; /* Ponoćno bijela (#f1f5f9) */
+}
+
+/* 📝 Automatsko posvjetljivanje prigušenih opisa */
+html.dark .text-slate-500,
+html.dark .text-slate-600 {
+  color: var(--text-muted) !important; /* Ugodna sivo-plava (#94a3b8) */
+}
+
+/* 📝 Prilagođavanje sitnih tekstova poput meta-podataka (bivši text-slate-400) */
+html.dark .text-slate-400 {
+  color: var(--text-muted) !important;
+}
+
+/* ==========================================================================
+   4. AUTOMATSKO PRILAGOĐAVANJE PLAVIH AKCENATA (LOGO, LINKOVI, BORDERE)
+   ========================================================================== */
+
+/* Vibrantnija i svjetlija plava boja na tamnoj pozadini (da plava ne "potone") */
+html.dark .text-blue-600,
+html.dark .text-blue-700 {
+  color: #60a5fa !important; /* Prelijepa nebesko-plava (Tailwind blue-400) */
+}
+
+html.dark .text-indigo-600 {
+  color: #818cf8 !important; /* Svjetlija indigo */
+}
+
+/* Prilagođavanje plavih bordera u mraku */
+html.dark .border-blue-600 {
+  border-color: #60a5fa !important;
+}
+
+/* Plavi bedževi (npr. "NEW" u Navbaru) dobijaju punu plavu pozadinu sa bijelim tekstom */
+html.dark .bg-blue-600 {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   5. SPECIFIČNE POPRAVKE ZA AKADEMIJU & HARMONIKU (CURRICULUM)
+   ========================================================================== */
+
+/* Suptilna plavičasta nijansa kada se mišem pređe preko zaglavlja lekcije */
+html.dark .hover\:bg-slate-50\/50:hover {
+  background-color: #243056 !important;
+}
+
+/* Pozadina i border unutar otvorene lekcije (komponente lekcija) */
+html.dark .bg-slate-50\/30 {
+  background-color: #161e35 !important; /* Dublji plavi ton za vizuelnu izolaciju sadržaja */
+}
+
+html.dark .border-slate-100 {
+  border-color: var(--card-border) !important;
+}
+
+/* Poglavlja u akademiji ("CHAPTER 1", "CHAPTER 2" bedževi) */
+html.dark .bg-blue-50 {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+/* Hover efekat za naslove lekcija */
+html.dark .hover\:text-blue-600:hover {
+  color: #60a5fa !important;
+}
+
+/* Boldovani tekstovi unutar samih lekcija (strong tagovi) dobijaju čisto bijelu boju */
+html.dark text-slate-600 strong,
+html.dark .text-slate-600 strong {
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   6. STILOVI ZA ŠTAMPANJE I PREUZIMANJE PDF CERTIFIKATA (PORTRAIT FORMAT)
+   ========================================================================== */
+@media print {
+  /* 1. Sakrij sve elemente osim samog certifikata */
+  .no-print, 
+  nav, 
+  footer {
+    display: none !important;
+  }
+
+  /* 2. Prisilno ukloni sve margine pretraživača i postavi uspravni format */
+  @page {
+    size: A4 portrait; /* 📐 Postavljeno na uspravni (Portrait) format */
+    margin: 0 !important; 
+  }
+
+  /* 3. Resetuj pozadinu i skloni sivi background stranice */
+  html, body {
+    background: #ffffff !important; 
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 4. Pusti <main> da se prirodno rastegne preko uspravnog papira */
+  main {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;  /* Puna širina uspravnog papira */
+    height: 100vh !important; /* Puna visina uspravnog papira */
+    max-width: 100% !important;
+    margin: 0 !important;
+    border: none !important; 
+    box-shadow: none !important; 
+    border-radius: 0 !important; 
+    padding: 15mm !important; /* Unutrašnji prostor prilagođen portrait formatu */
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important; /* Savršeno centrirano od vrha do dna */
+  }
+}
+
+/* ==========================================================================
+   7. ANIMACIJE (Zadržana tvoja marquee animacija)
+   ========================================================================== */
 
 @keyframes marquee {
   0% { transform: translateX(0%); }
