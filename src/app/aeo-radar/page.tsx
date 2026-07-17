@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, FormEvent, useEffect, useTransition } from 'react';
-import Link from 'next/link';
-import { UserButton } from '@clerk/nextjs';
 import { getUserStats, getUserRadarHistory } from '../actions';
+import Link from 'next/link';
 import Footer from '../components/Footer';
-import Image from 'next/image'; // Uvozimo Next.js Image za optimalno učitavanje logotipa
+import Navbar from '../components/Navbar'; // Koristimo zajednički navbar
 
 const loadingSteps = [
   "Initializing radar components...",
@@ -92,7 +91,7 @@ export default function AEORadarPage() {
       } catch (err) {
         console.error("Initialization error:", err);
       } finally {
-        loadingStats && setLoadingStats(false);
+        setLoadingStats(false);
       }
     }
     initPage();
@@ -246,56 +245,8 @@ export default function AEORadarPage() {
       {/* 📡 GLOBALNA POZADINSKA MREŽA */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_0.75px,transparent_0.75px),linear-gradient(to_bottom,#e2e8f0_0.75px,transparent_0.75px)] bg-[size:4rem_4rem] pointer-events-none opacity-40 z-0" />
 
-      {/* NAVBAR - Usklađen sa fiksnom bijelom pozadinom, sjenkom i logotipom (50x50) */}
-      <nav className="sticky top-0 z-50 w-full bg-white border-b border-slate-200/80 shadow-sm relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <Link href="/dashboard" className="group cursor-pointer select-none">
-            <div className="flex items-center gap-2.5">
-              <Image 
-                src="/logo.png" 
-                alt="AEO Audit Pro Logo" 
-                width={50} 
-                height={50} 
-                className="object-contain"
-                priority
-              />
-              <div className="text-2xl font-black tracking-tight italic">
-                AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200"> Audit</span> Pro
-              </div>
-            </div>
-          </Link>
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
-            <Link href="/dashboard" className="text-xs sm:text-sm font-bold text-slate-500 hover:text-blue-600 transition">
-              &larr; Back to Dashboard
-            </Link>
-            
-            <div className="h-4 w-px bg-slate-200 hidden sm:block" />
-            
-            {!loadingStats && userStats && !isFreePlan && (
-              <div className="flex items-center gap-2.5 bg-slate-100 border border-slate-200/50 rounded-xl px-3 py-1.5 text-[11px] font-bold text-slate-600 shadow-sm animate-in fade-in duration-200">
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-slate-900 text-white">
-                  📡 RADAR
-                </span>
-                <div className="flex flex-col items-start gap-0.5">
-                  <span className="text-[10px] text-slate-700 font-black">
-                    {userStats.radar_used ?? 0}/{userStats.radar_limit} Used
-                  </span>
-                  <div className="w-16 bg-slate-200 h-1 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full ${ (userStats.radar_used ?? 0) >= (userStats.radar_limit || 1) ? "bg-rose-500" : "bg-blue-600" }`}
-                      style={{ 
-                        width: `${Math.min(((userStats.radar_used ?? 0) / (userStats.radar_limit || 1)) * 100, 100)}%` 
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <UserButton /> 
-          </div>
-        </div>
-      </nav>
+      {/* ZAJEDNIČKI NAVBAR - Sa pametnim radar brojačem */}
+      <Navbar userStats={userStats} />
 
       {/* MAIN CONTENT WRAPPER */}
       <div className="max-w-5xl mx-auto px-4 sm:px-8 md:px-12 flex-1 w-full mt-6 relative z-10">
@@ -315,7 +266,7 @@ export default function AEORadarPage() {
           </p>
         </header>
 
-        {/* CONTROLS CONTAINER (FORM & BLUR OVERLAYS) */}
+        {/* CONTROLS CONTAINER */}
         <div className="relative">
           
           {/* PREMIUM BLOCK OVERLAY */}
@@ -411,9 +362,7 @@ export default function AEORadarPage() {
                   onClick={copyShareLink}
                   disabled={!currentRadarShareToken}
                   className={`w-full py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg border cursor-pointer ${
-                    copied 
-                      ? "bg-emerald-500 text-white border-emerald-500" 
-                      : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200"
+                    copied ? "bg-emerald-500 text-white border-emerald-500" : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200"
                   }`}
                 >
                   {copied ? "LINK COPIED!" : "COPY SHARE LINK"}
