@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
+import Image from "next/image"; // Uvozimo Next.js Image komponentu za optimalno učitavanje slike
 
 interface UserStats {
   plan: string;
@@ -22,7 +23,6 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Dashboard routes — any page that requires auth/logged-in state
   const isDashboard =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/aeo-radar") ||
@@ -59,8 +59,19 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
       <nav className="sticky top-0 z-50 w-full bg-white border-b border-slate-200/80 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
           <Link href="/dashboard" className="group cursor-pointer select-none">
-            <div className="text-2xl font-black tracking-tight italic">
-              AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200"> Audit</span> Pro
+            {/* IMPLEMENTIRAN LOGO: Slika i tekst poravnati u liniju */}
+            <div className="flex items-center gap-2.5">
+              <Image 
+                src="/logo.png" 
+                alt="AEO Audit Pro Logo" 
+                width={50} 
+                height={50} 
+                className="object-contain"
+                priority
+              />
+              <div className="text-2xl font-black tracking-tight italic">
+                AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200"> Audit</span> Pro
+              </div>
             </div>
           </Link>
 
@@ -86,7 +97,6 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
               </span>
             </Link>
 
-            {/* 🚀 ACADEMY LINK */}
             <Link
               href="/academy"
               className={`text-xs sm:text-sm font-semibold transition duration-200 flex items-center gap-1 m-0 ${
@@ -98,7 +108,6 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
 
             <div className="h-4 w-px bg-slate-200 hidden sm:block" />
 
-            {/* 📊 STATS WIDGET */}
             {userStats && (
               <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-[11px] font-bold text-slate-600 shadow-sm transition-all duration-200 hover:border-slate-300 select-none">
                 <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
@@ -139,14 +148,23 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
     <nav className="sticky top-0 z-50 w-full bg-white/70 backdrop-blur-md border-b border-slate-200/60 shadow-sm transition-all duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
         <Link href={userId ? "/dashboard" : "/"} className="group cursor-pointer select-none">
-          <div className="text-2xl font-black tracking-tight italic">
-            AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200"> Audit</span> Pro
+          {/* IMPLEMENTIRAN LOGO: Slika i tekst poravnati u liniju za javnu navigaciju */}
+          <div className="flex items-center gap-2.5">
+            <Image 
+              src="/logo.png" 
+              alt="AEO Audit Pro Logo" 
+              width={50} 
+              height={50} 
+              className="object-contain"
+              priority
+            />
+            <div className="text-2xl font-black tracking-tight italic">
+              AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200"> Audit</span> Pro
+            </div>
           </div>
         </Link>
 
         <div className="flex items-center justify-center gap-4 sm:gap-6 flex-wrap">
-
-          {/* Free Tools dropdown */}
           <div
             className="relative flex items-center m-0 p-0"
             ref={dropdownRef}
@@ -206,7 +224,7 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
                   </span>
                   <span className="text-[11px] text-slate-500 font-medium">
                     Analyze content density for AI systems.
-                </span>
+                  </span>
                 </Link>
               </div>
             )}
@@ -239,7 +257,6 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
             Pricing
           </Link>
 
-          {/* 🚀 ACADEMY LINK */}
           <Link
             href="/academy"
             className={`text-xs sm:text-sm font-bold transition m-0 ${

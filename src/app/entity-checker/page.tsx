@@ -3,6 +3,7 @@
 import { useState, useTransition, useRef, useEffect } from "react";
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
+import Image from "next/image"; // Uvozimo Next.js Image za optimalan rendering logotipa
 import Footer from "../components/Footer";
 import Tooltip from "../components/Tooltip";
 import { getUserStats } from "../actions";
@@ -59,20 +60,33 @@ export default function EntityChecker() {
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white relative overflow-x-hidden">
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_0.75px,transparent_0.75px),linear-gradient(to_bottom,#e2e8f0_0.75px,transparent_0.75px)] bg-[size:4rem_4rem] pointer-events-none opacity-40 z-0" />
       
-      {/* NAVBAR */}
-       <nav className="w-full max-w-6xl mx-auto p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-transparent border-b border-slate-200/40 sm:border-none relative z-10">
-        <Link href="/dashboard" className="group cursor-pointer select-none">
-          <div className="text-2xl font-black tracking-tight italic">
-            AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200">Audit</span> Pro
-          </div>
-        </Link>
-        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
-          <Link href="/dashboard" className="text-xs sm:text-sm font-bold text-slate-500 hover:text-blue-600 transition">
-            &larr; Back to Dashboard
+      {/* NAVBAR - Usklađen dizajn, bijela pozadina, sjenka i logo širine/visine 50 u gornjem lijevom uglu */}
+      <nav className="sticky top-0 z-50 w-full bg-white border-b border-slate-200/80 shadow-sm relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <Link href="/dashboard" className="group cursor-pointer select-none">
+            <div className="flex items-center gap-2.5">
+              <Image 
+                src="/logo.png" 
+                alt="AEO Audit Pro Logo" 
+                width={50} 
+                height={50} 
+                className="object-contain"
+                priority
+              />
+              <div className="text-2xl font-black tracking-tight italic">
+                AEO<span className="text-blue-600 group-hover:text-blue-500 transition-colors duration-200"> Audit</span> Pro
+              </div>
+            </div>
           </Link>
-          <UserButton /> 
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+            <Link href="/dashboard" className="text-xs sm:text-sm font-bold text-slate-500 hover:text-blue-600 transition">
+              &larr; Back to Dashboard
+            </Link>
+            <UserButton /> 
+          </div>
         </div>
       </nav>
+
       {/* MAIN CONTENT WRAPPER */}
       <div className="max-w-4xl mx-auto px-4 sm:px-8 md:px-12 flex-1 w-full mt-6 relative z-10">
         
