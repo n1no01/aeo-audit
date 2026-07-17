@@ -91,7 +91,7 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
             <Link
               href="/aeo-radar"
               className={`text-xs sm:text-sm font-semibold transition duration-200 flex items-center gap-1.5 m-0 ${
-                pathname === "/aeo-radar" ? "text-blue-600" : "text-slate-600 hover:text-blue-600"
+                pathname === "/aeo-radar" ? "text-blue-600 font-bold" : "text-slate-600 hover:text-blue-600"
               }`}
             >
               AI Radar
@@ -100,13 +100,11 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
             <Link
               href="/entity-checker"
               className={`text-xs sm:text-sm font-semibold transition duration-200 flex items-center gap-1.5 m-0 relative ${
-                pathname === "/entity-checker" ? "text-blue-600" : "text-slate-600 hover:text-blue-600"
+                pathname === "/entity-checker" ? "text-blue-600 font-bold" : "text-slate-600 hover:text-blue-600"
               }`}
             >
               Entity Checker
-              <span className="text-[9px] font-black bg-blue-600 text-white px-1.5 py-0.5 rounded-md shadow-sm shadow-blue-500/20">
-                NEW
-              </span>
+             
             </Link>
 
             <Link
@@ -117,6 +115,16 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
             >
               Academy 🎓
             </Link>
+
+            {/* 🏠 POZICIONIRANO DUGME ZA POVRATAK: Nalazi se tačno između Academy i vertikalnog separatora */}
+            {pathname !== "/dashboard" && (
+              <Link
+                href="/dashboard"
+                className="text-xs sm:text-sm font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50/60 border border-blue-100 px-3 py-1.5 rounded-xl transition duration-200"
+              >
+                <span>&larr;</span> Dashboard
+              </Link>
+            )}
 
             <div className="h-4 w-px bg-slate-200 hidden sm:block" />
 
