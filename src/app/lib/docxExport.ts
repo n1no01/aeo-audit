@@ -38,7 +38,9 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
     sentenceSimplicityScore,
     commodityContentScore,
     pageType,
-    detectedSchemas
+    detectedSchemas,
+    robotsRawContent,
+    llmsRawContent // Izvučen ključ iz audit podataka
   } = data;
 
   const { agencyName, brandColor, authorName, logoBase64 } = brandKit;
@@ -68,7 +70,7 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
         })
       );
     } catch (err) {
-      console.error("Failed to embedded custom logo inside document structure:", err);
+      console.error("Failed to embed custom logo inside document structure:", err);
     }
   } else {
     documentChildren.push(
@@ -107,6 +109,11 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
     new Paragraph({ text: `• DeepSeek Engine Visibility: ${aiBotsStatus?.deepSeekBot || "Allowed"}` }),
     new Paragraph({ text: `• Applebot Agent Deployment: ${aiBotsStatus?.appleBotExtended || "Allowed"}` }),
     new Paragraph({ text: `• Microsoft Bingbot Indexation: ${aiBotsStatus?.bingbot || "Allowed"}` }),
+    
+    // Directives i Discovery sekcija
+    new Paragraph({ text: `• Master Robots.txt Directives: ${robotsRawContent ? "Valid Instructions Parsed" : "Missing / Public Access Active"}` }),
+    new Paragraph({ text: `• LLMs.txt Context File Discovery: ${llmsRawContent && llmsRawContent.trim() ? "Discovered (Raw Text Content Parsed)" : "Missing / Not Found"}` }),
+
     new Paragraph({ text: `• Brand Disambiguation Alignment: ${entityTrustMap?.brandDisambiguationStatus || "Optimal"}` }),
     new Paragraph({ text: `• Semantic HTML5 Main Tag: ${semanticLayoutMap?.hasMainTag ? "Valid" : "Missing"}` }),
     new Paragraph({ text: `• H1 Title Tag Isolation: ${semanticLayoutMap?.hasSingleH1 ? "Optimal (Exactly 1 Tag Detected)" : "Anomaly Detected (Missing or Multiple H1s)"}` }),
@@ -131,12 +138,12 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
     );
   }
 
-  // Playbook Playbook Section (Sa kompleksnim Recommendation[] tipom podataka)
+  // Tactical Playbook Section
   documentChildren.push(
     new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "Prioritized Tactical Optimization Playbook", color: "0f172a", bold: true, size: 24 })] }),
     
     ...(recommendations as Recommendation[]).flatMap((item: Recommendation, idx: number) => [
-      // 1. Title with Severity
+      // 1. Title sa težinom greške
       new Paragraph({
         spacing: { before: 150, after: 60 },
         children: [
@@ -148,7 +155,7 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
           })
         ]
       }),
-      // 2. Description
+      // 2. Opis
       new Paragraph({
         spacing: { after: 60 },
         children: [
@@ -156,7 +163,7 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
           new TextRun({ text: item.description, size: 16 })
         ]
       }),
-      // 3. AEO Impact
+      // 3. AEO Uticaj
       new Paragraph({
         spacing: { after: 150 },
         children: [

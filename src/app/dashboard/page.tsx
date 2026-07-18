@@ -185,7 +185,7 @@ export default function Home() {
             <span className="text-[9px] sm:text-[10px] font-black tracking-[0.2em] uppercase text-blue-600 block truncate">AI Answer Engine Optimization</span>
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight italic">AEO<span className="text-blue-600"> Audit</span> Pro</h1>
-          <p className="text-slate-500 mt-4 sm:mt-5 text-sm sm:text-lg max-w-2xl mx-auto font-medium">Enterprise-grade Answer Engine Optimization auditing platform.</p>
+          <p className="text-slate-500 mt-4 sm:mt-5 text-sm sm:text-lg max-w-2xl mx-auto font-medium">Enterprise-grade Answer Engine Optimization auditing platform powered by AI semantic analysis.</p>
         </header>
 
         {/* FORM */}
