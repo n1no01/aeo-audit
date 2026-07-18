@@ -14,6 +14,7 @@ import MetricsPanel from "../components/dashboard/MetricsPanel";
 import InsightsPanel from "../components/dashboard/InsightsPanel";
 import RecommendationsPanel from "../components/dashboard/RecommendationsPanel";
 import SimulatorPanel from "../components/dashboard/SimulatorPanel";
+import LlmsPanel from "../components/dashboard/LlmsPanel"; // 👈 Uvežen novi panel
 
 import { AuditData, TabId, AEO_EXPLANATIONS, BotStatus } from "../lib/types"; 
 import { exportAuditToDocx } from "../lib/docxExport";
@@ -42,7 +43,8 @@ interface AuditHistoryItem {
   result_data: AuditData;
 }
 
-type ActiveTabType = TabId | "simulator" | "speed";
+// Proširena unija tipova za tabove kako bismo obuhvatili i "llms" bez 'any'
+type ActiveTabType = TabId | "simulator" | "speed" | "llms";
 
 export default function Home() {
   const [result, setResult] = useState<{ success?: boolean; error?: string; data?: AuditData } | null>(null);
@@ -79,7 +81,6 @@ export default function Home() {
     }
   };
 
-  // POPRAVLJENO: Sada odmah učitavamo kompletnu istoriju bez limita na 5
   useEffect(() => {
     async function loadInitialData() {
       const stats = await getUserStats();
@@ -160,18 +161,15 @@ export default function Home() {
     if (!currentAuditId || !result?.data) return;
     const shareUrl = `${window.location.origin}/share/${currentAuditId}`;
     const displayUrl = getCleanHostname();
-    const text = `🎯 AI Visibility Audit for ${displayUrl} is officially LIVE via AEO Audit Pro!\n\n` +
-                 `The Answer Engine Optimization (AEO) score is ${result.data.score}/100. The platform just analyzed how top-tier AI models like ChatGPT, Perplexity, and Claude crawl, parse, and extract this domain's content hierarchy.\n\n` +
-                 `See how this site stacks up in the age of AI search and review the live, interactive report here: ${shareUrl}`;
+    const text = `🎯 AI Visibility Audit for ${displayUrl} is officially LIVE via AEO Audit Pro!\n\nScore: ${result.data.score}/100. Interactive report here: ${shareUrl}`;
     window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`, "_blank", "width=600,height=600,scrollbars=yes,resizable=yes");
   };
 
   const shareOnX = () => {
     if (!currentAuditId || !result?.data) return;
     const shareUrl = `${window.location.origin}/share/${currentAuditId}`;
-    const displayUrl = getCleanHostname();
-    const tweetText = `Just ran an AI Search & AEO Audit for ${displayUrl} using AEO Audit Pro. Our optimization score is ${result.data.score}/100! Checking if ChatGPT, Perplexity, and Gemini can index and cite our brand. 🚀\n\nReview the live interactive report here:`;
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}&hashtags=AEO,SEO,SaaS`, "_blank", "width=600,height=450,scrollbars=yes,resizable=yes");
+    const tweetText = `Just ran an AI Search & AEO Audit for ${getCleanHostname()} using AEO Audit Pro. Our optimization score is ${result.data.score}/100! 🚀`;
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`, "_blank", "width=600,height=450,scrollbars=yes,resizable=yes");
   };
 
   return (
@@ -184,23 +182,17 @@ export default function Home() {
         {/* HEADER */}
         <header className="text-center mb-10 sm:mb-14 md:mb-16 px-2">
           <div className="inline-block px-4 py-2 mb-5 rounded-full bg-blue-50 border border-blue-100 max-w-full">
-            <span className="text-[9px] sm:text-[10px] font-black tracking-[0.2em] sm:tracking-[0.3em] uppercase text-blue-600 block truncate">
-              AI Answer Engine Optimization
-            </span>
+            <span className="text-[9px] sm:text-[10px] font-black tracking-[0.2em] uppercase text-blue-600 block truncate">AI Answer Engine Optimization</span>
           </div>
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight italic">
-            AEO<span className="text-blue-600"> Audit</span> Pro
-          </h1>
-          <p className="text-slate-500 mt-4 sm:mt-5 text-sm sm:text-lg max-w-2xl mx-auto font-medium">
-            Enterprise-grade Answer Engine Optimization auditing platform powered by AI semantic analysis.
-          </p>
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight italic">AEO<span className="text-blue-600"> Audit</span> Pro</h1>
+          <p className="text-slate-500 mt-4 sm:mt-5 text-sm sm:text-lg max-w-2xl mx-auto font-medium">Enterprise-grade Answer Engine Optimization auditing platform.</p>
         </header>
 
         {/* FORM */}
         <div className="bg-white border border-slate-200 rounded-[24px] sm:rounded-[32px] p-4 sm:p-6 shadow-xl shadow-blue-900/5 mb-12">
           <form action={handleAuditSubmit} className="space-y-4">
             <div className="flex flex-col md:flex-row gap-3">
-              <input name="url" type="text" required placeholder="Enter a domain or specific URL to audit" className="flex-1 px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50 border border-slate-200/60 rounded-[16px] sm:rounded-[20px] outline-none font-semibold text-sm sm:text-base text-slate-700 focus:border-blue-500 focus:bg-white transition" />
+              <input name="url" type="text" required placeholder="Enter a domain or specific URL to audit" className="flex-1 px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50 border border-slate-200/60 rounded-[16px] sm:rounded-[20px] outline-none font-semibold text-sm focus:border-blue-500 focus:bg-white transition" />
               <button disabled={isPending} className="bg-slate-900 text-white px-6 sm:px-10 py-3.5 sm:py-4 rounded-[16px] sm:rounded-[20px] text-sm sm:text-base font-black hover:bg-blue-600 transition disabled:bg-slate-300 shrink-0">
                 {isPending ? "GENERATING AUDIT..." : "ANALYZE AI VISIBILITY"}
               </button>
@@ -210,9 +202,6 @@ export default function Home() {
                 <span className={`transform transition duration-200 ${showBranding ? "rotate-90" : ""}`}>▶</span>
                 {showBranding ? "Hide Agency Branding Options" : "Show Agency White-Label Options"}
               </button>
-              <Link href="/aeo-radar" className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition self-start sm:self-center">
-                👉 Want real-time LLM recommendation checks? Try the AI Visibility Radar &rarr;
-              </Link>
             </div>
 
             {showBranding && (
@@ -262,7 +251,7 @@ export default function Home() {
         {result?.data && (
           <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-700">
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-              <button onClick={async () => { if (isFreePlan) { alert("🔒 Word (.DOCX) Export is a Premium Feature.\n\nPlease upgrade your plan under the Pricing section to unlock downloadable executive reports for your clients."); return; } await exportAuditToDocx(result.data!, { agencyName, brandColor, authorName, logoBase64 }); }} className={`w-full py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg flex items-center justify-center gap-1.5 cursor-pointer ${isFreePlan ? "bg-slate-700 text-slate-300 hover:bg-slate-800" : "bg-slate-900 text-white hover:bg-slate-800"}`}>{isFreePlan ? "🔒 EXPORT .DOCX" : "EXPORT .DOCX"}</button>
+              <button onClick={async () => { if (isFreePlan) { alert("🔒 Premium Feature"); return; } await exportAuditToDocx(result.data!, { agencyName, brandColor, authorName, logoBase64 }); }} className={`w-full py-4 rounded-[16px] sm:rounded-[24px] text-xs font-black tracking-wider transition shadow-lg flex items-center justify-center gap-1.5 cursor-pointer ${isFreePlan ? "bg-slate-700 text-slate-300 hover:bg-slate-800" : "bg-slate-900 text-white hover:bg-slate-800"}`}>{isFreePlan ? "🔒 EXPORT .DOCX" : "EXPORT .DOCX"}</button>
               <button onClick={copyShareLink} disabled={!currentAuditId} className={`w-full py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg border cursor-pointer ${copied ? "bg-emerald-500 text-white border-emerald-500" : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200"}`}>{copied ? "LINK COPIED!" : "COPY SHARE LINK"}</button>
               <button onClick={shareOnLinkedIn} disabled={!currentAuditId} className="w-full bg-blue-600 text-white hover:bg-blue-700 py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg disabled:bg-slate-200 disabled:text-slate-400 font-sans flex items-center justify-center gap-2 cursor-pointer"><span className="font-serif lowercase font-bold text-sm tracking-tighter">in</span> SHARE ON LINKEDIN</button>
               <button onClick={shareOnX} disabled={!currentAuditId} className="w-full bg-black text-white hover:bg-slate-900 py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg disabled:bg-slate-200 disabled:text-slate-400 flex items-center justify-center gap-2 cursor-pointer"><svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>SHARE ON X</button>
@@ -287,6 +276,7 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* TABS HEADER — Dodat novi tab za LLMs.txt */}
               <div className="w-full border-b border-slate-100 bg-slate-50/50 p-1.5 sm:p-2 overflow-x-auto flex flex-nowrap md:flex-wrap gap-1.5 scrollbar-none">
                 {[
                   { id: "metrics", label: "Score Breakdown & Metrics" },
@@ -295,6 +285,7 @@ export default function Home() {
                   { id: "simulator", label: "AI SERP Simulator" }, 
                   { id: "speed", label: "Page Speed & UX" },
                   { id: "robots", label: "Robots.txt" },
+                  { id: "llms", label: "LLMs.txt" }, // 👈 Novi tab unutar navigacije
                 ].map((tab) => (
                   <button key={tab.id} onClick={() => setActiveTab(tab.id as ActiveTabType)} className={`flex-1 md:flex-none whitespace-nowrap px-4 py-2.5 sm:py-3 text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-xl transition ${activeTab === tab.id ? "bg-white text-blue-600 shadow-sm border border-slate-200/60" : "text-slate-400 hover:text-slate-600"}`}>{tab.label}</button>
                 ))}
@@ -312,12 +303,14 @@ export default function Home() {
                     <div className="bg-slate-900 text-slate-300 rounded-2xl p-4 sm:p-5 font-mono text-[11px] sm:text-xs shadow-inner overflow-x-auto whitespace-pre leading-relaxed">{result.data.robotsRawContent || "No crawling instructions discovered during standard sweeps."}</div>
                   </div>
                 )}
+                {/* 🔄 Uslovno renderovanje novog LLMs panela */}
+                {activeTab === "llms" && <LlmsPanel data={result.data} />}
               </div>
             </div>
           </div>
         )}
 
-        {/* RECENT AUDIT LOGS - POPRAVLJENO: Uklonjeno View All dugme, sve se skrola odmah */}
+        {/* RECENT AUDIT LOGS */}
         <div className="bg-white border border-slate-200 rounded-[24px] sm:rounded-[32px] p-5 sm:p-8 shadow-xl shadow-blue-900/5 mt-12 mb-12">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">

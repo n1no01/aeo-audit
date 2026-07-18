@@ -152,7 +152,6 @@ async function fetchRobotsTxt(
     if (targetStatus === 404) return { content: "", status: 404 };
 
     const html = extractHtml(res.data);
-    // robots.txt is plain text — if we get an HTML page back something went wrong
     if (html && !html.trimStart().startsWith("<")) {
       return { content: html, status: 200 };
     }
@@ -184,7 +183,81 @@ async function fetchRobotsTxt(
     // fall through
   }
 
-  return { content: "", status: -1 }; // network error
+  return { content: "", status: -1 };
+}
+
+// ─────────────────────────────────────────────
+// LLMS.TXT FETCHING (3-tier)
+// ─────────────────────────────────────────────
+
+async function fetchLlmsTxt(
+  llmsUrl: string,
+  scrapingApiKey: string
+): Promise<{ content: string; status: number }> {
+  // Tier 1 — direct request
+  try {
+    const res = await axios.get<string>(llmsUrl, {
+      timeout: 5000,
+      validateStatus: (s) => s === 200 || s === 404,
+    });
+    if (res.status === 200 && typeof res.data === "string") {
+      return { content: res.data, status: 200 };
+    }
+    if (res.status === 404) {
+      return { content: "", status: 404 };
+    }
+  } catch {
+    // fall through
+  }
+
+  // Tier 2 — webscraping.ai datacenter
+  try {
+    const res = await axios.get("https://api.webscraping.ai/html", {
+      params: {
+        api_key: scrapingApiKey,
+        url: llmsUrl,
+        js: false,
+      },
+      timeout: 10000,
+      validateStatus: (s) => s === 200 || s === 404,
+    });
+
+    const targetStatus = Number(res.headers["x-target-status"] ?? res.status);
+    if (targetStatus === 404) return { content: "", status: 404 };
+
+    const html = extractHtml(res.data);
+    if (html && !html.trimStart().startsWith("<")) {
+      return { content: html, status: 200 };
+    }
+  } catch {
+    // fall through
+  }
+
+  // Tier 3 — webscraping.ai residential
+  try {
+    const res = await axios.get("https://api.webscraping.ai/html", {
+      params: {
+        api_key: scrapingApiKey,
+        url: llmsUrl,
+        js: false,
+        proxy: "residential",
+      },
+      timeout: 15000,
+      validateStatus: (s) => s === 200 || s === 404,
+    });
+
+    const targetStatus = Number(res.headers["x-target-status"] ?? res.status);
+    if (targetStatus === 404) return { content: "", status: 404 };
+
+    const html = extractHtml(res.data);
+    if (html && !html.trimStart().startsWith("<")) {
+      return { content: html, status: 200 };
+    }
+  } catch {
+    // fall through
+  }
+
+  return { content: "", status: -1 };
 }
 
 // ─────────────────────────────────────────────
@@ -204,16 +277,6 @@ const BOT_TOKENS: Record<string, Array<keyof BotStatus>> = {
   bingbot: ["bingbot"],
 };
 
-/**
- * Parses a robots.txt string.
- *
- * Rules:
- *  - Comments (#) and surrounding whitespace are stripped first.
- *  - Groups are separated by blank lines between directives.
- *  - Disallow: /  or  Disallow: /*  → blocked for that group's agents.
- *  - Allow: directive is intentionally ignored (simple mode).
- *  - User-agent: * blocks ALL tracked bots.
- */
 function parseRobotsTxt(content: string): {
   aiBotsStatus: BotStatus;
   robotsStatus: "Valid" | "Missing" | "Blocking AI" | "Error";
@@ -231,7 +294,6 @@ function parseRobotsTxt(content: string): {
     cohereAi: "Allowed",
   };
 
-  // Strip comments and trim each line, keep blank lines as group separators
   const lines = content.split(/\r?\n/).map((raw) => {
     const withoutComment = raw.split("#")[0].trimEnd();
     return withoutComment.trim();
@@ -242,7 +304,6 @@ function parseRobotsTxt(content: string): {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Blank line → end of current group
     if (line === "") {
       currentAgents = [];
       continue;
@@ -259,22 +320,19 @@ function parseRobotsTxt(content: string): {
     if (lower.startsWith("disallow:")) {
       const path = lower.replace("disallow:", "").trim();
 
-      // Only treat as full-block if path is "/" or "/*"
       if (path !== "/" && path !== "/*") continue;
       if (currentAgents.length === 0) continue;
 
       for (const agent of currentAgents) {
         if (agent === "*") {
-          // Wildcard → block every tracked bot
           (Object.keys(aiBotsStatus) as Array<keyof BotStatus>).forEach(
             (k) => {
               aiBotsStatus[k] = "Blocked";
             }
           );
-          break; // no need to check further agents in this group
+          break;
         }
 
-        // Specific bot token matching (substring)
         for (const [token, targets] of Object.entries(BOT_TOKENS)) {
           if (agent.includes(token)) {
             targets.forEach((t) => {
@@ -286,8 +344,6 @@ function parseRobotsTxt(content: string): {
 
       continue;
     }
-
-    // Any other directive (Allow, Sitemap, Crawl-delay, …) → skip
   }
 
   const anyBlocked = (
@@ -304,23 +360,13 @@ function parseRobotsTxt(content: string): {
 // CLOUDFLARE DETECTION
 // ─────────────────────────────────────────────
 
-/**
- * Checks whether a raw HTTP response (status + headers + html) looks like
- * any form of bot/Cloudflare blocking — regardless of who made the request.
- */
 function isBlockedResponse(status: number, headers: Record<string, unknown>, html: string): boolean {
-  // Hard status codes that always mean blocked
   if (status === 403 || status === 503 || status === 429) return true;
-
-  // Cloudflare-specific HTML challenge signatures
   if (looksLikeCloudflareChallenge(html)) return true;
-
-  // Cloudflare headers that survive some proxies
   if (headers["cf-mitigated"]) return true;
   if (String(headers["server"] ?? "").toLowerCase().includes("cloudflare")) return true;
   if (headers["cf-ray"]) return true;
 
-  // Generic bot-wall patterns (non-CF services: Akamai, Imperva, etc.)
   if (html.includes("Access Denied") && html.includes("</title>")) return true;
   if (html.includes("Request blocked") || html.includes("Bot verification")) return true;
   if (html.includes("security check") && html.length < 5000) return true;
@@ -330,35 +376,10 @@ function isBlockedResponse(status: number, headers: Record<string, unknown>, htm
   return false;
 }
 
-/**
- * Three-phase bot blocking detection:
- *
- * Phase 1 — Direct fetch with a known AI bot User-Agent (GPTBot).
- *   This bypasses webscraping.ai entirely, so we see the raw response
- *   the site actually sends to bots. CF headers, challenge HTML, status
- *   codes — all visible. This is the most reliable signal.
- *   Cost: 0 credits.
- *
- * Phase 2 — Only runs if Phase 1 detected a block.
- *   Direct fetch with a browser-like User-Agent to distinguish
- *   "blocking bots only" from "blocking everyone" (e.g. site is down).
- *   If the browser UA gets through → confirmed bot-specific block.
- *   If the browser UA is also blocked → site might just be down,
- *   or it's a very aggressive block. Either way, mark as Hard.
- *   Cost: 0 credits.
- *
- * Phase 3 — Only runs if Phase 1 detected a block AND Phase 2 confirmed
- *   it's bot-specific. Retries via webscraping.ai residential proxy to
- *   test whether a real-IP bypass works, which tells us severity.
- *   Cost: 5 credits (residential).
- */
 async function detectCloudflare(
   url: string,
   scrapingApiKey: string
 ): Promise<CloudflareResult> {
-
-  // ── Phase 1: direct bot-UA fetch ─────────────────────────────────────────
-  // Use GPTBot — one of the most commonly blocked UAs, gives us a clean signal.
   let phase1Blocked = false;
 
   try {
@@ -376,8 +397,6 @@ async function detectCloudflare(
     const html = typeof res.data === "string" ? res.data : "";
     phase1Blocked = isBlockedResponse(res.status, res.headers as Record<string, unknown>, html);
   } catch {
-    // Connection refused, ECONNRESET, etc. — site may be blocking at TCP level.
-    // Treat as detected; Phase 2 will clarify.
     phase1Blocked = true;
   }
 
@@ -385,10 +404,6 @@ async function detectCloudflare(
     return { detected: false, severity: "None", confirmedBlock: false };
   }
 
-  // ── Phase 2: direct browser-UA fetch — confirm it's bot-specific ─────────
-  // If a normal browser also gets blocked, the site may just be down or
-  // doing IP-level blocking. If the browser gets through, it's definitely
-  // a bot-targeting block.
   let browserGetsThrough = false;
 
   try {
@@ -410,17 +425,13 @@ async function detectCloudflare(
     const browserBlocked = isBlockedResponse(res.status, res.headers as Record<string, unknown>, html);
     browserGetsThrough = !browserBlocked;
   } catch {
-    // Browser UA also failed — likely site-level block or site is down
     browserGetsThrough = false;
   }
 
-  // If even a browser UA is blocked, this is a Hard block (or site is down)
   if (!browserGetsThrough) {
     return { detected: true, severity: "Hard", confirmedBlock: true };
   }
 
-  // Bot-specific block confirmed. Now test whether a residential proxy bypasses it.
-  // ── Phase 3: residential proxy — determine severity ───────────────────────
   try {
     const res: AxiosResponse = await axios.get(
       "https://api.webscraping.ai/html",
@@ -440,32 +451,20 @@ async function detectCloudflare(
     const html = extractHtml(res.data);
     const stillBlocked = isBlockedResponse(targetStatus, res.headers as Record<string, unknown>, html);
 
-    // Residential also blocked → Hard (fingerprinting beyond just IP/UA)
     if (stillBlocked) {
       return { detected: true, severity: "Hard", confirmedBlock: true };
     }
 
-    // Residential got through → datacenter/bot-UA blocked but real IPs ok
     return { detected: true, severity: "Soft", confirmedBlock: false };
   } catch {
-    // Can't confirm residential — default to Soft since browser UA got through
     return { detected: true, severity: "Soft", confirmedBlock: false };
   }
 }
-
-
 
 // ─────────────────────────────────────────────
 // AI ACCESSIBILITY (robots.txt inference)
 // ─────────────────────────────────────────────
 
-/**
- * Instead of making 6 live UA requests (expensive), we infer per-bot
- * accessibility purely from the already-parsed robots.txt status.
- *
- * The single datacenter + residential fetch for Cloudflare detection
- * (run separately) provides the live blocking signal.
- */
 function buildAIAccessibility(
   aiBotsStatus: BotStatus,
   cloudflare: CloudflareResult
@@ -484,19 +483,15 @@ function buildAIAccessibility(
 
   for (const [displayName, statusKey] of Object.entries(botMap)) {
     const robotsBlocked = aiBotsStatus[statusKey] === "Blocked";
-    // If Cloudflare is a hard block, every bot is effectively blocked at the
-    // network level regardless of robots.txt
     const cfBlocked = cloudflare.confirmedBlock;
     const blocked = robotsBlocked || cfBlocked;
 
     if (blocked) blockedCount++;
 
     userAgentTests[displayName] = {
-      // 200 = inferred allowed, 403 = inferred blocked
       status: blocked ? 403 : 200,
       blocked,
       cloudflareDetected: cloudflare.detected,
-      // Surface the reason so the UI can explain it
       blockedReason: cfBlocked
         ? "cloudflare"
         : robotsBlocked
@@ -537,7 +532,6 @@ async function fetchMainHtml(
     $("body").text().trim().length < 200 &&
     $("#root, #__next, #app").length > 0;
 
-  // Tier 1 — datacenter, no JS (fastest, 1 credit)
   try {
     const res = await axios.get("https://api.webscraping.ai/html", {
       params: { api_key: scrapingApiKey, url, js: false },
@@ -547,7 +541,6 @@ async function fetchMainHtml(
     if (html && !isSpaLike(cheerio.load(html))) {
       return { html, javascriptDependency: "Low" };
     }
-    // SPA detected → skip Tier 2, go straight to JS rendering (Tier 3)
     if (html && isSpaLike(cheerio.load(html))) {
       throw new Error("SPA detected in Tier 1");
     }
@@ -556,7 +549,6 @@ async function fetchMainHtml(
       err instanceof Error && err.message.startsWith("SPA detected");
 
     if (!isSpa) {
-      // Tier 2 — residential, no JS (overcomes IP blocks, 5 credits)
       try {
         const res = await axios.get("https://api.webscraping.ai/html", {
           params: {
@@ -572,12 +564,11 @@ async function fetchMainHtml(
           return { html, javascriptDependency: "Low" };
         }
       } catch {
-        // fall through to Tier 3
+        // fall through
       }
     }
   }
 
-  // Tier 3 — residential + JS rendering (handles SPAs & heavy anti-bot, 10 credits)
   const res = await axios.get("https://api.webscraping.ai/html", {
     params: {
       api_key: scrapingApiKey,
@@ -645,20 +636,24 @@ export async function scrapeWebsite(
     robotsStatus = parsed.robotsStatus;
   }
 
-  // ── 2. Cloudflare detection ───────────────────────────────────────────────
+  // ── 2. LLMs.txt Fetching (Novi korak integracije) ─────────────────────────
+  const llmsUrl = `${parsedUrl.protocol}//${parsedUrl.hostname}/llms.txt`;
+  const { content: llmsRawContent } = await fetchLlmsTxt(llmsUrl, scrapingApiKey);
+
+  // ── 3. Cloudflare detection ───────────────────────────────────────────────
   const cloudflare = await detectCloudflare(url, scrapingApiKey);
 
-  // ── 3. AI accessibility (inferred, no extra credits) ─────────────────────
+  // ── 4. AI accessibility (inferred, no extra credits) ─────────────────────
   const aiAccessibility = buildAIAccessibility(aiBotsStatus, cloudflare);
 
-  // ── 4. Main HTML crawl ────────────────────────────────────────────────────
+  // ── 5. Main HTML crawl ────────────────────────────────────────────────────
   const { html, javascriptDependency } = await fetchMainHtml(
     url,
     scrapingApiKey
   );
   const $ = cheerio.load(html);
 
-  // ── 5. Basic page signals ─────────────────────────────────────────────────
+  // ── 6. Basic page signals ─────────────────────────────────────────────────
   const title =
     $("title").text().trim().substring(0, 150) || "No title found";
   const metaDescription =
@@ -670,7 +665,7 @@ export async function scrapeWebsite(
   const hasTablesOrLists =
     $("table").length > 0 || $("ul").length > 0 || $("ol").length > 0;
 
-  // ── 6. Semantic layout map ────────────────────────────────────────────────
+  // ── 7. Semantic layout map ────────────────────────────────────────────────
   const allH1s = $("h1");
 
   const semanticLayoutMap: SemanticLayoutMap = {
@@ -707,19 +702,16 @@ export async function scrapeWebsite(
     if (!$(el).attr("alt")?.trim()) semanticLayoutMap.missingAltCount++;
   });
 
-// ── Napredna detekcija Heading Leap anomalija ──────────────────────────────
   let previousLevel: number | null = null;
 
   $("h1, h2, h3, h4, h5, h6").each((_, el) => {
     const currentLevel = Number(el.tagName.substring(1));
 
-    // Slučaj A: Prvi naslov na stranici preskače H1 (npr. stranica počinje sa H2 ili H3)
     if (previousLevel === null && currentLevel > 1) {
       semanticLayoutMap.hasHeadingLeap = true;
       return false;
     }
 
-    // Slučaj B: Standardni leap unutar strukture (npr. H2 -> H4)
     if (previousLevel !== null && currentLevel > previousLevel + 1) {
       semanticLayoutMap.hasHeadingLeap = true;
       return false;
@@ -728,7 +720,7 @@ export async function scrapeWebsite(
     previousLevel = currentLevel;
   });
 
-  // ── 7. Entity trust map ───────────────────────────────────────────────────
+  // ── 8. Entity trust map ───────────────────────────────────────────────────
   const entityTrustMap: EntityTrustMap = {
     hasWikidataOrWikipedia: false,
     hasLinkedIn: false,
@@ -807,7 +799,7 @@ export async function scrapeWebsite(
     entityTrustMap.hasPhysicalSignals = true;
   }
 
-  // ── 8. Schema parsing ─────────────────────────────────────────────────────
+  // ── 9. Schema parsing ─────────────────────────────────────────────────────
   const schemaSet = new Set<string>();
   let qaBlocksCount = 0;
 
@@ -903,7 +895,7 @@ export async function scrapeWebsite(
       ? "Inconsistent"
       : "Optimal";
 
-  // ── 9. Q&A detection ──────────────────────────────────────────────────────
+  // ── 10. Q&A detection ──────────────────────────────────────────────────────
   if (qaBlocksCount === 0) {
     const textNodes: { text: string; el: ReturnType<typeof $> }[] = [];
 
@@ -940,7 +932,7 @@ export async function scrapeWebsite(
     }
   }
 
-  // ── 10. Remaining signals ─────────────────────────────────────────────────
+  // ── 11. Remaining signals ─────────────────────────────────────────────────
   const hasVideoElements =
     $("video").length > 0 ||
     $("iframe[src*='youtube.com']").length > 0 ||
@@ -956,7 +948,7 @@ export async function scrapeWebsite(
 
   const wordCount = bodyText.split(/\s+/).filter(Boolean).length;
 
-  // ── 11. Page type detection ────────────────────────────────────────────────
+  // ── 12. Page type detection ────────────────────────────────────────────────
   let pageType: "Homepage" | "Article" | "FAQ" | "About" | "Commercial" | "General" =
     "General";
   const pathname = parsedUrl.pathname.toLowerCase();
@@ -1009,6 +1001,7 @@ export async function scrapeWebsite(
     javascriptDependency,
     robotsStatus,
     robotsRawContent,
+    llmsRawContent,
     aiBotsStatus,
     entityTrustMap,
     semanticLayoutMap,

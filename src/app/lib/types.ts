@@ -52,6 +52,7 @@ export interface ScrapedData {
   semanticLayoutMap: SemanticLayoutMap;
   pageType: "Homepage" | "Article" | "FAQ" | "About" | "Commercial" | "General";
   aiAccessibility: AIAccessibilityResult;
+  llmsRawContent: string;
 }
 
 export interface AuditData extends ScrapedData {
@@ -67,6 +68,7 @@ export interface AuditData extends ScrapedData {
   website_url?: string;
   commodityContentScore: number;
   aiAccessibility: AIAccessibilityResult;
+  llmsRawContent: string;
 }
 
 export type TabId = "metrics" | "analysis" | "recommendations" | "robots" | "simulator";
