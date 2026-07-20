@@ -69,6 +69,7 @@ export interface AuditData extends ScrapedData {
   commodityContentScore: number;
   aiAccessibility: AIAccessibilityResult;
   llmsRawContent: string;
+  llmsTxtStatus?: "Present" | "Missing";
 }
 
 export type TabId = "metrics" | "analysis" | "recommendations" | "robots" | "simulator";
@@ -111,4 +112,22 @@ export interface Recommendation {
   impact: string;                  // Kako ovo utiče na LLM/AEO (poveži sa tvojim AEO_EXPLANATIONS)
   fixSteps: string[];              // Korak-po-korak uputstvo za popravku
   codeSnippet?: string;            // Opciono: JSON-LD ili HTML primjer kako popraviti
+}
+
+export interface CategoryStat {
+  name: string;
+  avgScore: number;
+  audits: number;
+  color?: string;
+}
+
+export interface GlobalAEOStats {
+  totalAudits: number;
+  avgScore: number;
+  jsHydrationIssuePct: number;
+  noSchemaPct: number;
+  cloudflareWallPct: number;
+  llmsTxtAdoptionPct: number;
+  categoryStats: CategoryStat[];
+  updatedAt: string;
 }

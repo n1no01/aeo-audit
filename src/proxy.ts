@@ -6,6 +6,7 @@ const publicPaths = [
   '/tools/ai-schema-generator',
   '/tools/ai-robots-generator',
   '/tools/aeo-semantic-analyzer',
+  '/state-of-aeo',
   '/about',
   '/pricing',
   '/how-it-works',

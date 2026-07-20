@@ -37,12 +37,16 @@ export default async function LandingPage() {
         {/* FLOATING AI LOGOS Component */}
         <HeroLogos />
 
-        {/* Tool Category Badge */}
-        <div className="inline-block px-3 py-1.5 sm:px-4 sm:py-2 mb-6 rounded-full bg-blue-50 border border-blue-100 text-center max-w-full backdrop-blur-sm">
-          <span className="text-[9px] sm:text-[10px] font-black tracking-[0.2em] sm:tracking-[0.3em] uppercase text-blue-600 block truncate">
-            The Ultimate LLM & AI Search Audit Tool
+        {/* 🚀 BADGE SA LINKOM KA STATS STRANICI */}
+        <Link 
+          href="/state-of-aeo" 
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 mb-6 rounded-full bg-blue-50/80 hover:bg-blue-100/80 border border-blue-200/60 transition group backdrop-blur-sm shadow-sm"
+        >
+          <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+          <span className="text-[10px] sm:text-[11px] font-black tracking-wider uppercase text-blue-700">
+            State of AEO 2026 Benchmarks ↗
           </span>
-        </div>
+        </Link>
         
         {/* Headline */}
         <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight text-center max-w-4xl leading-[1.15] mb-6 px-2 text-slate-900">
@@ -54,16 +58,16 @@ export default async function LandingPage() {
           Traditional SEO is no longer enough. <strong className="font-bold text-slate-800">AEO Audit Pro</strong> audits your website’s semantic structure, parses AI crawler directives, and optimizes your data architecture so AI engines cite you as the primary source.
         </p>
 
-        {/* CTA Buttons */}
+        {/* 🚀 CTA BUTTONS (Uključen i link za /stats) */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center w-full sm:w-auto px-4 sm:px-0 mb-16 sm:mb-20">
           <Link href="/sign-up" className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black tracking-wide hover:bg-slate-900 transition shadow-xl shadow-blue-600/10 text-center text-sm w-full sm:w-auto">
             RUN A FREE AEO AUDIT
           </Link>
-          <Link href="#features" className="bg-white border border-slate-200 text-slate-700 px-8 py-4 rounded-2xl font-bold hover:bg-slate-50 transition text-center text-sm w-full sm:w-auto">
-            How It Works
+          <Link href="/stats" className="bg-white border border-slate-200/90 text-slate-800 px-6 py-4 rounded-2xl font-bold hover:bg-slate-50 hover:border-slate-300 transition text-center text-sm w-full sm:w-auto flex items-center justify-center gap-2 shadow-sm">
+            <span>View Industry Stats</span>
+            <span className="text-xs bg-blue-100 text-blue-700 font-extrabold px-2 py-0.5 rounded-md">Live</span>
           </Link>
         </div>
-
 
         {/* Interactive Mockup Component */}
         <InteractiveMockup />
