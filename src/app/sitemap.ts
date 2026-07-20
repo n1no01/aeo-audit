@@ -1,14 +1,14 @@
 import { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://www.aeoaudit-pro.com"; // 👈 Unesi svoj tačan domen
+  const baseUrl = "https://aeoaudit-pro.com";
 
   return [
     {
       url: baseUrl,
       lastModified: new Date(),
       changeFrequency: "daily",
-      priority: 1.0, // Početna stranica ima najveći prioritet
+      priority: 1.0,
     },
     {
       url: `${baseUrl}/pricing`,
@@ -22,6 +22,38 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.8,
     },
+    {
+      url: `${baseUrl}/about`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/academy`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+   
+    {
+      url: `${baseUrl}/tools/ai-schema-generator`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/tools/ai-robots-generator`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/tools/aeo-semantic-analyzer`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    // 📜 LEGAL
     {
       url: `${baseUrl}/privacy`,
       lastModified: new Date(),

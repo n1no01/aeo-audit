@@ -40,14 +40,20 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
     pageType,
     detectedSchemas,
     robotsRawContent,
-    llmsRawContent // Izvučen ključ iz audit podataka
+    llmsRawContent,
+    // 🚀 MULTI-PAGE DOMAIN EXTENSIONS
+    isDomainAudit,
+    pagesAuditedCount,
+    sampledPages,
+    domainStats,
+    website_url,
   } = data;
 
   const { agencyName, brandColor, authorName, logoBase64 } = brandKit;
   const cleanHexColor = brandColor.replace("#", "").trim();
   const documentChildren: Paragraph[] = [];
 
-  // Ako korisnik ima sačuvan logo, ubaci ga
+  // 1. BRAND LOGO ILI BRAND HEADER
   if (logoBase64) {
     try {
       const base64Data = logoBase64.split(",")[1];
@@ -82,16 +88,84 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
     );
   }
 
-  // Sastavljanje strukture dokumenta
+  // 2. NASLOVI I OSNOVNI STATUSERI
+  const auditTypeTitle = isDomainAudit
+    ? "MULTI-PAGE FULL DOMAIN AEO AUDIT"
+    : "ANSWER ENGINE OPTIMIZATION AUDIT";
+
   documentChildren.push(
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 400 }, children: [new TextRun({ text: "ANSWER ENGINE OPTIMIZATION AUDIT", bold: true, size: 32, color: "0f172a" })] }),
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 400 }, children: [new TextRun({ text: `Detected Category / Niche: ${pageCategory || "General Website"}`.toUpperCase(), bold: true, size: 14, color: "64748b" })] }),
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 600 }, children: [new TextRun({ text: `Overall Visibility Score: ${score}/100`, bold: true, size: 26, color: cleanHexColor })] }),
-    
-    new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 200, after: 200 }, children: [new TextRun({ text: "Executive Summary", color: "0f172a", bold: true, size: 24 })] }),
-    new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: "Target Title: ", bold: true }), new TextRun({ text: title })] }),
-    new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: "Meta Description: ", bold: true }), new TextRun({ text: metaDescription })] }),
-    new Paragraph({ spacing: { after: 400 }, children: [new TextRun({ text: "Primary H1 Anchor: ", bold: true }), new TextRun({ text: h1 })] }),
+    // POPRAVLJENO:
+new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 200 }, children: [new TextRun({ text: auditTypeTitle, bold: true, size: 28, color: "0f172a" })] }),
+new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 150 }, children: [new TextRun({ text: `Target Domain: ${website_url || "N/A"}`, bold: true, size: 16, color: "334155" })] }),
+new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 150 }, children: [new TextRun({ text: `Audit Scope: ${isDomainAudit ? "Multi-Page Domain Audit" : "Single Route Audit"}`, bold: true, size: 13, color: "2563eb" })] }),
+    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 500 }, children: [new TextRun({ text: `${isDomainAudit ? "Overall Domain Avg Score" : "Overall Visibility Score"}: ${score}/100`, bold: true, size: 26, color: cleanHexColor })] })
+  );
+
+  // 3. SEKCJA ZA MULTI-PAGE DOMAIN STATISTIKU (Ako je bio Domain Audit)
+  if (isDomainAudit && domainStats) {
+    documentChildren.push(
+      new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "Multi-Page Domain Coverage & Health", color: "0f172a", bold: true, size: 24 })] }),
+      new Paragraph({ text: `• Discovered & Sampled Routes: ${domainStats.totalPagesAudited || pagesAuditedCount || 1} Pages` }),
+      new Paragraph({ text: `• Average Depth: ${domainStats.avgWordCount || 0} words per page` }),
+      new Paragraph({ text: `• Schema.org Graph Coverage: ${domainStats.schemaCoveragePercent || 0}% of sampled pages` }),
+      new Paragraph({ text: `• Single H1 Cascade Health: ${domainStats.hasH1CoveragePercent || 0}% of sampled pages` }),
+      new Paragraph({ text: `• Meta Snippets Presence: ${domainStats.hasMetaDescriptionPercent || 0}% of sampled pages` }),
+      new Paragraph({ text: `• OpenGraph Social Coverage: ${domainStats.openGraphCoveragePercent || 0}% of sampled pages` }),
+      new Paragraph({ text: `• Conversational Q&A Blocks Density: ${domainStats.qaBlocksCoveragePercent || 0}% of sampled pages` }),
+      new Paragraph({ text: `• Table & List Structures (RAG): ${domainStats.tablesOrListsCoveragePercent || 0}% of sampled pages` })
+    );
+
+    // Discovered Schemas
+    if (domainStats.detectedSchemaTypes && domainStats.detectedSchemaTypes.length > 0) {
+      const schemasStr = domainStats.detectedSchemaTypes
+        .map(s => `${s.type} (${s.count})`)
+        .join(", ");
+      documentChildren.push(
+        new Paragraph({ text: `• Discovered Schema Entities: ${schemasStr}` })
+      );
+    }
+
+    // Sampled Pages List
+    if (sampledPages && sampledPages.length > 0) {
+      documentChildren.push(
+        new Paragraph({ heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 100 }, children: [new TextRun({ text: "Sampled Domain Routes Audit Breakdown", color: "1e293b", bold: true, size: 18 })] })
+      );
+
+      sampledPages.forEach((p, idx) => {
+        documentChildren.push(
+          new Paragraph({ text: `  ${idx + 1}. [Score: ${p.score}/100] ${p.url}` })
+        );
+      });
+    }
+
+    // Deficits List
+    if ((domainStats.missingSchemaPages && domainStats.missingSchemaPages.length > 0) || (domainStats.missingH1Pages && domainStats.missingH1Pages.length > 0)) {
+      documentChildren.push(
+        new Paragraph({ heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 100 }, children: [new TextRun({ text: "Route Deficits & Missing Elements", color: "b91c1c", bold: true, size: 18 })] })
+      );
+
+      if (domainStats.missingSchemaPages && domainStats.missingSchemaPages.length > 0) {
+        documentChildren.push(new Paragraph({ text: `• Pages Missing Schema.org Markup (${domainStats.missingSchemaPages.length}):`}));
+        domainStats.missingSchemaPages.forEach(u => {
+          documentChildren.push(new Paragraph({ text: `    - ${u}` }));
+        });
+      }
+
+      if (domainStats.missingH1Pages && domainStats.missingH1Pages.length > 0) {
+        documentChildren.push(new Paragraph({ text: `• Pages Missing Primary H1 Tag (${domainStats.missingH1Pages.length}):` }));
+        domainStats.missingH1Pages.forEach(u => {
+          documentChildren.push(new Paragraph({ text: `    - ${u}` }));
+        });
+      }
+    }
+  }
+
+  // 4. EXECUTIVE SUMMARY (Root/Homepage Specifics)
+  documentChildren.push(
+    new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: isDomainAudit ? "Primary Route Executive Summary (Homepage / Root)" : "Executive Summary", color: "0f172a", bold: true, size: 24 })] }),
+    new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: "Target Title: ", bold: true }), new TextRun({ text: title || "N/A" })] }),
+    new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: "Meta Description: ", bold: true }), new TextRun({ text: metaDescription || "N/A" })] }),
+    new Paragraph({ spacing: { after: 400 }, children: [new TextRun({ text: "Primary H1 Anchor: ", bold: true }), new TextRun({ text: h1 || "N/A" })] }),
 
     new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "AEO Content Core Pillars Score", color: "0f172a", bold: true, size: 24 })] }),
     new Paragraph({ text: `• BLUFF Alignment (Bottom Line Up Front): ${bluffScore || 5}/10` }),
@@ -206,5 +280,6 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
   });
 
   const blob = await Packer.toBlob(doc);
-  saveAs(blob, `AEO-Report-${agencyName.replace(/\s+/g, "-")}.docx`);
+  const cleanFileName = (website_url || agencyName).replace(/https?:\/\//, "").replace(/[^\w\b-]/g, "-");
+  saveAs(blob, `AEO-Report-${cleanFileName}.docx`);
 }

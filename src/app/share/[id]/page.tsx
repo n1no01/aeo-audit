@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { getSharedAudit } from "../../actions";
 import Tooltip from "../../components/Tooltip";
+import DomainMetricsPanel from "../../components/dashboard/DomainMetricsPanel";
 import { AuditData, AEO_EXPLANATIONS, Recommendation } from "../../lib/types"; 
 import Link from "next/link";
 
@@ -54,6 +55,8 @@ export default function SharedAuditPage({ params }: SharePageProps) {
     );
   }
 
+  const isDomain = result.data.isDomainAudit;
+
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white">
       
@@ -68,7 +71,58 @@ export default function SharedAuditPage({ params }: SharePageProps) {
       </nav>
 
       {/* MAIN REPORT CONTAINER */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-8 md:px-12 flex-1 w-full mt-6 mb-16">
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 md:px-12 flex-1 w-full mt-6 mb-16 space-y-8">
+        
+        {/* 🌐 MULTI-PAGE DOMAIN AUDIT HEADER CARD (Prikazuje se ako je izveštaj domenski) */}
+        {(isDomain || (result.data.pagesAuditedCount && result.data.pagesAuditedCount > 0)) && (
+          <div className="bg-slate-900 text-white p-6 sm:p-8 rounded-[24px] sm:rounded-[32px] border border-slate-800 shadow-2xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider mb-2">
+                  🌐 Multi-Page Domain Audit
+                </div>
+                <h3 className="text-xl font-black">
+                  Sampled Domain Routes ({result.data.pagesAuditedCount || 1} {result.data.pagesAuditedCount === 1 ? "Page" : "Pages"} Analyzed)
+                </h3>
+                <p className="text-slate-400 text-xs mt-1">
+                  The overall score represents the weighted average AEO health across key routes discovered in the sitemap.
+                </p>
+              </div>
+              <div className="text-right shrink-0">
+                <span className="text-3xl font-black text-blue-400">{result.data.score}</span>
+                <span className="text-xs text-slate-400 block font-bold">Domain Avg</span>
+              </div>
+            </div>
+
+            {result.data.sampledPages && result.data.sampledPages.length > 0 && (
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-2 scrollbar-thin">
+                {result.data.sampledPages.map((page, idx) => (
+                  <div key={idx} className="flex items-center justify-between bg-slate-800/60 p-3 rounded-xl border border-slate-700/50 text-xs">
+                    <div className="flex items-center gap-2 truncate max-w-[70%]">
+                      <span className="text-slate-500 font-mono text-[10px]">#{idx + 1}</span>
+                      <a 
+                        href={page.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="font-mono text-slate-300 hover:text-blue-400 underline decoration-slate-600 truncate"
+                      >
+                        {page.url}
+                      </a>
+                    </div>
+                    <span className={`font-black px-2.5 py-1 rounded-md shrink-0 ${
+                      page.score >= 75 ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" :
+                      page.score >= 50 ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" :
+                      "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                    }`}>
+                      {page.score} / 100
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="bg-white rounded-[24px] md:rounded-[48px] overflow-hidden border border-slate-100 shadow-2xl">
           
           {/* AUDIT TOP BAR */}
@@ -86,7 +140,9 @@ export default function SharedAuditPage({ params }: SharePageProps) {
                     </span>
                   </div>
                 )}
-                <h2 className="text-xl sm:text-3xl font-black tracking-tight truncate">AEO Performance Audit</h2>
+                <h2 className="text-xl sm:text-3xl font-black tracking-tight truncate">
+                  {isDomain ? "Full Domain AEO Audit" : "AEO Performance Audit"}
+                </h2>
                 <p className="text-slate-400 mt-1.5 text-xs sm:text-sm truncate w-full" title={targetUrl}>Target: {targetUrl}</p>
               </div>
             </div>
@@ -99,6 +155,28 @@ export default function SharedAuditPage({ params }: SharePageProps) {
           {/* CARDS GRID CONTENT */}
           <div className="p-4 sm:p-8 md:p-12 space-y-6 sm:space-y-8">
             
+            {/* 📊 BOGAT DOMAIN METRICS PANEL (Prikazuje se ako izveštaj ima agregirane domenske podatke) */}
+            {isDomain && result.data.domainStats && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-6 bg-blue-600 rounded-full" />
+                  <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                    Domain-Wide Technical Signals & Coverage
+                  </h3>
+                </div>
+                <DomainMetricsPanel data={result.data} />
+              </div>
+            )}
+
+            {isDomain && (
+              <div className="flex items-center gap-3 pt-6 border-t border-slate-100">
+                <div className="w-2 h-6 bg-slate-900 rounded-full" />
+                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
+                  Primary Route Detail Analysis (Homepage / Root)
+                </h3>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {/* CRAWLER MATRIX */}
               <div className="border border-slate-200/60 rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-slate-50/50 flex flex-col justify-between">
@@ -363,7 +441,6 @@ export default function SharedAuditPage({ params }: SharePageProps) {
               <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400">Prioritized Optimization Playbook</div>
               <div className="space-y-3 sm:space-y-4">
                 
-                {/* 🚀 FIXED: Map complex object fields safely instead of compiling raw objects directly as ReactNode items */}
                 {(result.data.recommendations as Recommendation[]).map((item, idx) => (
                   <div key={idx} className="bg-blue-50/60 border border-blue-100 rounded-2xl p-4 text-slate-800 text-sm flex items-start gap-3 sm:gap-4">
                     <span className="bg-blue-600 text-white rounded-xl w-7 h-7 flex items-center justify-center text-xs font-black shrink-0 mt-0.5">{idx + 1}</span>

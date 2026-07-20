@@ -11,6 +11,32 @@ export interface BotStatus {
   cohereAi: "Allowed" | "Blocked";
 }
 
+export interface DomainAggregatedStats {
+  totalPagesAudited: number;
+  schemaCoveragePercent: number;
+  hasH1CoveragePercent: number;
+  hasMetaDescriptionPercent: number;
+  avgWordCount: number;
+  
+  // 🚀 NOVE AEO & RAG METRIKE
+  qaBlocksCoveragePercent: number;
+  tablesOrListsCoveragePercent: number;
+  openGraphCoveragePercent: number;
+  detectedSchemaTypes: { type: string; count: number }[];
+  
+  // Brand & Social Footprint
+  hasSocialAnchorsPercent: number;
+  hasWikiLinksPercent: number;
+  
+  // Bot & Crawlability Directives
+  robotsStatus: string;
+  hasLlmsTxt: boolean;
+  botProtectionDetected: boolean;
+
+  missingSchemaPages: string[];
+  missingH1Pages: string[];
+}
+
 export interface EntityTrustMap {
   hasWikidataOrWikipedia: boolean;
   hasLinkedIn: boolean;
@@ -53,6 +79,8 @@ export interface ScrapedData {
   pageType: "Homepage" | "Article" | "FAQ" | "About" | "Commercial" | "General";
   aiAccessibility: AIAccessibilityResult;
   llmsRawContent: string;
+  jsonLd?: unknown[];
+  pageCategory?: string;
 }
 
 export interface AuditData extends ScrapedData {
@@ -70,6 +98,15 @@ export interface AuditData extends ScrapedData {
   aiAccessibility: AIAccessibilityResult;
   llmsRawContent: string;
   llmsTxtStatus?: "Present" | "Missing";
+  pagesAuditedCount?: number;
+  isDomainAudit?: boolean;
+  sampledPages?: Array<{ url: string; score: number }>;
+  domainStats?: DomainAggregatedStats;
+}
+
+export interface SampledPage {
+  url: string;
+  score: number;
 }
 
 export type TabId = "metrics" | "analysis" | "recommendations" | "robots" | "simulator";

@@ -6,6 +6,8 @@ import { formatUrl } from "./lib/utils";
 import { scrapeWebsite } from "./lib/scraper";
 import { calculateScore } from "./lib/scorer";
 import { generateAiAnalysis } from "./lib/gemini";
+import { getUrlsFromSitemap } from "./lib/crawler"; 
+import { aggregateDomainResults } from "./lib/aggregator";
 import { ScrapedData, AuditData } from "./lib/types";
 import { PostgrestError } from "@supabase/supabase-js"; 
 import { revalidatePath } from "next/cache";
@@ -42,7 +44,6 @@ interface DBHistoryItem {
   result_data: Record<string, unknown>; 
 }
 
-// 🔑 AŽURIRANI KLJUČ ODGOVORA (Izmiksovane opcije koje prate jednostavniji Playbook)
 const ANSWER_KEY: Record<number, string> = {
   1: "b", 2: "c", 3: "a", 4: "a", 5: "c",
   6: "b", 7: "b", 8: "a", 9: "c", 10: "a",
@@ -51,11 +52,14 @@ const ANSWER_KEY: Record<number, string> = {
 };
 
 // ===================================================================
-// CORE AEO AUDIT AKCIJE
+// CORE AEO AUDIT AKCIJE (Podrška za Single URL i Full Domain)
 // ===================================================================
 
 export async function analyzeUrl(formData: FormData) {
   const rawUrlInput = formData.get("url");
+  const auditMode = (formData.get("mode") as string) || "single"; // 🚀 Pročitaj mod ('single' ili 'domain')
+  console.log("RECEIVED AUDIT MODE:", auditMode);
+
   if (!rawUrlInput || typeof rawUrlInput !== "string") {
     return { error: "Please enter a valid target domain or URL." };
   }
@@ -132,24 +136,89 @@ export async function analyzeUrl(formData: FormData) {
     }
 
     let auditOutputData;
-    try {
-      const scrapedResult = await scrapeWebsite(url, SCRAPING_API_KEY) as ScrapedData;
-      const score = calculateScore(scrapedResult);
-      const aiData = await generateAiAnalysis(scrapedResult, score, url, GEMINI_API_KEY);
 
-      auditOutputData = {
-        ...scrapedResult,
-        website_url: url, 
-        score: aiData.score || score,
-        pageCategory: aiData.pageCategory || "Uncategorized",
-        aiAnalysis: aiData.aiAnalysis || "No analysis provided.",
-        recommendations: aiData.recommendations || [],
-        bluffScore: aiData.bluffScore || 5,
-        atomicStructureScore: aiData.atomicStructureScore || 5,
-        entityDensityScore: aiData.entityDensityScore || 5,
-        sentenceSimplicityScore: aiData.sentenceSimplicityScore || 5,
-        commodityContentScore: aiData.commodityContentScore || 5,
-      };
+    try {
+      if (auditMode === "domain") {
+        // 🚀 FULL DOMAIN AUDIT: Skupljanje uzorka od do 15 URL-ova iz sitemap-a ili landing page-a
+        const targetUrls = await getUrlsFromSitemap(url, 15);
+
+        // Paralelno skeniranje svih stranica u uzorku
+        const scrapePromises = targetUrls.map(async (pageUrl) => {
+          try {
+            const scraped = (await scrapeWebsite(pageUrl, SCRAPING_API_KEY)) as ScrapedData;
+            const score = calculateScore(scraped);
+            return { pageUrl, scraped, score };
+          } catch (e) {
+            console.error(`Failed to scrape ${pageUrl}:`, e);
+            return null;
+          }
+        });
+
+        const results = (await Promise.all(scrapePromises)).filter(Boolean);
+
+        if (results.length === 0) {
+          throw new Error("Unable to crawl domain sample pages.");
+        }
+
+        const validResults = results as { pageUrl: string; scraped: ScrapedData; score: number }[];
+
+        // 🚀 Izračunavanje tačnog matematičkog prosjeka cijele domene iz čistih algoritamskih skorova
+        const totalScoreSum = validResults.reduce((acc, curr) => acc + (curr.score || 0), 0);
+        const avgScore = Math.round(totalScoreSum / validResults.length);
+
+        // Deterministička agregacija metrika sa svih ruta za DomainMetricsPanel
+        const domainStats = aggregateDomainResults(validResults);
+
+        // Priprema liste skeniranih ruta sa njihovim pojedinačnim, dosljednim skorom
+        const sampledPagesList = validResults.map((r) => ({
+          url: r.pageUrl,
+          score: r.score,
+        }));
+
+        // Za AI analizu uzimamo primarnu (homepage) stranicu, ali je evaluiramo sa prosječnim skorom domene
+        const primaryResult = validResults[0].scraped;
+        const aiData = await generateAiAnalysis(primaryResult, avgScore, url, GEMINI_API_KEY);
+
+        auditOutputData = {
+          ...primaryResult,
+          website_url: url,
+          score: avgScore, // Tačan matematički prosjek domene
+          pageCategory: aiData.pageCategory || primaryResult.pageCategory || "General Website",
+          aiAnalysis: `[Multi-Page Domain Audit (Sample: ${validResults.length} pages)]\n\n${aiData.aiAnalysis || "No analysis provided."}`,
+          recommendations: aiData.recommendations || [],
+          bluffScore: aiData.bluffScore || 5,
+          atomicStructureScore: aiData.atomicStructureScore || 5,
+          entityDensityScore: aiData.entityDensityScore || 5,
+          sentenceSimplicityScore: aiData.sentenceSimplicityScore || 5,
+          commodityContentScore: aiData.commodityContentScore || 5,
+          
+          // Agregirani podaci spremni za UI i bazu
+          isDomainAudit: true,
+          pagesAuditedCount: validResults.length,
+          sampledPages: sampledPagesList,
+          domainStats: domainStats,
+        };
+
+      } else {
+        // 🎯 SINGLE URL AUDIT: Standardna logika za 1 stranicu
+        const scrapedResult = (await scrapeWebsite(url, SCRAPING_API_KEY)) as ScrapedData;
+        const score = calculateScore(scrapedResult);
+        const aiData = await generateAiAnalysis(scrapedResult, score, url, GEMINI_API_KEY);
+
+        auditOutputData = {
+          ...scrapedResult,
+          website_url: url, 
+          score: score, // Dosljedan algoritamski skor identičan onom iz domain moda
+          pageCategory: aiData.pageCategory || "Uncategorized",
+          aiAnalysis: aiData.aiAnalysis || "No analysis provided.",
+          recommendations: aiData.recommendations || [],
+          bluffScore: aiData.bluffScore || 5,
+          atomicStructureScore: aiData.atomicStructureScore || 5,
+          entityDensityScore: aiData.entityDensityScore || 5,
+          sentenceSimplicityScore: aiData.sentenceSimplicityScore || 5,
+          commodityContentScore: aiData.commodityContentScore || 5,
+        };
+      }
     } catch (apiError) {
       console.error("External API Error (Scraper/Gemini):", apiError);
       return { 
@@ -450,7 +519,6 @@ export async function submitAeoExam(answers: Record<number, string>, fullName: s
   const { userId } = await auth();
   if (!userId) return { success: false, message: "Unauthorized access." };
 
-  // 🛡️ Provera da ime nije prazno
   if (!fullName || fullName.trim() === "") {
     return { success: false, message: "Please provide your full legal name for certification verification." };
   }
@@ -492,14 +560,13 @@ export async function submitAeoExam(answers: Record<number, string>, fullName: s
     const passed = correctCount >= requiredToPass;
     const newAttemptsCount = (userStats.exam_attempts_used || 0) + 1;
 
-    // 🚀 ATOMSKO AŽURIRANJE: Upisujemo i full_name i cert_issued_at timestamp
     const { error: updateError } = await supabase
       .from("users")
       .update({
         exam_attempts_used: newAttemptsCount,
         exam_passed: passed,
-        full_name: passed ? fullName.trim() : null, // Čuva ime samo ako je ispit položen
-        cert_issued_at: passed ? new Date().toISOString() : null // Zaključava tačan datum prolaza
+        full_name: passed ? fullName.trim() : null,
+        cert_issued_at: passed ? new Date().toISOString() : null
       })
       .eq("id", userId);
 

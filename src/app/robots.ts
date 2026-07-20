@@ -5,13 +5,10 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*", // Svi botovi na svetu...
       allow: [
-        "/", 
-        "/pricing", 
-        "/how-it-works"
+        "/"
       ], // ...imaju dozvolu za ove javne stranice
       disallow: [
-        "/dashboard",   
-        "/dashboard/*",   
+        "/dashboard",     
         "/api/",          
       ],
     },
