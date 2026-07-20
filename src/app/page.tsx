@@ -63,7 +63,7 @@ export default async function LandingPage() {
           <Link href="/sign-up" className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black tracking-wide hover:bg-slate-900 transition shadow-xl shadow-blue-600/10 text-center text-sm w-full sm:w-auto">
             RUN A FREE AEO AUDIT
           </Link>
-          <Link href="/stats" className="bg-white border border-slate-200/90 text-slate-800 px-6 py-4 rounded-2xl font-bold hover:bg-slate-50 hover:border-slate-300 transition text-center text-sm w-full sm:w-auto flex items-center justify-center gap-2 shadow-sm">
+          <Link href="/state-of-aeo" className="bg-white border border-slate-200/90 text-slate-800 px-6 py-4 rounded-2xl font-bold hover:bg-slate-50 hover:border-slate-300 transition text-center text-sm w-full sm:w-auto flex items-center justify-center gap-2 shadow-sm">
             <span>View Industry Stats</span>
             <span className="text-xs bg-blue-100 text-blue-700 font-extrabold px-2 py-0.5 rounded-md">Live</span>
           </Link>
