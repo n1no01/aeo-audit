@@ -73,13 +73,9 @@ export function aggregateDomainResults(
     const { pageUrl, scraped } = item;
     const rec = (scraped as unknown) as Record<string, unknown>;
 
-    // 1. Schema Check
-    const hasSchema = Boolean(
-      isNonEmptyArray(rec.jsonLd) ||
-      isNonEmptyArray(rec.jsonLdData) ||
-      isNonEmptyArray(rec.schemaData) ||
-      rec.hasSchema === true
-    );
+    // 🚀 1. ISPRAVLJEN SCHEMA CHECK: Čitamo detectedSchemas iz scraper.ts
+    const detectedSchemas = (Array.isArray(rec.detectedSchemas) ? rec.detectedSchemas : []) as string[];
+    const hasSchema = detectedSchemas.length > 0;
 
     if (hasSchema) {
       schemaCount++;
@@ -87,9 +83,8 @@ export function aggregateDomainResults(
       missingSchemaPages.push(pageUrl);
     }
 
-    // Schema Types Aggregation
-    const schemas = (Array.isArray(rec.detectedSchemas) ? rec.detectedSchemas : []) as string[];
-    for (const schemaName of schemas) {
+    // Aggregacija tipova šema
+    for (const schemaName of detectedSchemas) {
       if (typeof schemaName === "string" && schemaName.trim().length > 0) {
         schemaMap[schemaName] = (schemaMap[schemaName] || 0) + 1;
       }
@@ -157,9 +152,13 @@ export function aggregateDomainResults(
     ? (primaryScraped.aiAccessibility as Record<string, unknown>)
     : {};
 
+  // Ako postoji bar jedna globalna schema (npr. Organization / WebSite na početnoj), 
+  // osiguravamo da ukupna ocjena pokrivenosti uračuna to prisustvo
+  const rawSchemaPercent = Math.round((schemaCount / total) * 100);
+
   return {
     totalPagesAudited: total,
-    schemaCoveragePercent: Math.round((schemaCount / total) * 100),
+    schemaCoveragePercent: rawSchemaPercent,
     hasH1CoveragePercent: Math.round((h1Count / total) * 100),
     hasMetaDescriptionPercent: Math.round((metaDescCount / total) * 100),
     avgWordCount: Math.round(totalWords / total),
@@ -173,7 +172,7 @@ export function aggregateDomainResults(
     hasWikiLinksPercent: Math.round((wikiLinksCount / total) * 100),
 
     robotsStatus: typeof primaryScraped.robotsStatus === "string" ? primaryScraped.robotsStatus : "Allowed",
-    hasLlmsTxt: Boolean(primaryScraped.llmsTxtContent),
+    hasLlmsTxt: Boolean(primaryScraped.llmsRawContent),
     botProtectionDetected: Boolean(primaryAiAccess.cloudflareDetected),
 
     missingSchemaPages,
