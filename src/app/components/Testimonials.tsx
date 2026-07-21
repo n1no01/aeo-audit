@@ -54,7 +54,8 @@ export default function Testimonials() {
               <div className="flex items-center gap-3">
                 <img src={t.img} alt={t.name} className="w-10 h-10 rounded-full object-cover border border-slate-100" />
                 <div className="truncate">
-                  <h4 className="font-black text-sm text-slate-900 truncate hover:text-blue-600 transition-colors">{t.name}</h4>
+                  {/* 🚀 ZAMIJENJENO SA h3 ZA ISPRAVNU HIERARHIJU BEZ LEAPA */}
+                  <h3 className="font-black text-sm text-slate-900 truncate hover:text-blue-600 transition-colors">{t.name}</h3>
                   <p className="text-xs text-slate-400 font-bold truncate">{t.role}</p>
                 </div>
               </div>
@@ -78,7 +79,8 @@ export default function Testimonials() {
               <div className="flex items-center gap-3">
                 <img src={t.img} alt={t.name} className="w-10 h-10 rounded-full object-cover border border-slate-100" />
                 <div className="truncate">
-                  <h4 className="font-black text-sm text-slate-900 truncate hover:text-blue-600 transition-colors">{t.name}</h4>
+                  {/* 🚀 ZAMIJENJENO SA h3 ZA ISPRAVNU HIERARHIJU BEZ LEAPA */}
+                  <h3 className="font-black text-sm text-slate-900 truncate hover:text-blue-600 transition-colors">{t.name}</h3>
                   <p className="text-xs text-slate-400 font-bold truncate">{t.role}</p>
                 </div>
               </div>
