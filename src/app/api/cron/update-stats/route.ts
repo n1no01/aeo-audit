@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { AuditData } from "@/app/lib/types";
 import { supabase } from "../../../lib/supabase";
 
+// 🚀 OSIGURAVA DA VERCEL NE KEŠIRA DNEVNI CRON
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 interface AuditRow {
   website_url: string;
   result_data: AuditData;
@@ -117,7 +121,7 @@ export async function GET(request: Request) {
       avgWordCountHighScore,
     };
 
-    // 🚀 NOVO: Dinamički sortirane top 4 greške po učestalosti
+    // Dinamički sortirane top 4 greške po učestalosti
     const topFailures = [
       {
         id: "js_hydration",
@@ -143,7 +147,7 @@ export async function GET(request: Request) {
         pct: unstructuredPct,
         description: "Fluffy marketing paragraphs without direct Q&A blocks, tables, or bolded facts make it difficult for RAG systems to synthesize concise answers."
       }
-    ].sort((a, b) => b.pct - a.pct); // Sortiramo da najčešća greška bude #1
+    ].sort((a, b) => b.pct - a.pct);
 
     const { data: firstRow } = await supabase
       .from("global_stats")
@@ -165,7 +169,7 @@ export async function GET(request: Request) {
         llms_txt_adoption_pct: llmsTxtAdoptionPct,
         category_stats: categoryStats,
         content_benchmarks: contentBenchmarks,
-        top_failures: topFailures, // 🚀 Snimamo dinamičke greške
+        top_failures: topFailures,
         updated_at: new Date().toISOString(),
       })
       .eq("id", firstRow.id);

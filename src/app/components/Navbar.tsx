@@ -58,16 +58,16 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Priprema varijabli za brojač
+  const usedCredits = isRadarPage ? (userStats?.radar_used ?? 0) : (userStats?.used ?? 0);
+  const limitCredits = isRadarPage 
+    ? (userStats?.radar_limit ?? 0) 
+    : (userStats?.limit || (userStats?.plan === "FREE" ? 1 : userStats?.plan === "STARTER" ? 50 : 200));
+  
+  const badgeLabel = isRadarPage ? "RADAR" : userStats?.plan || "FREE";
+
   // ─── DASHBOARD / APP NAVBAR ──────────────────────────────────────────────
   if (isDashboard) {
-    // Određivanje varijabli za brojač u zavisnosti od stranice
-    const usedCredits = isRadarPage ? (userStats?.radar_used ?? 0) : (userStats?.used ?? 0);
-    const limitCredits = isRadarPage 
-      ? (userStats?.radar_limit ?? 0) 
-      : (userStats?.limit || (userStats?.plan === "FREE" ? 1 : userStats?.plan === "STARTER" ? 50 : 200));
-    
-    const badgeLabel = isRadarPage ? "📡 RADAR" : userStats?.plan;
-
     return (
       <nav className="sticky top-0 z-50 w-full bg-white border-b border-slate-200/80 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -87,7 +87,7 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
             </div>
           </Link>
 
-          <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
             <Link
               href="/aeo-radar"
               className={`text-xs sm:text-sm font-semibold transition duration-200 flex items-center gap-1.5 m-0 ${
@@ -104,7 +104,6 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
               }`}
             >
               Entity Checker
-             
             </Link>
 
             <Link
@@ -116,7 +115,7 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
               Academy 🎓
             </Link>
 
-            {/* 🏠 POZICIONIRANO DUGME ZA POVRATAK: Nalazi se tačno između Academy i vertikalnog separatora */}
+            {/* POZICIONIRANO DUGME ZA POVRATAK */}
             {pathname !== "/dashboard" && (
               <Link
                 href="/dashboard"
@@ -128,35 +127,23 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
 
             <div className="h-4 w-px bg-slate-200 hidden sm:block" />
 
-            {/* Pametni jedinstveni brojač za čitavu aplikaciju */}
-            {userStats && (
-              <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-[11px] font-bold text-slate-600 shadow-sm transition-all duration-200 hover:border-slate-300 select-none">
-                <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
-                  isRadarPage 
-                    ? "bg-slate-900 text-white" 
-                    : (userStats.plan === "FREE" ? "bg-slate-200 text-slate-700" : "bg-blue-600 text-white")
-                }`}>
-                  {badgeLabel}
-                </span>
-                <div className="flex flex-col items-start gap-0.5">
-                  <span className="text-[10px] text-slate-700 font-black">
-                    {usedCredits}/{limitCredits} Used
-                  </span>
-                  <div className="w-16 bg-slate-200 h-1 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        usedCredits >= (limitCredits || 1) ? "bg-rose-500" : "bg-blue-600"
-                      }`}
-                      style={{
-                        width: `${Math.min((usedCredits / (limitCredits || 1)) * 100, 100)}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* 🚀 CLERK USER BUTTON SA PODEBLJANIM PLANOM UNUTAR PADAJUĆEG MENIJA */}
+            <UserButton>
+              <UserButton.MenuItems>
+                {userStats && (
+                  <UserButton.Link
+                    label={`Plan: ${badgeLabel.toUpperCase()} • ${usedCredits}/${limitCredits} Used`}
+                    labelIcon={
+                      <span className="text-xs font-bold">
+                        {usedCredits >= (limitCredits || 1) ? "🚨" : "⚡"}
+                      </span>
+                    }
+                    href="/pricing"
+                  />
+                )}
+              </UserButton.MenuItems>
+            </UserButton>
 
-            <UserButton />
           </div>
         </div>
       </nav>

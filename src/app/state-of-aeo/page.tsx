@@ -4,8 +4,8 @@ import Footer from "../components/Footer";
 import { GlobalAEOStats } from "../lib/types";
 import { supabase } from "../lib/supabase";
 
-// 🚀 Revalidacija stranice svakih 24h (86400 sekundi)
-export const revalidate = 86400;
+export const revalidate = 0;
+export const dynamic = "force-dynamic";
 
 interface ContentBenchmarks {
   qaBlocksPct?: number;
