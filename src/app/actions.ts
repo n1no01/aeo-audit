@@ -52,12 +52,44 @@ const ANSWER_KEY: Record<number, string> = {
 };
 
 // ===================================================================
+// POMOĆNA FUNKCIJA ZA PARALELNU OBRADU U GRUPAMA (BATCHING)
+// ===================================================================
+async function scrapePagesInBatches(
+  urls: string[], 
+  apiKey: string, 
+  batchSize = 5
+) {
+  const results = [];
+
+  for (let i = 0; i < urls.length; i += batchSize) {
+    const chunk = urls.slice(i, i + batchSize);
+    
+    // Pokreće batch od 5 stranica paralelno
+    const chunkPromises = chunk.map(async (pageUrl) => {
+      try {
+        const scraped = (await scrapeWebsite(pageUrl, apiKey)) as ScrapedData;
+        const score = calculateScore(scraped);
+        return { pageUrl, scraped, score };
+      } catch (e) {
+        console.error(`Failed to scrape ${pageUrl}:`, e);
+        return null;
+      }
+    });
+
+    const chunkResults = await Promise.all(chunkPromises);
+    results.push(...chunkResults.filter(Boolean));
+  }
+
+  return results;
+}
+
+// ===================================================================
 // CORE AEO AUDIT AKCIJE (Podrška za Single URL i Full Domain)
 // ===================================================================
 
 export async function analyzeUrl(formData: FormData) {
   const rawUrlInput = formData.get("url");
-  const auditMode = (formData.get("mode") as string) || "single"; // 🚀 Pročitaj mod ('single' ili 'domain')
+  const auditMode = (formData.get("mode") as string) || "single";
   console.log("RECEIVED AUDIT MODE:", auditMode);
 
   if (!rawUrlInput || typeof rawUrlInput !== "string") {
@@ -139,50 +171,38 @@ export async function analyzeUrl(formData: FormData) {
 
     try {
       if (auditMode === "domain") {
-        // 🚀 FULL DOMAIN AUDIT: Skupljanje uzorka od do 15 URL-ova iz sitemap-a ili landing page-a
+        // 🚀 FULL DOMAIN AUDIT: Izvlačenje do 15 URL-ova iz sitemapa
         const targetUrls = await getUrlsFromSitemap(url, 15);
 
-        // Paralelno skeniranje svih stranica u uzorku
-        const scrapePromises = targetUrls.map(async (pageUrl) => {
-          try {
-            const scraped = (await scrapeWebsite(pageUrl, SCRAPING_API_KEY)) as ScrapedData;
-            const score = calculateScore(scraped);
-            return { pageUrl, scraped, score };
-          } catch (e) {
-            console.error(`Failed to scrape ${pageUrl}:`, e);
-            return null;
-          }
-        });
+        // 🚀 Efikasno skeniranje u grupama po 5 u paraleli (Batching)
+        const validResults = (await scrapePagesInBatches(
+          targetUrls, 
+          SCRAPING_API_KEY, 
+          5
+        )) as { pageUrl: string; scraped: ScrapedData; score: number }[];
 
-        const results = (await Promise.all(scrapePromises)).filter(Boolean);
-
-        if (results.length === 0) {
+        if (validResults.length === 0) {
           throw new Error("Unable to crawl domain sample pages.");
         }
 
-        const validResults = results as { pageUrl: string; scraped: ScrapedData; score: number }[];
-
-        // 🚀 Izračunavanje tačnog matematičkog prosjeka cijele domene iz čistih algoritamskih skorova
+        // Izračunavanje matematičkog prosjeka domene
         const totalScoreSum = validResults.reduce((acc, curr) => acc + (curr.score || 0), 0);
         const avgScore = Math.round(totalScoreSum / validResults.length);
 
-        // Deterministička agregacija metrika sa svih ruta za DomainMetricsPanel
         const domainStats = aggregateDomainResults(validResults);
 
-        // Priprema liste skeniranih ruta sa njihovim pojedinačnim, dosljednim skorom
         const sampledPagesList = validResults.map((r) => ({
           url: r.pageUrl,
           score: r.score,
         }));
 
-        // Za AI analizu uzimamo primarnu (homepage) stranicu, ali je evaluiramo sa prosječnim skorom domene
         const primaryResult = validResults[0].scraped;
         const aiData = await generateAiAnalysis(primaryResult, avgScore, url, GEMINI_API_KEY);
 
         auditOutputData = {
           ...primaryResult,
           website_url: url,
-          score: avgScore, // Tačan matematički prosjek domene
+          score: avgScore,
           pageCategory: aiData.pageCategory || primaryResult.pageCategory || "General Website",
           aiAnalysis: `[Multi-Page Domain Audit (Sample: ${validResults.length} pages)]\n\n${aiData.aiAnalysis || "No analysis provided."}`,
           recommendations: aiData.recommendations || [],
@@ -192,7 +212,6 @@ export async function analyzeUrl(formData: FormData) {
           sentenceSimplicityScore: aiData.sentenceSimplicityScore || 5,
           commodityContentScore: aiData.commodityContentScore || 5,
           
-          // Agregirani podaci spremni za UI i bazu
           isDomainAudit: true,
           pagesAuditedCount: validResults.length,
           sampledPages: sampledPagesList,
@@ -200,7 +219,7 @@ export async function analyzeUrl(formData: FormData) {
         };
 
       } else {
-        // 🎯 SINGLE URL AUDIT: Standardna logika za 1 stranicu
+        // 🎯 SINGLE URL AUDIT
         const scrapedResult = (await scrapeWebsite(url, SCRAPING_API_KEY)) as ScrapedData;
         const score = calculateScore(scrapedResult);
         const aiData = await generateAiAnalysis(scrapedResult, score, url, GEMINI_API_KEY);
@@ -208,7 +227,7 @@ export async function analyzeUrl(formData: FormData) {
         auditOutputData = {
           ...scrapedResult,
           website_url: url, 
-          score: score, // Dosljedan algoritamski skor identičan onom iz domain moda
+          score: score,
           pageCategory: aiData.pageCategory || "Uncategorized",
           aiAnalysis: aiData.aiAnalysis || "No analysis provided.",
           recommendations: aiData.recommendations || [],

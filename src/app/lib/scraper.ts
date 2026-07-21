@@ -21,7 +21,6 @@ type CloudflareSeverity = "None" | "Soft" | "Hard";
 interface CloudflareResult {
   detected: boolean;
   severity: CloudflareSeverity;
-  // true = even residential proxy got a challenge page
   confirmedBlock: boolean;
 }
 
@@ -89,7 +88,6 @@ function isValidSocialProfile(
   return false;
 }
 
-/** Returns true if the HTML response looks like a Cloudflare challenge page. */
 function looksLikeCloudflareChallenge(html: string): boolean {
   return (
     html.includes("Just a moment...") ||
@@ -102,7 +100,6 @@ function looksLikeCloudflareChallenge(html: string): boolean {
   );
 }
 
-/** Extracts plain text from a webscraping.ai response (string or object). */
 function extractHtml(data: unknown): string {
   if (typeof data === "string") return data;
   if (data && typeof data === "object") {
@@ -112,17 +109,16 @@ function extractHtml(data: unknown): string {
 }
 
 // ─────────────────────────────────────────────
-// ROBOTS.TXT FETCHING (3-tier)
+// ROBOTS.TXT FETCHING (Optimized timeouts)
 // ─────────────────────────────────────────────
 
 async function fetchRobotsTxt(
   robotsUrl: string,
   scrapingApiKey: string
 ): Promise<{ content: string; status: number }> {
-  // Tier 1 — direct request (fastest, free)
   try {
     const res = await axios.get<string>(robotsUrl, {
-      timeout: 5000,
+      timeout: 3000,
       validateStatus: (s) => s === 200 || s === 404,
     });
     if (res.status === 200 && typeof res.data === "string") {
@@ -135,7 +131,6 @@ async function fetchRobotsTxt(
     // fall through
   }
 
-  // Tier 2 — webscraping.ai datacenter (bypasses basic IP blocks)
   try {
     const res = await axios.get("https://api.webscraping.ai/html", {
       params: {
@@ -143,32 +138,7 @@ async function fetchRobotsTxt(
         url: robotsUrl,
         js: false,
       },
-      timeout: 10000,
-      validateStatus: (s) => s === 200 || s === 404,
-    });
-
-    const targetStatus = Number(res.headers["x-target-status"] ?? res.status);
-
-    if (targetStatus === 404) return { content: "", status: 404 };
-
-    const html = extractHtml(res.data);
-    if (html && !html.trimStart().startsWith("<")) {
-      return { content: html, status: 200 };
-    }
-  } catch {
-    // fall through
-  }
-
-  // Tier 3 — webscraping.ai residential (bypasses stricter protections)
-  try {
-    const res = await axios.get("https://api.webscraping.ai/html", {
-      params: {
-        api_key: scrapingApiKey,
-        url: robotsUrl,
-        js: false,
-        proxy: "residential",
-      },
-      timeout: 15000,
+      timeout: 5000,
       validateStatus: (s) => s === 200 || s === 404,
     });
 
@@ -187,17 +157,16 @@ async function fetchRobotsTxt(
 }
 
 // ─────────────────────────────────────────────
-// LLMS.TXT FETCHING (3-tier)
+// LLMS.TXT FETCHING (Optimized timeouts)
 // ─────────────────────────────────────────────
 
 async function fetchLlmsTxt(
   llmsUrl: string,
   scrapingApiKey: string
 ): Promise<{ content: string; status: number }> {
-  // Tier 1 — direct request
   try {
     const res = await axios.get<string>(llmsUrl, {
-      timeout: 5000,
+      timeout: 3000,
       validateStatus: (s) => s === 200 || s === 404,
     });
     if (res.status === 200 && typeof res.data === "string") {
@@ -210,7 +179,6 @@ async function fetchLlmsTxt(
     // fall through
   }
 
-  // Tier 2 — webscraping.ai datacenter
   try {
     const res = await axios.get("https://api.webscraping.ai/html", {
       params: {
@@ -218,31 +186,7 @@ async function fetchLlmsTxt(
         url: llmsUrl,
         js: false,
       },
-      timeout: 10000,
-      validateStatus: (s) => s === 200 || s === 404,
-    });
-
-    const targetStatus = Number(res.headers["x-target-status"] ?? res.status);
-    if (targetStatus === 404) return { content: "", status: 404 };
-
-    const html = extractHtml(res.data);
-    if (html && !html.trimStart().startsWith("<")) {
-      return { content: html, status: 200 };
-    }
-  } catch {
-    // fall through
-  }
-
-  // Tier 3 — webscraping.ai residential
-  try {
-    const res = await axios.get("https://api.webscraping.ai/html", {
-      params: {
-        api_key: scrapingApiKey,
-        url: llmsUrl,
-        js: false,
-        proxy: "residential",
-      },
-      timeout: 15000,
+      timeout: 5000,
       validateStatus: (s) => s === 200 || s === 404,
     });
 
@@ -384,13 +328,12 @@ async function detectCloudflare(
 
   try {
     const res = await axios.get(url, {
-      timeout: 10000,
+      timeout: 4000,
       validateStatus: () => true,
-      maxRedirects: 5,
+      maxRedirects: 3,
       headers: {
         "User-Agent": "GPTBot/1.0",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.5",
       },
     });
 
@@ -404,65 +347,11 @@ async function detectCloudflare(
     return { detected: false, severity: "None", confirmedBlock: false };
   }
 
-  let browserGetsThrough = false;
-
-  try {
-    const res = await axios.get(url, {
-      timeout: 10000,
-      validateStatus: () => true,
-      maxRedirects: 5,
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Connection": "keep-alive",
-        "Upgrade-Insecure-Requests": "1",
-      },
-    });
-
-    const html = typeof res.data === "string" ? res.data : "";
-    const browserBlocked = isBlockedResponse(res.status, res.headers as Record<string, unknown>, html);
-    browserGetsThrough = !browserBlocked;
-  } catch {
-    browserGetsThrough = false;
-  }
-
-  if (!browserGetsThrough) {
-    return { detected: true, severity: "Hard", confirmedBlock: true };
-  }
-
-  try {
-    const res: AxiosResponse = await axios.get(
-      "https://api.webscraping.ai/html",
-      {
-        params: {
-          api_key: scrapingApiKey,
-          url,
-          js: false,
-          proxy: "residential",
-        },
-        timeout: 20000,
-        validateStatus: () => true,
-      }
-    );
-
-    const targetStatus = Number(res.headers["x-target-status"] ?? res.status);
-    const html = extractHtml(res.data);
-    const stillBlocked = isBlockedResponse(targetStatus, res.headers as Record<string, unknown>, html);
-
-    if (stillBlocked) {
-      return { detected: true, severity: "Hard", confirmedBlock: true };
-    }
-
-    return { detected: true, severity: "Soft", confirmedBlock: false };
-  } catch {
-    return { detected: true, severity: "Soft", confirmedBlock: false };
-  }
+  return { detected: true, severity: "Soft", confirmedBlock: false };
 }
 
 // ─────────────────────────────────────────────
-// AI ACCESSIBILITY (robots.txt inference)
+// AI ACCESSIBILITY
 // ─────────────────────────────────────────────
 
 function buildAIAccessibility(
@@ -521,7 +410,7 @@ function buildAIAccessibility(
 }
 
 // ─────────────────────────────────────────────
-// MAIN CRAWL (3-tier with correct js param)
+// MAIN CRAWL (Brza podrška za besplatni plan)
 // ─────────────────────────────────────────────
 
 async function fetchMainHtml(
@@ -532,51 +421,51 @@ async function fetchMainHtml(
     $("body").text().trim().length < 200 &&
     $("#root, #__next, #app").length > 0;
 
+  // 1. Domaći direktni fetch bez proxyja za brzinu (0.5s)
+  try {
+    const res = await axios.get(url, {
+      timeout: 4000,
+      headers: {
+        "User-Agent": "AEO-Audit-Pro-Bot/1.0",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      },
+    });
+    if (typeof res.data === "string" && res.data.length > 300) {
+      const $ = cheerio.load(res.data);
+      if (!isSpaLike($)) {
+        return { html: res.data, javascriptDependency: "Low" };
+      }
+    }
+  } catch {
+    // Nastavi na Webscraping API
+  }
+
+  // 2. Webscraping API bez JS-a (Brzi proxy, ~2-3s)
   try {
     const res = await axios.get("https://api.webscraping.ai/html", {
       params: { api_key: scrapingApiKey, url, js: false },
-      timeout: 12000,
+      timeout: 6000,
     });
     const html = extractHtml(res.data);
-    if (html && !isSpaLike(cheerio.load(html))) {
-      return { html, javascriptDependency: "Low" };
+    if (html) {
+      const $ = cheerio.load(html);
+      return { 
+        html, 
+        javascriptDependency: isSpaLike($) ? "Critical" : "Low" 
+      };
     }
-    if (html && isSpaLike(cheerio.load(html))) {
-      throw new Error("SPA detected in Tier 1");
-    }
-  } catch (err: unknown) {
-    const isSpa =
-      err instanceof Error && err.message.startsWith("SPA detected");
-
-    if (!isSpa) {
-      try {
-        const res = await axios.get("https://api.webscraping.ai/html", {
-          params: {
-            api_key: scrapingApiKey,
-            url,
-            js: false,
-            proxy: "residential",
-          },
-          timeout: 18000,
-        });
-        const html = extractHtml(res.data);
-        if (html && !isSpaLike(cheerio.load(html))) {
-          return { html, javascriptDependency: "Low" };
-        }
-      } catch {
-        // fall through
-      }
-    }
+  } catch {
+    // Nastavi
   }
 
+  // 3. Fallback: Webscraping API sa JS renderovanjem
   const res = await axios.get("https://api.webscraping.ai/html", {
     params: {
       api_key: scrapingApiKey,
       url,
       js: true,
-      proxy: "residential",
     },
-    timeout: 30000,
+    timeout: 10000,
   });
   const html = extractHtml(res.data);
   if (!html) throw new Error("Failed to retrieve HTML payload.");
@@ -593,11 +482,15 @@ export async function scrapeWebsite(
 ): Promise<ScrapedData> {
   const parsedUrl = new URL(url);
 
-  // ── 1. Robots.txt ─────────────────────────────────────────────────────────
-  const robotsUrl = `${parsedUrl.protocol}//${parsedUrl.hostname}/robots.txt`;
+  // Paralelno pokrećemo preuzimanje pomoćnih fajlova (robots, llms, cloudflare) radi ušteđevine vremena
+  const [robotsRes, llmsRes, cloudflare] = await Promise.all([
+    fetchRobotsTxt(`${parsedUrl.protocol}//${parsedUrl.hostname}/robots.txt`, scrapingApiKey),
+    fetchLlmsTxt(`${parsedUrl.protocol}//${parsedUrl.hostname}/llms.txt`, scrapingApiKey),
+    detectCloudflare(url, scrapingApiKey)
+  ]);
 
-  const { content: robotsRawContent, status: robotsFetchStatus } =
-    await fetchRobotsTxt(robotsUrl, scrapingApiKey);
+  const { content: robotsRawContent, status: robotsFetchStatus } = robotsRes;
+  const { content: llmsRawContent } = llmsRes;
 
   let robotsStatus: "Valid" | "Missing" | "Blocking AI" | "Error";
   let aiBotsStatus: BotStatus;
@@ -636,24 +529,16 @@ export async function scrapeWebsite(
     robotsStatus = parsed.robotsStatus;
   }
 
-  // ── 2. LLMs.txt Fetching (Novi korak integracije) ─────────────────────────
-  const llmsUrl = `${parsedUrl.protocol}//${parsedUrl.hostname}/llms.txt`;
-  const { content: llmsRawContent } = await fetchLlmsTxt(llmsUrl, scrapingApiKey);
-
-  // ── 3. Cloudflare detection ───────────────────────────────────────────────
-  const cloudflare = await detectCloudflare(url, scrapingApiKey);
-
-  // ── 4. AI accessibility (inferred, no extra credits) ─────────────────────
   const aiAccessibility = buildAIAccessibility(aiBotsStatus, cloudflare);
 
-  // ── 5. Main HTML crawl ────────────────────────────────────────────────────
+  // Učitavanje glavnog HTML-a
   const { html, javascriptDependency } = await fetchMainHtml(
     url,
     scrapingApiKey
   );
   const $ = cheerio.load(html);
 
-  // ── 6. Basic page signals ─────────────────────────────────────────────────
+  // Osnovni signali stranice
   const title =
     $("title").text().trim().substring(0, 150) || "No title found";
   const metaDescription =
@@ -665,7 +550,7 @@ export async function scrapeWebsite(
   const hasTablesOrLists =
     $("table").length > 0 || $("ul").length > 0 || $("ol").length > 0;
 
-  // ── 7. Semantic layout map ────────────────────────────────────────────────
+  // Semantička mapa
   const allH1s = $("h1");
 
   const semanticLayoutMap: SemanticLayoutMap = {
@@ -720,7 +605,7 @@ export async function scrapeWebsite(
     previousLevel = currentLevel;
   });
 
-  // ── 8. Entity trust map ───────────────────────────────────────────────────
+  // Entity Trust Map
   const entityTrustMap: EntityTrustMap = {
     hasWikidataOrWikipedia: false,
     hasLinkedIn: false,
@@ -799,7 +684,7 @@ export async function scrapeWebsite(
     entityTrustMap.hasPhysicalSignals = true;
   }
 
-  // ── 9. Schema parsing ─────────────────────────────────────────────────────
+  // Schema parsing
   const schemaSet = new Set<string>();
   let qaBlocksCount = 0;
 
@@ -864,7 +749,7 @@ export async function scrapeWebsite(
 
       deepParse(parsed);
     } catch {
-      // malformed JSON — skip
+      // malformed JSON
     }
   });
 
@@ -895,7 +780,7 @@ export async function scrapeWebsite(
       ? "Inconsistent"
       : "Optimal";
 
-  // ── 10. Q&A detection ──────────────────────────────────────────────────────
+  // Q&A detekcija
   if (qaBlocksCount === 0) {
     const textNodes: { text: string; el: ReturnType<typeof $> }[] = [];
 
@@ -932,7 +817,7 @@ export async function scrapeWebsite(
     }
   }
 
-  // ── 11. Remaining signals ─────────────────────────────────────────────────
+  // Preostali signali
   const hasVideoElements =
     $("video").length > 0 ||
     $("iframe[src*='youtube.com']").length > 0 ||
@@ -948,7 +833,7 @@ export async function scrapeWebsite(
 
   const wordCount = bodyText.split(/\s+/).filter(Boolean).length;
 
-  // ── 12. Page type detection ────────────────────────────────────────────────
+  // Detekcija tipa stranice
   let pageType: "Homepage" | "Article" | "FAQ" | "About" | "Commercial" | "General" =
     "General";
   const pathname = parsedUrl.pathname.toLowerCase();
@@ -986,7 +871,6 @@ export async function scrapeWebsite(
     pageType = "Article";
   }
 
-  // ── Return ────────────────────────────────────────────────────────────────
   return {
     title,
     metaDescription,
