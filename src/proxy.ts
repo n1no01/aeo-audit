@@ -1,6 +1,6 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 
-// 🚀 Umjesto createRouteMatcher, definišemo obični JS niz sa javnim putanjama
+// 🚀 Definišemo obični JS niz sa javnim putanjama
 const publicPaths = [
   '/', 
   '/tools/ai-schema-generator',
@@ -18,25 +18,24 @@ const publicPaths = [
   '/terms',
   '/sign-in',           
   '/sign-up',          
-  '/api/webhook'     
+  '/api/webhook',
+  '/api/cron' // 🚀 PUŠTA VERCEL CRON DA PRISTUPI API-JU BEZ CLERK PRIJAVE
 ];
 
 export default clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl;
 
-  // Provjeravamo da li trenutna putanja tačno odgovara nekoj iz niza 
-  // ili počinje sa njom (što je JS zamjena za regex-e i parametre poput (.*) ili [token])
+  // Provjeravamo da li trenutna putanja tačno odgovara nekoj iz niza ili počinje sa njom
   const isPublicRoute = publicPaths.some(path => 
     pathname === path || pathname.startsWith(path + '/')
   );
 
   // Ako ruta NIJE javna, zaštiti je
   if (!isPublicRoute) {
-    // Ispravan način za v5+ unutar middleware callback-a:
     const authObj = await auth();
     
     if (!authObj.userId) {
-      // Ako korisnik nije prijavljen, Clerk će ga automatski preusmjeriti na login stranu
+      // Ako korisnik nije prijavljen, preusmjeri na sign-in
       return authObj.redirectToSignIn();
     }
   }
