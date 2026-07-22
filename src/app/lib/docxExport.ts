@@ -94,14 +94,13 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
     : "ANSWER ENGINE OPTIMIZATION AUDIT";
 
   documentChildren.push(
-    // POPRAVLJENO:
-new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 200 }, children: [new TextRun({ text: auditTypeTitle, bold: true, size: 28, color: "0f172a" })] }),
-new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 150 }, children: [new TextRun({ text: `Target Domain: ${website_url || "N/A"}`, bold: true, size: 16, color: "334155" })] }),
-new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 150 }, children: [new TextRun({ text: `Audit Scope: ${isDomainAudit ? "Multi-Page Domain Audit" : "Single Route Audit"}`, bold: true, size: 13, color: "2563eb" })] }),
+    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 200 }, children: [new TextRun({ text: auditTypeTitle, bold: true, size: 28, color: "0f172a" })] }),
+    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 150 }, children: [new TextRun({ text: `Target Domain: ${website_url || "N/A"}`, bold: true, size: 16, color: "334155" })] }),
+    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 150 }, children: [new TextRun({ text: `Audit Scope: ${isDomainAudit ? "Multi-Page Domain Audit" : "Single Route Audit"}`, bold: true, size: 13, color: "2563eb" })] }),
     new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 500 }, children: [new TextRun({ text: `${isDomainAudit ? "Overall Domain Avg Score" : "Overall Visibility Score"}: ${score}/100`, bold: true, size: 26, color: cleanHexColor })] })
   );
 
-  // 3. SEKCJA ZA MULTI-PAGE DOMAIN STATISTIKU (Ako je bio Domain Audit)
+  // 3. SEKCIJA ZA MULTI-PAGE DOMAIN STATISTIKU (Ako je bio Domain Audit)
   if (isDomainAudit && domainStats) {
     documentChildren.push(
       new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "Multi-Page Domain Coverage & Health", color: "0f172a", bold: true, size: 24 })] }),
@@ -175,14 +174,14 @@ new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 150 }, childr
     new Paragraph({ text: `• Google Non-Commodity Score (Content Authenticity): ${commodityContentScore || 5}/10` }),
 
     new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "AI Crawler Access & Entity Token Map", color: "0f172a", bold: true, size: 24 })] }),
-    new Paragraph({ text: `• OpenAI GPTBot Clearance: ${aiBotsStatus?.gptBot || "Allowed"}` }),
+    new Paragraph({ text: `• Googlebot Engine Clearance: ${aiBotsStatus?.googlebot || "Allowed"}` }),
     new Paragraph({ text: `• OpenAI SearchBot Clearance: ${aiBotsStatus?.oaiSearchBot || "Allowed"}` }),
+    new Paragraph({ text: `• Claude SearchBot Clearance: ${aiBotsStatus?.claudeSearchBot || "Allowed"}` }),
+    new Paragraph({ text: `• Claude User Fetch Clearance: ${aiBotsStatus?.claudeUser || "Allowed"}` }),
     new Paragraph({ text: `• Perplexity AI Engine Status: ${aiBotsStatus?.perplexityBot || "Allowed"}` }),
-    new Paragraph({ text: `• Claude Bot Architecture: ${aiBotsStatus?.claudeBot || "Allowed"}` }),
-    new Paragraph({ text: `• Gemini Extended Radar: ${aiBotsStatus?.googleExtended || "Allowed"}` }),
-    new Paragraph({ text: `• DeepSeek Engine Visibility: ${aiBotsStatus?.deepSeekBot || "Allowed"}` }),
-    new Paragraph({ text: `• Applebot Agent Deployment: ${aiBotsStatus?.appleBotExtended || "Allowed"}` }),
     new Paragraph({ text: `• Microsoft Bingbot Indexation: ${aiBotsStatus?.bingbot || "Allowed"}` }),
+    new Paragraph({ text: `• Meta AI Engine Clearance: ${aiBotsStatus?.metaExternalAgent || "Allowed"}` }),
+    new Paragraph({ text: `• Grok AI Engine Status: ${aiBotsStatus?.grokBot || "Allowed"}` }),
     
     // Directives i Discovery sekcija
     new Paragraph({ text: `• Master Robots.txt Directives: ${robotsRawContent ? "Valid Instructions Parsed" : "Missing / Public Access Active"}` }),
