@@ -1,10 +1,12 @@
 export interface BotStatus {
   gptBot: "Allowed" | "Blocked";
   claudeBot: "Allowed" | "Blocked";
+  claudeSearchBot: "Allowed" | "Blocked";
+  claudeUser: "Allowed" | "Blocked";
   perplexityBot: "Allowed" | "Blocked";
   oaiSearchBot: "Allowed" | "Blocked";
   googleExtended: "Allowed" | "Blocked";
-  anthropicAi: "Allowed" | "Blocked";
+  googlebot: "Allowed" | "Blocked";
   deepSeekBot: "Allowed" | "Blocked";
   appleBotExtended: "Allowed" | "Blocked";
   bingbot: "Allowed" | "Blocked";

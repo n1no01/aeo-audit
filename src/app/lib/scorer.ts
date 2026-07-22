@@ -1,4 +1,4 @@
-import { ScrapedData } from "./types";
+import { ScrapedData, BotStatus } from "./types";
 
 interface ExtendedScrapedData extends Omit<ScrapedData, "bodyText" | "aiAccessibility"> {
   commodityContentScore?: number;
@@ -52,38 +52,47 @@ export function calculateScore(data: ExtendedScrapedData): number {
     score -= 3;
   }
 
-// ==========================================
-// 3. ROBOTS, BOT ACCESS & RENDERING (Max 15 bodova)
-// ==========================================
+  // ==========================================
+  // 3. ROBOTS, BOT ACCESS & RENDERING (Max 15 bodova)
+  // ==========================================
+  const botSeverity = data.aiAccessibility?.cloudflareSeverity ?? "None";
+  const botDetected = data.aiAccessibility?.cloudflareDetected ?? false;
 
-const botSeverity = data.aiAccessibility?.cloudflareSeverity ?? "None";
-const botDetected = data.aiAccessibility?.cloudflareDetected ?? false;
-const robotsBlockingAI = data.robotsStatus === "Blocking AI";
+  // Analiza pojedinačnih AI i Search botova
+  const botStatuses = Object.values(data.aiBotsStatus ?? {}) as string[];
+  const totalBotsCount = botStatuses.length;
+  const blockedBotsCount = botStatuses.filter((s) => s === "Blocked").length;
 
-// Check if bots are completely locked out by any means
-const completelyBlocked = robotsBlockingAI || (botDetected && botSeverity === "Hard");
-const partiallyBlocked = !completelyBlocked && (botDetected && botSeverity === "Soft");
+  // Primarni Search & AEO botovi (Googlebot, Claude Search, OpenAI Search, Perplexity)
+  const isCoreSearchBlocked =
+    data.aiBotsStatus?.googlebot === "Blocked" ||
+    data.aiBotsStatus?.oaiSearchBot === "Blocked" ||
+    data.aiBotsStatus?.claudeSearchBot === "Blocked" ||
+    data.aiBotsStatus?.perplexityBot === "Blocked";
 
-if (completelyBlocked) {
-  // Site is completely inaccessible to AI crawlers.
-  // Apply a score floor — no other section can save this site.
-  // We subtract enough to guarantee the final score can't exceed ~20.
-  score -= 60;
-} else if (partiallyBlocked) {
-  // Soft block: datacenter bots blocked, real IPs pass.
-  // Most AI crawlers use datacenter IPs so this is still serious.
-  score -= 15;
-} else if (data.robotsStatus === "Valid" || data.robotsStatus === "Missing") {
-  // No blocking detected — award full access bonus
-  score += 10;
-}
+  const isAllBotsBlocked = totalBotsCount > 0 && blockedBotsCount === totalBotsCount;
+  const completelyBlocked = isAllBotsBlocked || (botDetected && botSeverity === "Hard");
+  const partiallyBlocked =
+    !completelyBlocked &&
+    (blockedBotsCount > 0 || isCoreSearchBlocked || (botDetected && botSeverity === "Soft"));
 
-// JS rendering (separate from access — even an accessible site can be hard to parse)
-if (data.javascriptDependency === "Low") {
-  score += 5;
-} else if (data.javascriptDependency === "Critical") {
-  score -= 10;
-}
+  if (completelyBlocked) {
+    // Sajt je potpuno blokiran za AI crawlere — primjenjuje se jaka penalizacija
+    score -= 60;
+  } else if (partiallyBlocked) {
+    // Delimična blokada: blokiran je neki od AEO search botova ili postoji Cloudflare Soft block
+    score -= 15;
+  } else if (data.robotsStatus === "Valid" || data.robotsStatus === "Missing") {
+    // Svi botovi imaju nesmetan pristup
+    score += 10;
+  }
+
+  // JS rendering zavisnost
+  if (data.javascriptDependency === "Low") {
+    score += 5;
+  } else if (data.javascriptDependency === "Critical") {
+    score -= 10;
+  }
 
   // ==========================================
   // 4. STRUKTURIRANI PODACI & KONTEKSTUALNE ŠEME (Max 15 bodova)

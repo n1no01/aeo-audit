@@ -205,15 +205,17 @@ async function fetchLlmsTxt(
 }
 
 // ─────────────────────────────────────────────
-// ROBOTS.TXT PARSER
+// ROBOTS.TXT PARSER (Striktno pojedinačna provjera)
 // ─────────────────────────────────────────────
 
 const BOT_TOKENS: Record<string, Array<keyof BotStatus>> = {
   gptbot: ["gptBot"],
   "oai-searchbot": ["oaiSearchBot"],
   "google-extended": ["googleExtended"],
+  googlebot: ["googlebot"],
   claudebot: ["claudeBot"],
-  "anthropic-ai": ["anthropicAi"],
+  "claude-searchbot": ["claudeSearchBot"],
+  "claude-user": ["claudeUser"],
   perplexitybot: ["perplexityBot"],
   deepseekbot: ["deepSeekBot"],
   "applebot-extended": ["appleBotExtended"],
@@ -228,10 +230,12 @@ function parseRobotsTxt(content: string): {
   const aiBotsStatus: BotStatus = {
     gptBot: "Allowed",
     claudeBot: "Allowed",
+    claudeSearchBot: "Allowed",
+    claudeUser: "Allowed",
     perplexityBot: "Allowed",
     oaiSearchBot: "Allowed",
     googleExtended: "Allowed",
-    anthropicAi: "Allowed",
+    googlebot: "Allowed",
     deepSeekBot: "Allowed",
     appleBotExtended: "Allowed",
     bingbot: "Allowed",
@@ -278,7 +282,7 @@ function parseRobotsTxt(content: string): {
         }
 
         for (const [token, targets] of Object.entries(BOT_TOKENS)) {
-          if (agent.includes(token)) {
+          if (agent === token || agent.includes(token)) {
             targets.forEach((t) => {
               aiBotsStatus[t] = "Blocked";
             });
@@ -361,10 +365,12 @@ function buildAIAccessibility(
   const botMap: Record<string, keyof BotStatus> = {
     GPTBot: "gptBot",
     ClaudeBot: "claudeBot",
+    "Claude-SearchBot": "claudeSearchBot",
+    "Claude-User": "claudeUser",
     PerplexityBot: "perplexityBot",
     "OAI-SearchBot": "oaiSearchBot",
     "Google-Extended": "googleExtended",
-    "Anthropic-AI": "anthropicAi",
+    Googlebot: "googlebot",
   };
 
   const userAgentTests: AIAccessibilityResult["userAgentTests"] = {};
@@ -500,10 +506,12 @@ export async function scrapeWebsite(
     aiBotsStatus = {
       gptBot: "Allowed",
       claudeBot: "Allowed",
+      claudeSearchBot: "Allowed",
+      claudeUser: "Allowed",
       perplexityBot: "Allowed",
       oaiSearchBot: "Allowed",
       googleExtended: "Allowed",
-      anthropicAi: "Allowed",
+      googlebot: "Allowed",
       deepSeekBot: "Allowed",
       appleBotExtended: "Allowed",
       bingbot: "Allowed",
@@ -514,10 +522,12 @@ export async function scrapeWebsite(
     aiBotsStatus = {
       gptBot: "Allowed",
       claudeBot: "Allowed",
+      claudeSearchBot: "Allowed",
+      claudeUser: "Allowed",
       perplexityBot: "Allowed",
       oaiSearchBot: "Allowed",
       googleExtended: "Allowed",
-      anthropicAi: "Allowed",
+      googlebot: "Allowed",
       deepSeekBot: "Allowed",
       appleBotExtended: "Allowed",
       bingbot: "Allowed",

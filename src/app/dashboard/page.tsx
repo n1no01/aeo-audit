@@ -208,37 +208,41 @@ export default function Home() {
         <div className="bg-white border border-slate-200 rounded-[24px] sm:rounded-[32px] p-4 sm:p-6 shadow-xl shadow-blue-900/5 mb-12">
           <form action={handleAuditSubmit} className="space-y-4">
             
-            {/* 🚀 AUDIT SCOPE SWITCHER (Single URL vs Full Domain) */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-200/80">
-              <span className="text-xs font-extrabold uppercase tracking-wider text-slate-600 px-2">
-                Audit Scope
+        {/* 🚀 AUDIT SCOPE SWITCHER (Locked while isPending) */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-200/80">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-slate-600 px-2">
+            Audit Scope
+          </span>
+          <div className="inline-flex rounded-xl bg-slate-200/70 p-1 w-full sm:w-auto">
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={() => setAuditMode("single")}
+              className={`flex-1 sm:flex-none px-4 py-2 text-xs font-black rounded-lg transition-all ${
+                auditMode === "single"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-slate-500 hover:text-slate-900"
+              } ${isPending ? "opacity-50 cursor-not-allowed" : ""}`}
+            >
+              Single Path Audit
+            </button>
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={() => setAuditMode("domain")}
+              className={`flex-1 sm:flex-none px-4 py-2 text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                auditMode === "domain"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-slate-500 hover:text-slate-900"
+              } ${isPending ? "opacity-50 cursor-not-allowed" : ""}`}
+            >
+              <span>Full Domain Audit</span>
+              <span className="text-[9px] bg-blue-100 text-blue-700 font-extrabold px-1.5 py-0.5 rounded-md">
+                Sample 15
               </span>
-              <div className="inline-flex rounded-xl bg-slate-200/70 p-1 w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={() => setAuditMode("single")}
-                  className={`flex-1 sm:flex-none px-4 py-2 text-xs font-black rounded-lg transition-all ${
-                    auditMode === "single"
-                      ? "bg-white text-blue-600 shadow-sm"
-                      : "text-slate-500 hover:text-slate-900"
-                  }`}
-                >
-                  Single Path Audit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAuditMode("domain")}
-                  className={`flex-1 sm:flex-none px-4 py-2 text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                    auditMode === "domain"
-                      ? "bg-white text-blue-600 shadow-sm"
-                      : "text-slate-500 hover:text-slate-900"
-                  }`}
-                >
-                  <span>Full Domain Audit</span>
-                  <span className="text-[9px] bg-blue-100 text-blue-700 font-extrabold px-1.5 py-0.5 rounded-md">Sample 15</span>
-                </button>
-              </div>
-            </div>
+            </button>
+          </div>
+        </div>
 
             {/* Skriveni input koji prosljeđuje mod u formData server akciji */}
             <input type="hidden" name="mode" value={auditMode} />
