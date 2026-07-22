@@ -186,15 +186,14 @@ export default function SharedAuditPage({ params }: SharePageProps) {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   {[
-                    { n: "ChatGPT", v: result.data.aiBotsStatus?.gptBot },
+                    { n: "Googlebot", v: result.data.aiBotsStatus?.googlebot },
                     { n: "OpenAI Search", v: result.data.aiBotsStatus?.oaiSearchBot },
+                    { n: "Claude Search", v: result.data.aiBotsStatus?.claudeSearchBot },
+                    { n: "Claude User", v: result.data.aiBotsStatus?.claudeUser },
                     { n: "Perplexity", v: result.data.aiBotsStatus?.perplexityBot },
-                    { n: "ClaudeBot", v: result.data.aiBotsStatus?.claudeBot },
-                    { n: "Gemini Ext.", v: result.data.aiBotsStatus?.googleExtended },
-                    { n: "DeepSeek Bot", v: result.data.aiBotsStatus?.deepSeekBot },
-                    { n: "Apple Bot Extended", v: result.data.aiBotsStatus?.appleBotExtended },
                     { n: "Bing Bot", v: result.data.aiBotsStatus?.bingbot },
-                    { n: "Cohere AI", v: result.data.aiBotsStatus?.cohereAi },
+                    { n: "Meta AI", v: result.data.aiBotsStatus?.metaExternalAgent },
+                    { n: "Grok Bot", v: result.data.aiBotsStatus?.grokBot },
                   ].map((b, idx) => (
                     <div key={idx} className="bg-white border border-slate-100 p-2 rounded-xl flex items-center justify-between">
                       <span className="font-bold text-slate-600 truncate mr-1">{b.n}</span>
