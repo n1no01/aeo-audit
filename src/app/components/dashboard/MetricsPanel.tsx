@@ -158,17 +158,13 @@ export default function MetricsPanel({ data }: MetricsPanelProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
             {[
               { n: "Googlebot", statusKey: "googlebot" },
-              { n: "ChatGPT", statusKey: "gptBot" },
               { n: "OpenAI Search", statusKey: "oaiSearchBot" },
-              { n: "Perplexity", statusKey: "perplexityBot" },
-              { n: "ClaudeBot", statusKey: "claudeBot" },
               { n: "Claude Search", statusKey: "claudeSearchBot" },
               { n: "Claude User", statusKey: "claudeUser" },
-              { n: "Gemini Ext.", statusKey: "googleExtended" },
-              { n: "DeepSeek Bot", statusKey: "deepSeekBot" },
-              { n: "Apple Bot Ext.", statusKey: "appleBotExtended" },
+              { n: "Perplexity", statusKey: "perplexityBot" },
               { n: "Bing Bot", statusKey: "bingbot" },
-              { n: "Cohere AI", statusKey: "cohereAi" },
+              { n: "Meta AI", statusKey: "metaExternalAgent" },
+              { n: "Grok Bot", statusKey: "grokBot" },
             ].map((b, idx) => {
               const robotsBlocked = data?.aiBotsStatus?.[b.statusKey as keyof BotStatus] === "Blocked";
               const hardBlock = data?.aiAccessibility?.cloudflareSeverity === "Hard";

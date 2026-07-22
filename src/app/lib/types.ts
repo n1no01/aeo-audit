@@ -1,16 +1,12 @@
 export interface BotStatus {
-  gptBot: "Allowed" | "Blocked";
-  claudeBot: "Allowed" | "Blocked";
+  googlebot: "Allowed" | "Blocked";
+  oaiSearchBot: "Allowed" | "Blocked";
   claudeSearchBot: "Allowed" | "Blocked";
   claudeUser: "Allowed" | "Blocked";
   perplexityBot: "Allowed" | "Blocked";
-  oaiSearchBot: "Allowed" | "Blocked";
-  googleExtended: "Allowed" | "Blocked";
-  googlebot: "Allowed" | "Blocked";
-  deepSeekBot: "Allowed" | "Blocked";
-  appleBotExtended: "Allowed" | "Blocked";
   bingbot: "Allowed" | "Blocked";
-  cohereAi: "Allowed" | "Blocked";
+  metaExternalAgent: "Allowed" | "Blocked";
+  grokBot: "Allowed" | "Blocked";
 }
 
 export interface DomainAggregatedStats {

@@ -58,17 +58,20 @@ export function calculateScore(data: ExtendedScrapedData): number {
   const botSeverity = data.aiAccessibility?.cloudflareSeverity ?? "None";
   const botDetected = data.aiAccessibility?.cloudflareDetected ?? false;
 
-  // Analiza pojedinačnih AI i Search botova
+  // Analiza pojedinačnih AEO Search botova
   const botStatuses = Object.values(data.aiBotsStatus ?? {}) as string[];
   const totalBotsCount = botStatuses.length;
   const blockedBotsCount = botStatuses.filter((s) => s === "Blocked").length;
 
-  // Primarni Search & AEO botovi (Googlebot, Claude Search, OpenAI Search, Perplexity)
+  // Primarni Search & AEO botovi (Uključeni svi novi AEO pretraživači)
   const isCoreSearchBlocked =
     data.aiBotsStatus?.googlebot === "Blocked" ||
     data.aiBotsStatus?.oaiSearchBot === "Blocked" ||
     data.aiBotsStatus?.claudeSearchBot === "Blocked" ||
-    data.aiBotsStatus?.perplexityBot === "Blocked";
+    data.aiBotsStatus?.perplexityBot === "Blocked" ||
+    data.aiBotsStatus?.bingbot === "Blocked" ||
+    data.aiBotsStatus?.metaExternalAgent === "Blocked" ||
+    data.aiBotsStatus?.grokBot === "Blocked";
 
   const isAllBotsBlocked = totalBotsCount > 0 && blockedBotsCount === totalBotsCount;
   const completelyBlocked = isAllBotsBlocked || (botDetected && botSeverity === "Hard");
@@ -83,7 +86,7 @@ export function calculateScore(data: ExtendedScrapedData): number {
     // Delimična blokada: blokiran je neki od AEO search botova ili postoji Cloudflare Soft block
     score -= 15;
   } else if (data.robotsStatus === "Valid" || data.robotsStatus === "Missing") {
-    // Svi botovi imaju nesmetan pristup
+    // Svi AEO botovi imaju nesmetan pristup
     score += 10;
   }
 

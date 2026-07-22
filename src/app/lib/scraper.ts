@@ -209,18 +209,16 @@ async function fetchLlmsTxt(
 // ─────────────────────────────────────────────
 
 const BOT_TOKENS: Record<string, Array<keyof BotStatus>> = {
-  gptbot: ["gptBot"],
-  "oai-searchbot": ["oaiSearchBot"],
-  "google-extended": ["googleExtended"],
   googlebot: ["googlebot"],
-  claudebot: ["claudeBot"],
+  "oai-searchbot": ["oaiSearchBot"],
   "claude-searchbot": ["claudeSearchBot"],
   "claude-user": ["claudeUser"],
   perplexitybot: ["perplexityBot"],
-  deepseekbot: ["deepSeekBot"],
-  "applebot-extended": ["appleBotExtended"],
-  "cohere-ai": ["cohereAi"],
   bingbot: ["bingbot"],
+  "meta-externalagent": ["metaExternalAgent"],
+  grokbot: ["grokBot"],
+  "xai-grok": ["grokBot"],
+  grok: ["grokBot"],
 };
 
 function parseRobotsTxt(content: string): {
@@ -228,18 +226,14 @@ function parseRobotsTxt(content: string): {
   robotsStatus: "Valid" | "Missing" | "Blocking AI" | "Error";
 } {
   const aiBotsStatus: BotStatus = {
-    gptBot: "Allowed",
-    claudeBot: "Allowed",
+    googlebot: "Allowed",
+    oaiSearchBot: "Allowed",
     claudeSearchBot: "Allowed",
     claudeUser: "Allowed",
     perplexityBot: "Allowed",
-    oaiSearchBot: "Allowed",
-    googleExtended: "Allowed",
-    googlebot: "Allowed",
-    deepSeekBot: "Allowed",
-    appleBotExtended: "Allowed",
     bingbot: "Allowed",
-    cohereAi: "Allowed",
+    metaExternalAgent: "Allowed",
+    grokBot: "Allowed",
   };
 
   const lines = content.split(/\r?\n/).map((raw) => {
@@ -336,7 +330,7 @@ async function detectCloudflare(
       validateStatus: () => true,
       maxRedirects: 3,
       headers: {
-        "User-Agent": "GPTBot/1.0",
+        "User-Agent": "OAI-SearchBot/1.0",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       },
     });
@@ -363,14 +357,14 @@ function buildAIAccessibility(
   cloudflare: CloudflareResult
 ): AIAccessibilityResult {
   const botMap: Record<string, keyof BotStatus> = {
-    GPTBot: "gptBot",
-    ClaudeBot: "claudeBot",
+    Googlebot: "googlebot",
+    "OAI-SearchBot": "oaiSearchBot",
     "Claude-SearchBot": "claudeSearchBot",
     "Claude-User": "claudeUser",
     PerplexityBot: "perplexityBot",
-    "OAI-SearchBot": "oaiSearchBot",
-    "Google-Extended": "googleExtended",
-    Googlebot: "googlebot",
+    Bingbot: "bingbot",
+    "Meta-ExternalAgent": "metaExternalAgent",
+    GrokBot: "grokBot",
   };
 
   const userAgentTests: AIAccessibilityResult["userAgentTests"] = {};
@@ -501,38 +495,23 @@ export async function scrapeWebsite(
   let robotsStatus: "Valid" | "Missing" | "Blocking AI" | "Error";
   let aiBotsStatus: BotStatus;
 
+  const defaultBotStatus: BotStatus = {
+    googlebot: "Allowed",
+    oaiSearchBot: "Allowed",
+    claudeSearchBot: "Allowed",
+    claudeUser: "Allowed",
+    perplexityBot: "Allowed",
+    bingbot: "Allowed",
+    metaExternalAgent: "Allowed",
+    grokBot: "Allowed",
+  };
+
   if (robotsFetchStatus === 404) {
     robotsStatus = "Missing";
-    aiBotsStatus = {
-      gptBot: "Allowed",
-      claudeBot: "Allowed",
-      claudeSearchBot: "Allowed",
-      claudeUser: "Allowed",
-      perplexityBot: "Allowed",
-      oaiSearchBot: "Allowed",
-      googleExtended: "Allowed",
-      googlebot: "Allowed",
-      deepSeekBot: "Allowed",
-      appleBotExtended: "Allowed",
-      bingbot: "Allowed",
-      cohereAi: "Allowed",
-    };
+    aiBotsStatus = { ...defaultBotStatus };
   } else if (robotsFetchStatus === -1 || !robotsRawContent) {
     robotsStatus = "Error";
-    aiBotsStatus = {
-      gptBot: "Allowed",
-      claudeBot: "Allowed",
-      claudeSearchBot: "Allowed",
-      claudeUser: "Allowed",
-      perplexityBot: "Allowed",
-      oaiSearchBot: "Allowed",
-      googleExtended: "Allowed",
-      googlebot: "Allowed",
-      deepSeekBot: "Allowed",
-      appleBotExtended: "Allowed",
-      bingbot: "Allowed",
-      cohereAi: "Allowed",
-    };
+    aiBotsStatus = { ...defaultBotStatus };
   } else {
     const parsed = parseRobotsTxt(robotsRawContent);
     aiBotsStatus = parsed.aiBotsStatus;
