@@ -4,13 +4,13 @@ import { useState, FormEvent, useEffect, useTransition } from 'react';
 import { getUserStats, getUserRadarHistory } from '../actions';
 import Link from 'next/link';
 import Footer from '../components/Footer';
-import Navbar from '../components/Navbar'; // Koristimo zajednički navbar
+import Navbar from '../components/Navbar';
 
 const loadingSteps = [
   "Initializing radar components...",
   "Routing live matrix nodes...",
   "Crawling Conversational SERPs...",
-  "Evaluating citations on Perplexity networks...",
+  "Evaluating citations on AI networks...",
   "Parsing semantic competitive vectors...",
   "Synthesizing RAG answer summary...",
   "Building live matrix profile...",
@@ -24,6 +24,7 @@ interface RadarAuditResult {
 }
 
 interface RadarResultData {
+  engineUsed?: "perplexity" | "openai";
   auditResult: RadarAuditResult;
   allSourcesCrawled: string[];
 }
@@ -38,6 +39,7 @@ interface DBRadarHistoryItem {
 }
 
 interface ApiResponse {
+  engineUsed?: "perplexity" | "openai";
   auditResult: RadarAuditResult;
   allSourcesCrawled: string[];
 }
@@ -50,9 +52,20 @@ interface UserStats {
   radar_limit: number;
 }
 
+// Helper funkcija za prikaz čistog domena unutar izvora
+function formatSourceDomain(urlStr: string): string {
+  try {
+    const parsed = new URL(urlStr.startsWith('http') ? urlStr : `https://${urlStr}`);
+    return parsed.hostname.replace(/^www\./, '');
+  } catch {
+    return urlStr;
+  }
+}
+
 export default function AEORadarPage() {
   const [targetUrl, setTargetUrl] = useState<string>('');
   const [keyword, setKeyword] = useState<string>('');
+  const [selectedEngine, setSelectedEngine] = useState<"perplexity" | "openai">("perplexity");
   
   const [scannedUrl, setScannedUrl] = useState<string>('');
   const [scannedKeyword, setScannedKeyword] = useState<string>('');
@@ -123,9 +136,13 @@ export default function AEORadarPage() {
     setKeyword(item.keyword);
     setScannedUrl(item.website_url);
     setScannedKeyword(item.keyword);
+    if (item.result_data.engineUsed) {
+      setSelectedEngine(item.result_data.engineUsed);
+    }
     
     setCurrentRadarShareToken(item.share_token); 
     setResults({
+      engineUsed: item.result_data.engineUsed,
       auditResult: item.result_data.auditResult,
       allSourcesCrawled: item.result_data.allSourcesCrawled
     });
@@ -150,10 +167,11 @@ export default function AEORadarPage() {
     const shareUrl = `${window.location.origin}/share-radar/${currentRadarShareToken}`;
     const cleanDisplayUrl = scannedUrl.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
     const antiPreviewDomain = cleanDisplayUrl.replace('.', ' . ');
+    const engineLabel = selectedEngine === "openai" ? "ChatGPT (OpenAI Search)" : "Perplexity Sonar";
     
-    const text = `🎯 Live AI Visibility Radar Check for ${antiPreviewDomain} is officially LIVE!\n\n` +
+    const text = `🎯 Live AI Visibility Radar Check (${engineLabel}) for ${antiPreviewDomain} is officially LIVE!\n\n` +
                  `The Answer Engine Optimization (AEO) scan checked if leading LLMs cite or recommend our brand for the query: "${scannedKeyword}".\n\n` +
-                 `State: ${results.auditResult.isMentioned ? "🟢 Optimized Node" : "🔴 Invisible Vector"}\n\n` +
+                 `State: ${results.auditResult.isMentioned ? "🟢 AI Visible" : "🔴 Invisible"}\n\n` +
                  `Review the live, interactive RAG report here: ${shareUrl}`;
                  
     const linkedinUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`;
@@ -165,9 +183,10 @@ export default function AEORadarPage() {
     const shareUrl = `${window.location.origin}/share-radar/${currentRadarShareToken}`;
     const cleanDisplayUrl = scannedUrl.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
     const antiPreviewDomain = cleanDisplayUrl.replace('.', ' . ');
+    const engineLabel = selectedEngine === "openai" ? "ChatGPT (OpenAI Search)" : "Perplexity Sonar";
     
-    const tweetText = `Just ran an AI Radar scan for ${antiPreviewDomain} regarding "${scannedKeyword}".\n\n` +
-                      `State: ${results.auditResult.isMentioned ? "🟢 AI Optimized" : "🔴 AI Invisible"}\n\n` +
+    const tweetText = `Just ran an AI Radar scan (${engineLabel}) for ${antiPreviewDomain} regarding "${scannedKeyword}".\n\n` +
+                      `State: ${results.auditResult.isMentioned ? "🟢 AI Visible" : "🔴 Invisible"}\n\n` +
                       `Review the interactive report matrix here: ${shareUrl} #AEO #LLM #SaaS`;
                       
     const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
@@ -198,7 +217,11 @@ export default function AEORadarPage() {
         const response = await fetch('/api/aeo-radar', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ targetUrl: cleanUrl, keyword: currentActiveKeyword }),
+          body: JSON.stringify({ 
+            targetUrl: cleanUrl, 
+            keyword: currentActiveKeyword,
+            engine: selectedEngine
+          }),
         });
 
         const resData = await response.json();
@@ -245,7 +268,7 @@ export default function AEORadarPage() {
       {/* 📡 GLOBALNA POZADINSKA MREŽA */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_0.75px,transparent_0.75px),linear-gradient(to_bottom,#e2e8f0_0.75px,transparent_0.75px)] bg-[size:4rem_4rem] pointer-events-none opacity-40 z-0" />
 
-      {/* ZAJEDNIČKI NAVBAR - Sa pametnim radar brojačem */}
+      {/* NAVBAR */}
       <Navbar userStats={userStats} />
 
       {/* MAIN CONTENT WRAPPER */}
@@ -279,7 +302,7 @@ export default function AEORadarPage() {
                 Unlock AI Visibility Radar
               </h3>
               <p className="text-xs sm:text-sm text-slate-500 font-semibold max-w-md mb-6 leading-relaxed">
-                Real-time tracking across conversational nodes and Perplexity networks is exclusive to Premium accounts. Upgrade today to launch your matrix scans.
+                Real-time tracking across conversational nodes and AI networks is exclusive to Premium accounts. Upgrade today to launch your matrix scans.
               </p>
               <Link 
                 href="/pricing" 
@@ -308,26 +331,66 @@ export default function AEORadarPage() {
             )}
 
             <form onSubmit={handleAudit} className="space-y-4">
+              
+              {/* 🎛️ AI ENGINE SELECTOR TABS */}
+              <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl w-fit">
+                <button
+                  type="button"
+                  disabled={isPending || isRadarLimitReached || isFreePlan}
+                  onClick={() => setSelectedEngine("perplexity")}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-2 ${
+                    isPending || isRadarLimitReached || isFreePlan
+                      ? "opacity-50 cursor-not-allowed"
+                      : "cursor-pointer"
+                  } ${
+                    selectedEngine === "perplexity"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-900"
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  Perplexity Sonar
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isPending || isRadarLimitReached || isFreePlan}
+                  onClick={() => setSelectedEngine("openai")}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-2 ${
+                    isPending || isRadarLimitReached || isFreePlan
+                      ? "opacity-50 cursor-not-allowed"
+                      : "cursor-pointer"
+                  } ${
+                    selectedEngine === "openai"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-900"
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-purple-500" />
+                  ChatGPT (OpenAI Search)
+                </button>
+              </div>
+
               <div className="flex flex-col md:flex-row gap-3">
                 <input
                   type="text" 
                   required
-                  disabled={isRadarLimitReached || isFreePlan}
+                  disabled={isPending || isRadarLimitReached || isFreePlan}
                   placeholder="Your domain (e.g., example.com)"
                   value={targetUrl}
                   onChange={(e) => setTargetUrl(e.target.value)}
-                  className="flex-1 px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50 border border-slate-200/60 rounded-[16px] sm:rounded-[20px] outline-none font-semibold text-sm sm:text-base text-slate-700 focus:border-blue-500 focus:bg-white transition"
+                  className="flex-1 px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50 border border-slate-200/60 rounded-[16px] sm:rounded-[20px] outline-none font-semibold text-sm sm:text-base text-slate-700 focus:border-blue-500 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <input
                   type="text" 
                   required
-                  disabled={isRadarLimitReached || isFreePlan}
+                  disabled={isPending || isRadarLimitReached || isFreePlan}
                   placeholder="Target Search Query / Keyword"
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
-                  className="flex-1 px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50 border border-slate-200/60 rounded-[16px] sm:rounded-[20px] outline-none font-semibold text-sm sm:text-base text-slate-700 focus:border-blue-500 focus:bg-white transition"
+                  className="flex-1 px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50 border border-slate-200/60 rounded-[16px] sm:rounded-[20px] outline-none font-semibold text-sm sm:text-base text-slate-700 focus:border-blue-500 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed"
                 />
-                <button disabled={isPending || isRadarLimitReached || isFreePlan} className="bg-slate-900 text-white px-6 sm:px-10 py-3.5 sm:py-4 rounded-[16px] sm:rounded-[20px] text-sm sm:text-base font-black hover:bg-blue-600 transition disabled:bg-slate-300 shrink-0">
+                <button disabled={isPending || isRadarLimitReached || isFreePlan} className="bg-slate-900 text-white px-6 sm:px-10 py-3.5 sm:py-4 rounded-[16px] sm:rounded-[20px] text-sm sm:text-base font-black hover:bg-blue-600 transition disabled:bg-slate-300 shrink-0 cursor-pointer disabled:cursor-not-allowed">
                   {isPending ? "SCANNING VECTOR..." : "LAUNCH RADAR SCAN"}
                 </button>
               </div>
@@ -341,7 +404,9 @@ export default function AEORadarPage() {
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-indigo-500/10 to-blue-500/5 animate-pulse" />
                 <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
                   <div>
-                    <div className="text-xs font-black uppercase tracking-[0.3em] text-blue-500 mb-1.5">Live Radar Engine</div>
+                    <div className="text-xs font-black uppercase tracking-[0.3em] text-blue-500 mb-1.5">
+                      Live Radar Engine ({selectedEngine === "openai" ? "ChatGPT OpenAI" : "Perplexity Sonar"})
+                    </div>
                     <h2 className="text-xl sm:text-3xl font-black tracking-tight">Running Live Matrix Scan</h2>
                   </div>
                   <div className="relative w-12 h-12 sm:w-14 sm:h-14 shrink-0"><div className="absolute inset-0 rounded-full border-4 border-slate-100" /><div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 animate-spin" /></div>
@@ -397,13 +462,13 @@ export default function AEORadarPage() {
                       <span className="text-3xl sm:text-4xl font-black">{results.auditResult.isMentioned ? "🟢" : "🔴"}</span>
                     </div>
                     <div className="text-center sm:text-left w-full sm:w-auto overflow-hidden">
-                      <div className="inline-flex items-center px-2.5 py-1 mb-2 rounded-md bg-blue-500/10 border border-blue-500/20">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 mb-2 rounded-md bg-blue-500/10 border border-blue-500/20">
                         <span className="text-[9px] sm:text-[10px] font-black tracking-wider uppercase text-blue-400">
-                          Live RAG Status Tracker
+                          Live AI Visibility Check ({results.engineUsed === "openai" ? "ChatGPT OpenAI" : "Perplexity Sonar"})
                         </span>
                       </div>
                       <h2 className="text-xl sm:text-3xl font-black tracking-tight">
-                        {results.auditResult.isMentioned ? "AI Optimized Node" : "AI Invisible Vector"}
+                        {results.auditResult.isMentioned ? "AI Visible" : "Invisible"}
                       </h2>
                       <p className="text-slate-400 mt-1.5 text-xs sm:text-sm max-w-full italic font-medium">
                         &ldquo;{scannedKeyword}&rdquo;
@@ -452,11 +517,24 @@ export default function AEORadarPage() {
 
                   {results.allSourcesCrawled.length > 0 && (
                     <div className="p-4 sm:p-6 rounded-2xl bg-slate-50 border">
-                      <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3">Live RAG Matrix Sources ({results.allSourcesCrawled.length})</div>
+                      <div className="text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-3">
+                        Live RAG Matrix Sources ({results.allSourcesCrawled.length})
+                      </div>
                       <div className="max-h-32 overflow-y-auto text-xs font-semibold text-slate-600 space-y-2 pr-1">
                         {results.allSourcesCrawled.map((source, idx) => (
-                          <a key={idx} href={source} target="_blank" rel="noopener noreferrer" className="block truncate bg-white border p-2 rounded-xl hover:text-blue-500 transition shadow-sm">
-                            🔗 {source}
+                          <a 
+                            key={idx} 
+                            href={source} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="flex items-center justify-between bg-white border border-slate-200/80 p-2.5 rounded-xl hover:border-blue-500 hover:text-blue-600 transition shadow-sm group"
+                          >
+                            <span className="truncate font-bold text-slate-800 group-hover:text-blue-600">
+                              🔗 {formatSourceDomain(source)}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-normal truncate max-w-[200px] ml-2 hidden sm:inline">
+                              {source}
+                            </span>
                           </a>
                         ))}
                       </div>
@@ -489,11 +567,18 @@ export default function AEORadarPage() {
                 {history.map((scan) => (
                   <div key={scan.id} className="flex flex-col sm:flex-row justify-between sm:items-center bg-slate-50 border border-slate-100 p-4 rounded-2xl gap-4 hover:border-blue-500/30 transition-all duration-200">
                     <div className="overflow-hidden">
-                      <div className="text-sm font-black text-slate-800 truncate">{scan.website_url}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-black text-slate-800 truncate">{scan.website_url}</span>
+                        {scan.result_data?.engineUsed && (
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase ${scan.result_data.engineUsed === 'openai' ? 'bg-purple-50 text-purple-600 border border-purple-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`}>
+                            {scan.result_data.engineUsed === 'openai' ? 'chatgpt' : scan.result_data.engineUsed}
+                          </span>
+                        )}
+                      </div>
                       <div className="text-slate-400 font-semibold text-[11px] mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
                         <span>Query: <span className="text-blue-600 font-black">&ldquo;{scan.keyword}&rdquo;</span></span>
                         <span className="text-slate-200">|</span>
-                        <span>State: <span className={`font-black ${scan.result_data.auditResult.isMentioned ? "text-emerald-600" : "text-amber-600"}`}>{scan.result_data.auditResult.isMentioned ? "Optimized" : "Invisible"}</span></span>
+                        <span>State: <span className={`font-black ${scan.result_data?.auditResult?.isMentioned ? "text-emerald-600" : "text-amber-600"}`}>{scan.result_data?.auditResult?.isMentioned ? "AI Visible" : "Invisible"}</span></span>
                         <span className="text-slate-200">|</span>
                         <span className="text-slate-400 font-medium">{new Date(scan.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}</span>
                         
@@ -528,14 +613,14 @@ export default function AEORadarPage() {
                             console.error("Failed to copy link from history:", err);
                           }
                         }}
-                        className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold rounded-xl text-xs transition shadow-sm"
+                        className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold rounded-xl text-xs transition shadow-sm cursor-pointer"
                       >
                         Copy Link
                       </button>
                       
                       <button
                         onClick={() => handleLoadFromHistory(scan)}
-                        className="px-4 py-2 bg-slate-900 hover:bg-blue-600 text-white font-black rounded-xl text-xs transition shadow-md"
+                        className="px-4 py-2 bg-slate-900 hover:bg-blue-600 text-white font-black rounded-xl text-xs transition shadow-md cursor-pointer"
                       >
                         Load Report ↗
                       </button>
@@ -549,7 +634,7 @@ export default function AEORadarPage() {
                       type="button"
                       onClick={loadAllHistory}
                       disabled={isLoadingAllHistory || isFreePlan}
-                      className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 disabled:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-black uppercase tracking-wider rounded-xl transition shadow-sm border border-slate-200/40"
+                      className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 disabled:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-black uppercase tracking-wider rounded-xl transition shadow-sm border border-slate-200/40 cursor-pointer"
                     >
                       {isLoadingAllHistory ? "Fetching complete matrix..." : "✨ View All History"}
                     </button>
