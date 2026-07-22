@@ -52,7 +52,6 @@ interface UserStats {
   radar_limit: number;
 }
 
-// Helper funkcija za prikaz čistog domena unutar izvora
 function formatSourceDomain(urlStr: string): string {
   try {
     const parsed = new URL(urlStr.startsWith('http') ? urlStr : `https://${urlStr}`);
@@ -65,7 +64,8 @@ function formatSourceDomain(urlStr: string): string {
 export default function AEORadarPage() {
   const [targetUrl, setTargetUrl] = useState<string>('');
   const [keyword, setKeyword] = useState<string>('');
-  const [selectedEngine, setSelectedEngine] = useState<"perplexity" | "openai">("perplexity");
+  // ⚡ ChatGPT (openai) je sada DEFAULT
+  const [selectedEngine, setSelectedEngine] = useState<"perplexity" | "openai">("openai");
   
   const [scannedUrl, setScannedUrl] = useState<string>('');
   const [scannedKeyword, setScannedKeyword] = useState<string>('');
@@ -167,7 +167,7 @@ export default function AEORadarPage() {
     const shareUrl = `${window.location.origin}/share-radar/${currentRadarShareToken}`;
     const cleanDisplayUrl = scannedUrl.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
     const antiPreviewDomain = cleanDisplayUrl.replace('.', ' . ');
-    const engineLabel = selectedEngine === "openai" ? "ChatGPT (OpenAI Search)" : "Perplexity Sonar";
+    const engineLabel = selectedEngine === "openai" ? "ChatGPT" : "Perplexity Sonar";
     
     const text = `🎯 Live AI Visibility Radar Check (${engineLabel}) for ${antiPreviewDomain} is officially LIVE!\n\n` +
                  `The Answer Engine Optimization (AEO) scan checked if leading LLMs cite or recommend our brand for the query: "${scannedKeyword}".\n\n` +
@@ -183,7 +183,7 @@ export default function AEORadarPage() {
     const shareUrl = `${window.location.origin}/share-radar/${currentRadarShareToken}`;
     const cleanDisplayUrl = scannedUrl.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
     const antiPreviewDomain = cleanDisplayUrl.replace('.', ' . ');
-    const engineLabel = selectedEngine === "openai" ? "ChatGPT (OpenAI Search)" : "Perplexity Sonar";
+    const engineLabel = selectedEngine === "openai" ? "ChatGPT" : "Perplexity Sonar";
     
     const tweetText = `Just ran an AI Radar scan (${engineLabel}) for ${antiPreviewDomain} regarding "${scannedKeyword}".\n\n` +
                       `State: ${results.auditResult.isMentioned ? "🟢 AI Visible" : "🔴 Invisible"}\n\n` +
@@ -337,6 +337,24 @@ export default function AEORadarPage() {
                 <button
                   type="button"
                   disabled={isPending || isRadarLimitReached || isFreePlan}
+                  onClick={() => setSelectedEngine("openai")}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-2 ${
+                    isPending || isRadarLimitReached || isFreePlan
+                      ? "opacity-50 cursor-not-allowed"
+                      : "cursor-pointer"
+                  } ${
+                    selectedEngine === "openai"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-900"
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-purple-500" />
+                  ChatGPT
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isPending || isRadarLimitReached || isFreePlan}
                   onClick={() => setSelectedEngine("perplexity")}
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-2 ${
                     isPending || isRadarLimitReached || isFreePlan
@@ -350,24 +368,6 @@ export default function AEORadarPage() {
                 >
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   Perplexity Sonar
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isPending || isRadarLimitReached || isFreePlan}
-                  onClick={() => setSelectedEngine("openai")}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-2 ${
-                    isPending || isRadarLimitReached || isFreePlan
-                      ? "opacity-50 cursor-not-allowed"
-                      : "cursor-pointer"
-                  } ${
-                    selectedEngine === "openai"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-900"
-                  }`}
-                >
-                  <span className="w-2 h-2 rounded-full bg-purple-500" />
-                  ChatGPT (OpenAI Search)
                 </button>
               </div>
 
