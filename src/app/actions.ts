@@ -619,3 +619,92 @@ export async function submitAeoExam(answers: Record<number, string>, fullName: s
     return { success: false, message: "An unexpected network layer crash occurred." };
   }
 }
+
+// ===================================================================
+// 🔑 AKCIJE ZA CHROME EXTENSION API KLJUČEVE
+// ===================================================================
+
+export async function getOrCreateApiKey() {
+  const { userId } = await auth();
+  const clerkUser = await currentUser();
+
+  if (!userId || !clerkUser) return { error: "Unauthorized" };
+
+  const email = clerkUser.emailAddresses[0]?.emailAddress;
+
+  try {
+    // 1. Provjeri da li korisnik uopšte postoji u tabeli 'users'
+    const { data: dbUser } = await supabase
+      .from("users")
+      .select("id, api_key")
+      .eq("id", userId)
+      .maybeSingle();
+
+    // Ako korisnik uopšte ne postoji u 'users' tabeli, kreiramo ga
+    if (!dbUser) {
+      const newApiKey = `aeo_live_${Math.random().toString(36).substring(2)}${Date.now().toString(36)}`;
+      
+      const { data: newUser, error: insertError } = await supabase
+        .from("users")
+        .insert([
+          { 
+            id: userId, 
+            email: email, 
+            plan: "FREE", 
+            audit_limit: 1, 
+            used_audits: 0,
+            api_key: newApiKey
+          }
+        ])
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error("User creation error in getOrCreateApiKey:", insertError);
+        return { error: "Failed to initialize user with API key." };
+      }
+
+      return { apiKey: newUser.api_key };
+    }
+
+    // 2. Ako korisnik postoji i već ima ključ, vrati ga
+    if (dbUser.api_key) {
+      return { apiKey: dbUser.api_key };
+    }
+
+    // 3. Ako korisnik postoji ali nema ključ, generiši ga i ažuriraj red
+    const newApiKey = `aeo_live_${Math.random().toString(36).substring(2)}${Date.now().toString(36)}`;
+
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({ api_key: newApiKey })
+      .eq("id", userId);
+
+    if (updateError) {
+      console.error("Failed to save generated API key:", updateError);
+      return { error: "Failed to generate API key." };
+    }
+
+    return { apiKey: newApiKey };
+  } catch (err) {
+    console.error("Error in getOrCreateApiKey:", err);
+    return { error: "System error generating API key." };
+  }
+}
+
+export async function regenerateApiKey() {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized" };
+
+  const newApiKey = `aeo_live_${Math.random().toString(36).substring(2)}${Date.now().toString(36)}`;
+
+  const { error } = await supabase
+    .from("users")
+    .update({ api_key: newApiKey })
+    .eq("id", userId);
+
+  if (error) return { error: "Failed to regenerate API key." };
+
+  revalidatePath("/settings");
+  return { apiKey: newApiKey };
+}
