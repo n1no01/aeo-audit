@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getOrCreateApiKey } from "../../actions"; // Prilagodi import putanju po potrebi
+import { getOrCreateApiKey } from "../../actions";
 
 export default function WidgetEmbedCard() {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // 🚀 Osiguravamo da domena nema "www." i nema visecih kosa crta
   const getCleanDomain = () => {
     let domain = process.env.NEXT_PUBLIC_APP_URL || "";
     
@@ -19,7 +18,6 @@ export default function WidgetEmbedCard() {
       domain = "https://aeoaudit-pro.com";
     }
 
-    // Uklanjamo www. ako postoji, te navodnike i prazne prostore
     return domain
       .replace("www.", "")
       .split(" ")[0]
@@ -33,11 +31,16 @@ export default function WidgetEmbedCard() {
 
   useEffect(() => {
     async function loadKey() {
-      const res = await getOrCreateApiKey();
-      if (res && "apiKey" in res && res.apiKey) {
-        setApiKey(res.apiKey);
+      try {
+        const res = await getOrCreateApiKey();
+        if (res && "apiKey" in res && res.apiKey) {
+          setApiKey(res.apiKey);
+        }
+      } catch (err) {
+        console.error("Error loading API key:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     loadKey();
   }, []);
@@ -52,13 +55,13 @@ export default function WidgetEmbedCard() {
 
   container.innerHTML = \`
     <div style="max-width:420px; padding:24px; background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; font-family:sans-serif; box-shadow:0 10px 25px -5px rgba(0,0,0,0.05);">
-      <h3 style="margin:0 0 6px 0; font-size:18px; color:#0f172a; font-weight:800;">Free AEO Readiness Scan</h3>
-      <p style="margin:0 0 16px 0; font-size:12px; color:#64748b;">Check if ChatGPT & Perplexity can recommend your business.</p>
+      <h3 style="margin:0 0 6px 0; font-size:18px; color:#0f172a; font-weight:800;">Check Your AEO Score</h3>
+      <p style="margin:0 0 16px 0; font-size:12px; color:#64748b;">Instant AI Search Engine Optimization readiness check.</p>
 
       <form id="aeo-widget-form" style="display:flex; flex-direction:column; gap:10px;">
         <input type="url" id="aeo-url" placeholder="https://yourwebsite.com" required style="padding:10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px;" />
         <input type="email" id="aeo-email" placeholder="your@email.com" required style="padding:10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px;" />
-        <button type="submit" id="aeo-btn" style="padding:10px; background:#2563eb; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:13px;">Run Free AEO Audit →</button>
+        <button type="submit" id="aeo-btn" style="padding:10px; background:#2563eb; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:13px;">Get Your Free Score →</button>
       </form>
 
       <div id="aeo-result" style="margin-top:16px; display:none;"></div>
@@ -89,12 +92,39 @@ export default function WidgetEmbedCard() {
 
       const data = await res.json();
       if(data.success) {
+        const isGood = data.score >= 70;
+        const statusText = isGood ? "High Recommendation Odds" : "Needs AEO Optimization";
+        const statusColor = isGood ? "#16a34a" : "#dc2626";
+
         resultDiv.style.display = "block";
         resultDiv.innerHTML = \`
-          <div style="padding:12px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0; text-align:center;">
-            <div style="font-size:12px; color:#64748b; font-weight:bold;">YOUR AEO SCORE</div>
-            <div style="font-size:32px; font-weight:900; color:\${data.score >= 70 ? '#16a34a' : '#dc2626'};">\${data.score}/100</div>
-            <p style="font-size:11px; color:#475569; margin-top:4px;">Full detailed report has been prepared for your site.</p>
+          <div style="padding:14px; background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0;">
+            <div style="display:flex; justify-content:space-between; items-center; border-bottom:1px solid #e2e8f0; pb:8px; margin-bottom:10px;">
+              <div>
+                <div style="font-size:10px; color:#64748b; font-weight:bold; text-transform:uppercase;">Overall AEO Score</div>
+                <div style="font-size:24px; font-weight:900; color:\${statusColor};">\${data.score}/100</div>
+              </div>
+              <div style="text-align:right;">
+                <span style="font-size:11px; font-weight:bold; color:\${statusColor}; background:\${isGood ? '#f0fdf4' : '#fef2f2'}; padding:4px 8px; border-radius:6px; border:1px solid \${isGood ? '#bbf7d0' : '#fecaca'};">
+                  \${statusText}
+                </span>
+              </div>
+            </div>
+
+            <div style="font-size:11px; color:#334155; margin-top:8px; display:flex; flex-direction:column; gap:4px;">
+              <div style="display:flex; justify-content:space-between;">
+                <span>🤖 ChatGPT Recommendation:</span>
+                <strong>\${data.score >= 70 ? 'High' : data.score >= 40 ? 'Moderate' : 'Low'}</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between;">
+                <span>🔍 Perplexity Citation:</span>
+                <strong>\${data.score >= 60 ? 'Likely' : 'Unlikely'}</strong>
+              </div>
+            </div>
+
+            <p style="font-size:10px; color:#64748b; margin-top:10px; text-align:center; font-style:italic;">
+              Full detailed report has been sent to your email.
+            </p>
           </div>
         \`;
       } else {
@@ -104,7 +134,7 @@ export default function WidgetEmbedCard() {
       console.error(err);
       alert("Error connecting to AEO Audit engine.");
     } finally {
-      btn.innerText = "Run Free AEO Audit →";
+      btn.innerText = "Get Your Free Score →";
       btn.disabled = false;
     }
   });
@@ -112,15 +142,14 @@ export default function WidgetEmbedCard() {
 </script>`;
 
   const handleCopy = () => {
+    if (loading || !apiKey) return;
     navigator.clipboard.writeText(embedCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (loading) return null;
-
   return (
-    <div className="bg-white border border-slate-200 rounded-[24px] sm:rounded-[32px] p-6 sm:p-8 shadow-xl shadow-blue-900/5 my-8">
+    <div className="bg-white border border-slate-200 rounded-[24px] sm:rounded-[32px] p-6 sm:p-8 shadow-xl shadow-blue-900/5">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-bold uppercase tracking-wider mb-2">
@@ -131,50 +160,53 @@ export default function WidgetEmbedCard() {
             Capture prospective B2B clients by embedding a free instant AEO scanner on your agency site or blog.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <a
-            href="/dashboard/leads"
-            className="px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold rounded-xl text-xs transition-colors"
-          >
-            View Captured Leads →
-          </a>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* KOD KUTIJA */}
-        <div className="lg:col-span-7 flex flex-col justify-between bg-slate-900 rounded-2xl p-4 border border-slate-800">
+        <div className="lg:col-span-7 flex flex-col justify-between bg-slate-900 rounded-2xl p-4 border border-slate-800 min-h-[260px]">
           <div className="flex justify-between items-center mb-2">
             <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider">
               Embed Code (Snippet)
             </span>
             <button
               onClick={handleCopy}
-              className="text-xs bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+              disabled={loading || !apiKey}
+              className="text-xs bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer"
             >
-              {copied ? "Copied to Clipboard! ✓" : "Copy Code"}
+              {loading ? "Generating Key..." : copied ? "Copied to Clipboard! ✓" : "Copy Code"}
             </button>
           </div>
-          <pre className="text-[11px] font-mono text-blue-400 overflow-x-auto max-h-[220px] whitespace-pre-wrap leading-relaxed bg-slate-950 p-3 rounded-xl border border-slate-800">
-            {embedCode}
-          </pre>
+
+          {loading ? (
+            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 animate-pulse my-auto">
+              <div className="h-3 bg-slate-800 rounded w-3/4"></div>
+              <div className="h-3 bg-slate-800 rounded w-1/2"></div>
+              <div className="h-3 bg-slate-800 rounded w-2/3"></div>
+            </div>
+          ) : (
+            <pre className="text-[11px] font-mono text-blue-400 overflow-x-auto max-h-[220px] whitespace-pre-wrap leading-relaxed bg-slate-950 p-3 rounded-xl border border-slate-800">
+              {embedCode}
+            </pre>
+          )}
+
           <p className="text-[10px] text-slate-500 mt-2">
             💡 Simply paste this snippet anywhere inside your WordPress, Webflow, or custom HTML page.
           </p>
         </div>
 
-        {/* BRZI PREVIEW WIDGETA */}
+        {/* PREVIEW WIDGETA */}
         <div className="lg:col-span-5 flex flex-col justify-center items-center bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">
             Widget Live Preview
           </span>
           <div className="w-full max-w-[340px] bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-left font-sans">
-            <h4 className="text-sm font-extrabold text-slate-900">Free AEO Readiness Scan</h4>
-            <p className="text-[11px] text-slate-500 mb-3 mt-0.5">Check if ChatGPT & Perplexity can recommend your business.</p>
+            <h4 className="text-sm font-extrabold text-slate-900">Check Your AEO Score</h4>
+            <p className="text-[11px] text-slate-500 mb-3 mt-0.5">Instant AI Search Engine Optimization readiness check.</p>
             <div className="space-y-2 opacity-70 pointer-events-none">
               <div className="p-2 border border-slate-200 rounded-lg text-xs text-slate-400">https://yourwebsite.com</div>
               <div className="p-2 border border-slate-200 rounded-lg text-xs text-slate-400">your@email.com</div>
-              <div className="p-2 bg-blue-600 text-white rounded-lg text-xs font-bold text-center">Run Free AEO Audit →</div>
+              <div className="p-2 bg-blue-600 text-white rounded-lg text-xs font-bold text-center">Get Your Free Score →</div>
             </div>
             <p className="text-[9px] text-slate-400 text-center mt-3">
               Powered by <span className="font-bold text-blue-600">AEO Audit Pro</span>

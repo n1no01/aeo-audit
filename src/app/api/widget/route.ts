@@ -30,10 +30,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // Provjera API ključa
+    // 🔒 Provjera API ključa i plana korisnika u bazi
     const { data: agencyUser, error: userError } = await supabase
       .from("users")
-      .select("id")
+      .select("id, plan")
       .eq("api_key", apiKey)
       .maybeSingle();
 
@@ -41,6 +41,14 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "Invalid or unauthorized API key." },
         { status: 401, headers: corsHeaders }
+      );
+    }
+
+    // 🚫 Blokiramo izvođenje ako je korisnik na FREE planu
+    if (agencyUser.plan === "FREE") {
+      return NextResponse.json(
+        { error: "Widget lead generation requires an active paid plan." },
+        { status: 403, headers: corsHeaders }
       );
     }
 
@@ -78,7 +86,7 @@ export async function POST(req: Request) {
         url: formattedUrl,
         score: score,
       },
-      { headers: corsHeaders }
+      { status: 200, headers: corsHeaders }
     );
   } catch (error) {
     console.error("Widget API error:", error);
