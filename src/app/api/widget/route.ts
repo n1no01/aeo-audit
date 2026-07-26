@@ -71,14 +71,37 @@ export async function POST(req: Request) {
     const scrapedData = await scrapeWebsite(formattedUrl, SCRAPING_API_KEY);
     const score = calculateScore(scrapedData);
 
-    await supabase.from("widget_leads").insert([
-      {
-        agency_user_id: agencyUser.id,
-        lead_email: leadEmail,
-        website_url: formattedUrl,
-        score: score,
-      },
-    ]);
+    const cleanEmail = leadEmail.trim().toLowerCase();
+
+    // 🔍 1. Provjera da li ovaj lead email već postoji za ovu agenciju
+    const { data: existingLead } = await supabase
+      .from("widget_leads")
+      .select("id")
+      .eq("agency_user_id", agencyUser.id)
+      .eq("lead_email", cleanEmail)
+      .maybeSingle();
+
+    if (existingLead) {
+      // 🔄 Ako postoji, samo ažuriramo postojeći zapis najnovijim podacima
+      await supabase
+        .from("widget_leads")
+        .update({
+          website_url: formattedUrl,
+          score: score,
+          created_at: new Date().toISOString(),
+        })
+        .eq("id", existingLead.id);
+    } else {
+      // ➕ Ako ne postoji, ubacujemo novi lead
+      await supabase.from("widget_leads").insert([
+        {
+          agency_user_id: agencyUser.id,
+          lead_email: cleanEmail,
+          website_url: formattedUrl,
+          score: score,
+        },
+      ]);
+    }
 
     return NextResponse.json(
       {
