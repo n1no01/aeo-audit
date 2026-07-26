@@ -708,3 +708,26 @@ export async function regenerateApiKey() {
   revalidatePath("/settings");
   return { apiKey: newApiKey };
 }
+
+export async function getAgencyLeads() {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized access." };
+
+  try {
+    const { data, error } = await supabase
+      .from("widget_leads")
+      .select("id, lead_email, website_url, score, created_at")
+      .eq("agency_user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching widget leads:", error.message);
+      return { error: "Failed to load widget leads." };
+    }
+
+    return { success: true, leads: data || [] };
+  } catch (error) {
+    console.error("Critical error in getAgencyLeads:", error);
+    return { error: "An unexpected error occurred." };
+  }
+}

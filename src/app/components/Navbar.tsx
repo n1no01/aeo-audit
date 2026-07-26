@@ -138,6 +138,16 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
                 Entity Checker
               </Link>
 
+              {/* 🚀 LINK ZA LEADOVE IZ WIDGETA */}
+              <Link
+                href="/dashboard/leads"
+                className={`text-xs sm:text-sm font-semibold transition duration-200 flex items-center gap-1.5 m-0 ${
+                  pathname.startsWith("/dashboard/leads") ? "text-blue-600 font-bold" : "text-slate-600 hover:text-blue-600"
+                }`}
+              >
+                Lead Magnet
+              </Link>
+
               <Link
                 href="/academy"
                 className={`text-xs sm:text-sm font-semibold transition duration-200 flex items-center gap-1 m-0 ${
@@ -158,7 +168,7 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
 
               <div className="h-4 w-px bg-slate-200 hidden sm:block" />
 
-              {/* CLERK USER BUTTON SA INTEGRISANIM API KEY OPGIJOM */}
+              {/* CLERK USER BUTTON SA INTEGRISANIM API KEY I LEADS OPCIJAMA */}
               <UserButton>
                 <UserButton.MenuItems>
                   {userStats && (
@@ -172,6 +182,11 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
                       href="/pricing"
                     />
                   )}
+                  <UserButton.Link
+                    label="Widget & Captured Leads"
+                    labelIcon={<span className="text-xs font-bold">🎯</span>}
+                    href="/dashboard/leads"
+                  />
                   <UserButton.Action
                     label="Chrome Extension API Key"
                     labelIcon={<span className="text-xs font-bold">🔑</span>}
@@ -219,6 +234,11 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
                   <Link href="/dashboard" className="bg-slate-900 text-white text-xs sm:text-sm font-bold px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl hover:bg-blue-600 transition shadow-sm">Dashboard</Link>
                   <UserButton>
                     <UserButton.MenuItems>
+                      <UserButton.Link
+                        label="Widget & Captured Leads"
+                        labelIcon={<span className="text-xs font-bold">🎯</span>}
+                        href="/dashboard/leads"
+                      />
                       <UserButton.Action
                         label="Chrome Extension API Key"
                         labelIcon={<span className="text-xs font-bold">🔑</span>}

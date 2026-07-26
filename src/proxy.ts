@@ -19,7 +19,8 @@ const publicPaths = [
   '/sign-in',           
   '/sign-up',          
   '/api/webhook',
-  '/api/cron' // 🚀 PUŠTA VERCEL CRON DA PRISTUPI API-JU BEZ CLERK PRIJAVE
+  '/api/cron',
+  "/api/widget",
 ];
 
 export default clerkMiddleware(async (auth, request) => {

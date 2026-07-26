@@ -282,7 +282,7 @@ export default function AEORadarPage() {
             </span>
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight italic">
-            AI Visibility<span className="text-blue-600"> Radar</span>
+            AI <span className="text-blue-600"> Radar</span>
           </h1>
           <p className="text-slate-500 mt-4 sm:mt-5 text-sm sm:text-lg max-w-2xl mx-auto font-medium">
             Scan the live web through the eyes of Conversational AI engines. Track citations safely using your package credits.

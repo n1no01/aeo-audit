@@ -63,7 +63,7 @@ export default function SharedAuditPage({ params }: SharePageProps) {
       {/* PUBLIC NAVBAR */}
       <nav className="w-full max-w-6xl mx-auto p-4 sm:p-6 flex justify-between items-center bg-transparent">
         <div className="text-2xl font-black tracking-tight italic select-none">
-          AEO<span className="text-blue-600">Audit</span> Pro
+          AEO <span className="text-blue-600">Audit</span> Pro
         </div>
         <div className="px-4 py-1.5 bg-blue-50 border border-blue-100 rounded-xl text-[11px] font-black uppercase tracking-wider text-blue-600">
           Public Intelligence Report
@@ -485,7 +485,7 @@ export default function SharedAuditPage({ params }: SharePageProps) {
         <div className="bg-slate-50 border border-slate-200/60 rounded-full px-4 py-2 text-slate-600 font-bold text-[11px]">
           🚀 Want to audit your own website?{" "}
           <Link href="/" className="text-blue-600 hover:underline font-black ml-1">
-            Analyze AI Visibility Free &rarr;
+            Analyze AI Visibility &rarr;
           </Link>
         </div>
       </footer>

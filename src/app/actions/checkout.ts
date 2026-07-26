@@ -2,6 +2,8 @@
 
 import DodoPayments from "dodopayments";
 
+const ACADEMY_PRODUCT_ID = "pdt_0NipGjvEpOXk5b2pkxaVt";
+
 export async function getDodoCheckoutUrl(
   productId: string,
   clerkUserId: string,
@@ -18,6 +20,10 @@ export async function getDodoCheckoutUrl(
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const environment = process.env.NODE_ENV === "production" ? "live_mode" : "test_mode";
 
+  // 🚀 Uslovno preusmjeravanje ovisno o productId
+  const redirectPath = productId === ACADEMY_PRODUCT_ID ? "/academy" : "/dashboard";
+  const returnUrl = `${appUrl}${redirectPath}?payment=success`;
+
   try {
     const client = new DodoPayments({
       bearerToken: apiKey,
@@ -28,8 +34,7 @@ export async function getDodoCheckoutUrl(
       product_cart: [{ product_id: productId, quantity: 1 }],
       customer: { email },
       metadata: { clerkUserId: String(clerkUserId) },
-      // 🚀 POPRAVLJENO: Vraćamo korisnika direktno na academy uz naš success flag
-      return_url: `${appUrl}/academy?payment=success`, 
+      return_url: returnUrl,
     });
 
     const checkoutUrl = (session as { checkout_url?: string }).checkout_url ?? null;

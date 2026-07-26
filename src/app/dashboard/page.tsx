@@ -16,6 +16,7 @@ import InsightsPanel from "../components/dashboard/InsightsPanel";
 import RecommendationsPanel from "../components/dashboard/RecommendationsPanel";
 import SimulatorPanel from "../components/dashboard/SimulatorPanel";
 import LlmsPanel from "../components/dashboard/LlmsPanel";
+import WidgetEmbedCard from "../components/dashboard/WidgetEmbedCard";
 
 import { AuditData, TabId, AEO_EXPLANATIONS, BotStatus } from "../lib/types"; 
 import { exportAuditToDocx } from "../lib/docxExport";
