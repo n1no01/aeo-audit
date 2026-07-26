@@ -61,9 +61,10 @@ export default async function PricingPage() {
                 </div>
 
                 <ul className="space-y-3 text-sm font-medium text-slate-600 border-t border-slate-100 pt-6">
-                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Knowledge Graph Entity Checker</strong></li>
+                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Entity Checker</strong></li>
                   <li className="flex items-center gap-2">✔ Advanced Semantic Diagnostics</li>
-                  <li className="flex items-center gap-2 text-slate-400 line-through">❌ AI Visibility Radar Tracking</li>
+                  <li className="flex items-center gap-2 text-slate-400 line-through">❌ AI Radar Tracking</li>
+                  <li className="flex items-center gap-2 text-slate-400 line-through">❌ Lead Magnet</li>
                   <li className="flex items-center gap-2 text-slate-400 line-through">❌ Full White-Label Toolkit</li>
                   <li className="flex items-center gap-2 text-slate-400 line-through">❌ Unlimited .DOCX Document Exports</li>
                 </ul>
@@ -100,8 +101,9 @@ export default async function PricingPage() {
                 </div>
 
                 <ul className="space-y-3 text-sm font-medium text-slate-600 border-t border-slate-100 pt-6">
-                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Knowledge Graph Entity Checker</strong></li>
-                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">AI Visibility Radar Tracking</strong></li>
+                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Entity Checker</strong></li>
+                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">AI Radar Tracking</strong></li>
+                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Lead Magnet</strong></li>
                   <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Full White-Label Toolkit</strong></li>
                   <li className="flex items-center gap-2">✔ Advanced Semantic Diagnostics</li>
                   <li className="flex items-center gap-2">✔ Unlimited .DOCX Document Exports</li>
@@ -147,8 +149,9 @@ export default async function PricingPage() {
                 </div>
 
                 <ul className="space-y-3 text-sm font-medium text-slate-600 border-t border-slate-100 pt-6">
-                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Knowledge Graph Entity Checker</strong></li>
-                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">AI Visibility Radar Tracking</strong></li>
+                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Entity Checker</strong></li>
+                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">AI Radar Tracking</strong></li>
+                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Lead Magnet</strong></li>
                   <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Full White-Label Toolkit</strong></li>
                   <li className="flex items-center gap-2">✔ Advanced Semantic Diagnostics</li>
                   <li className="flex items-center gap-2">✔ Unlimited .DOCX Document Exports</li>
@@ -186,8 +189,9 @@ export default async function PricingPage() {
                 </div>
 
                 <ul className="space-y-3 text-sm font-medium text-slate-600 border-t border-slate-100 pt-6">
-                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Knowledge Graph Entity Checker</strong></li>
-                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">AI Visibility Radar Tracking</strong></li>
+                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Entity Checker</strong></li>
+                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">AI Radar Tracking</strong></li>
+                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Lead Magnet</strong></li>
                   <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Full White-Label Toolkit</strong></li>
                   <li className="flex items-center gap-2">✔ Advanced Semantic Diagnostics</li>
                   <li className="flex items-center gap-2">✔ Unlimited .DOCX Document Exports</li>
@@ -245,8 +249,9 @@ export default async function PricingPage() {
                 }
               ],
               "featureList": [
-                "Knowledge Graph Entity Checker",
-                "AI Visibility Radar Tracking",
+                "Entity Checker",
+                "AI Radar Tracking",
+                "Lead Magnet",
                 "Advanced Semantic Diagnostics",
                 "White-Label Toolkit",
                 "DOCX Report Exports"
