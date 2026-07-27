@@ -3,26 +3,54 @@ import { supabase } from "../../lib/supabase";
 import { scrapeWebsite } from "../../lib/scraper";
 import { generateAiAnalysis } from "../../lib/gemini";
 import { calculateScore } from "../../lib/scorer";
+import { formatUrl } from "../../lib/utils";
 import { ScrapedData } from "../../lib/types";
+
+// 🚀 CORS zaglavlja za komunikaciju sa Chrome ekstenzijom
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+// 🚀 OPTIONS Handler za CORS Preflight zahtjeve (sprječava HTML 405/CORS grešku)
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 200, headers: corsHeaders });
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { apiKey, domData } = await req.json();
+    const body = await req.json();
+    // Prihvata 'url' (iz novog popup.js) ili 'domData.url' kao fallback za unazad kompatibilnost
+    const apiKey = body.apiKey;
+    const rawUrl = body.url || body.domData?.url;
 
     // 1. Validacija parametara
     if (!apiKey || typeof apiKey !== "string") {
-      return NextResponse.json({ error: "API key is missing or invalid." }, { status: 401 });
+      return NextResponse.json(
+        { error: "API key is missing or invalid." },
+        { status: 401, headers: corsHeaders }
+      );
     }
 
-    if (!domData || !domData.url) {
-      return NextResponse.json({ error: "Invalid DOM data structure provided from extension." }, { status: 400 });
+    if (!rawUrl || typeof rawUrl !== "string") {
+      return NextResponse.json(
+        { error: "Target URL is missing or invalid." },
+        { status: 400, headers: corsHeaders }
+      );
     }
+
+    // Normalizacija URL-a na identičan način kao i na Web Dashboardu
+    const targetUrl = formatUrl(rawUrl) || rawUrl;
 
     const SCRAPING_API_KEY = process.env.SCRAPING_API_KEY;
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
     if (!SCRAPING_API_KEY || !GEMINI_API_KEY) {
-      return NextResponse.json({ error: "Server API keys (Scraper/Gemini) are missing." }, { status: 500 });
+      return NextResponse.json(
+        { error: "Server API keys (Scraper/Gemini) are missing." },
+        { status: 500, headers: corsHeaders }
+      );
     }
 
     // 2. Autentifikacija korisnika
@@ -33,7 +61,10 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (userError || !dbUser) {
-      return NextResponse.json({ error: "Invalid or unauthorized API key." }, { status: 403 });
+      return NextResponse.json(
+        { error: "Invalid or unauthorized API key." },
+        { status: 403, headers: corsHeaders }
+      );
     }
 
     const currentUsed = dbUser.used_audits || 0;
@@ -47,13 +78,11 @@ export async function POST(req: NextRequest) {
             ? "Free audit limit reached. Upgrade your plan for more extension audits!"
             : `Monthly audit limit reached (${currentUsed}/${limit}) for ${dbUser.plan} plan.`
         },
-        { status: 402 }
+        { status: 402, headers: corsHeaders }
       );
     }
 
-    const targetUrl = domData.url;
-
-    // 4. Puni backend scraping (Identično kao na web-u)
+    // 4. Puni backend scraping (Identično kao na web-u sa servera)
     const scrapedResult = (await scrapeWebsite(targetUrl, SCRAPING_API_KEY)) as ScrapedData;
 
     // 5. Matematički seed score
@@ -95,9 +124,12 @@ export async function POST(req: NextRequest) {
       .select("share_token")
       .single();
 
-    if (auditInsertError) {
+    if (auditInsertError || !insertedAudit) {
       console.error("Extension Audit insert error:", auditInsertError);
-      return NextResponse.json({ error: "Failed to save audit report to database." }, { status: 500 });
+      return NextResponse.json(
+        { error: "Failed to save audit report to database." },
+        { status: 500, headers: corsHeaders }
+      );
     }
 
     // 8. Inkrementisanje brojača
@@ -111,27 +143,33 @@ export async function POST(req: NextRequest) {
       ? updatedUsers[0].used_audits
       : currentUsed + 1;
 
-    // 9. Odgovor ekstenziji
-    return NextResponse.json({
-      success: true,
-      shareToken: insertedAudit?.share_token,
-      creditsRemaining: limit - finalUsedCount,
-      result: {
-        score: auditOutputData.score,
-        pageCategory: auditOutputData.pageCategory,
-        aiAnalysis: auditOutputData.aiAnalysis,
-        recommendations: auditOutputData.recommendations,
-        bluffScore: auditOutputData.bluffScore,
-        atomicStructureScore: auditOutputData.atomicStructureScore,
-        entityDensityScore: auditOutputData.entityDensityScore,
-        sentenceSimplicityScore: auditOutputData.sentenceSimplicityScore,
-        commodityContentScore: auditOutputData.commodityContentScore,
+    // 9. Odgovor ekstenziji sa shareToken-om za otvaranje izveštaja na webu
+    return NextResponse.json(
+      {
+        success: true,
+        shareToken: insertedAudit.share_token,
+        creditsRemaining: limit - finalUsedCount,
+        result: {
+          score: auditOutputData.score,
+          pageCategory: auditOutputData.pageCategory,
+          aiAnalysis: auditOutputData.aiAnalysis,
+          recommendations: auditOutputData.recommendations,
+          bluffScore: auditOutputData.bluffScore,
+          atomicStructureScore: auditOutputData.atomicStructureScore,
+          entityDensityScore: auditOutputData.entityDensityScore,
+          sentenceSimplicityScore: auditOutputData.sentenceSimplicityScore,
+          commodityContentScore: auditOutputData.commodityContentScore,
+        },
       },
-    });
+      { status: 200, headers: corsHeaders }
+    );
 
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Internal server error";
     console.error("Critical Extension API Route Error:", message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: message },
+      { status: 500, headers: corsHeaders }
+    );
   }
 }
