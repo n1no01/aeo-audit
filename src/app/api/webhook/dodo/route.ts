@@ -97,7 +97,8 @@ export async function POST(req: Request) {
 
   const STARTER_ID = process.env.NEXT_PUBLIC_DODO_STARTER_PLAN_ID;
   const AGENCY_ID = process.env.NEXT_PUBLIC_DODO_AGENCY_PLAN_ID;
-  const ACADEMY_PRODUCT_ID = process.env.NEXT_PUBLIC_DODO_ACADEMY_PRODUCT_ID; 
+  const ACADEMY_PRODUCT_ID = process.env.NEXT_PUBLIC_DODO_ACADEMY_PRODUCT_ID;
+  const SINGLE_AUDIT_PRODUCT_ID = process.env.NEXT_PUBLIC_DODO_SINGLE_AUDIT_PRODUCT_ID;
 
   const data = evt.data ?? {};
   const clerkUserId = data.metadata?.clerkUserId || data.metadata?.userId;
@@ -206,14 +207,14 @@ export async function POST(req: Request) {
   }
 
   // ===================================================================
-  // 🎓 OBRADA SIGNALA ZA JEDNOKRATNU UPLATU AKADEMIJE ($10 One-time)
+  // 🎓 OBRADA SIGNALA ZA JEDNOKRATNE UPLATE (Akademija i Single Audit)
   // ===================================================================
-  // 🚀 POPRAVLJENO: Hvata zvanični Dodo 'payment.succeeded' event tip
   if (evt.type === "payment.succeeded") {
     const resolvedId = await resolvePlanOrProductId();
 
-    console.log(`[DODO WEBHOOK] Processing payment.succeeded. Resolved ID: ${resolvedId}, Expected Academy ID: ${ACADEMY_PRODUCT_ID}`);
+    console.log(`[DODO WEBHOOK] Processing payment.succeeded. Resolved ID: ${resolvedId}`);
 
+    // 1. Uplatila se Akademija ($10)
     if (ACADEMY_PRODUCT_ID && resolvedId === ACADEMY_PRODUCT_ID) {
       console.log(`Unlocking Academy Access for Clerk User: ${clerkUserId}`);
       
@@ -232,9 +233,41 @@ export async function POST(req: Request) {
       }
 
       return NextResponse.json({ received: true, academy_unlocked: true });
-    } else {
-      console.warn(`[DODO WEBHOOK] ID Mismatch or unhandled one-time product layout. Resolved: ${resolvedId}`);
     }
+
+    // 2. 🚀 Uplatila se pojedinačna analiza ($5 Single Audit)
+    if (SINGLE_AUDIT_PRODUCT_ID && resolvedId === SINGLE_AUDIT_PRODUCT_ID) {
+      console.log(`Adding +1 Audit Credit for Clerk User: ${clerkUserId}`);
+
+      const { data: user, error: fetchErr } = await supabaseAdmin
+        .from("users")
+        .select("audit_limit")
+        .eq("id", clerkUserId)
+        .maybeSingle();
+
+      if (fetchErr || !user) {
+        console.error("Supabase Single Audit fetch failed for user:", clerkUserId, fetchErr?.message);
+        return NextResponse.json({ error: "User not found for credit increment" }, { status: 404 });
+      }
+
+      const currentLimit = Number(user.audit_limit) || 0;
+      const newLimit = currentLimit + 1;
+
+      const { error: updateErr } = await supabaseAdmin
+        .from("users")
+        .update({ audit_limit: newLimit })
+        .eq("id", clerkUserId);
+
+      if (updateErr) {
+        console.error("Supabase Single Audit update failed:", updateErr.message);
+        return NextResponse.json({ error: "Failed to increment audit_limit" }, { status: 500 });
+      }
+
+      console.log(`[SUCCESS] User ${clerkUserId} audit_limit updated from ${currentLimit} to ${newLimit}`);
+      return NextResponse.json({ received: true, audit_credit_added: true, new_limit: newLimit });
+    }
+
+    console.warn(`[DODO WEBHOOK] ID Mismatch or unhandled one-time product layout. Resolved: ${resolvedId}`);
   }
 
   console.log(`Unhandled Dodo event type: ${evt.type}`);

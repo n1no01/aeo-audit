@@ -10,6 +10,7 @@ export default async function PricingPage() {
   const userEmail = user?.emailAddresses[0]?.emailAddress || "";
 
   // ID-jevi planova iz .env fajla
+  const SINGLE_AUDIT_PRODUCT_ID = process.env.NEXT_PUBLIC_DODO_SINGLE_AUDIT_PRODUCT_ID!;
   const STARTER_PRODUCT_ID = process.env.NEXT_PUBLIC_DODO_STARTER_PLAN_ID!;
   const AGENCY_PRODUCT_ID = process.env.NEXT_PUBLIC_DODO_AGENCY_PLAN_ID!;
 
@@ -40,44 +41,54 @@ export default async function PricingPage() {
           {/* PRICING CARDS GRID */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 xl:gap-8 max-w-7xl mx-auto items-stretch w-full px-2 sm:px-0 relative z-10">
             
-            {/* 1. FREE PLAN */}
+            {/* 1. SINGLE AUDIT (PAY-AS-YOU-GO) */}
             <div 
               role="region" 
-              aria-label="Free Tier Plan - Basic Test Check for 0 dollars"
+              aria-label="Single Audit Credit - One time check for 5 dollars"
               className="bg-white border border-slate-200 rounded-[24px] p-6 shadow-xl shadow-blue-900/5 flex flex-col justify-between relative overflow-hidden"
             >
               <div>
-                <h3 className="text-xl font-black tracking-tight mb-1">Free Tier</h3>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-6">Basic Test Check</p>
+                <h3 className="text-xl font-black tracking-tight mb-1">Single Audit</h3>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-6">Pay As You Go</p>
                 
                 <div className="flex items-baseline mb-2">
-                  <span className="text-4xl font-black tracking-tight">$0</span>
-                  <span className="text-slate-400 font-bold text-sm ml-2">one-time</span>
+                  <span className="text-4xl font-black tracking-tight">$5</span>
+                  <span className="text-slate-400 font-bold text-sm ml-2">/ 1 credit</span>
                 </div>
                 <div className="text-blue-600 text-xs font-black tracking-wide mb-6 uppercase space-y-1">
-                  <p>⚡ 1 audit total</p>
-                  <p>⚡ 1 radar scan total</p>
-
+                  <p>⚡ +1 audit credit</p>
+                  <p>⚡ Instant account top-up</p>
                 </div>
 
                 <ul className="space-y-3 text-sm font-medium text-slate-600 border-t border-slate-100 pt-6">
+                  <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Full Single Audit Report</strong></li>
                   <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Entity Checker</strong></li>
                   <li className="flex items-center gap-2">✔ Advanced Semantic Diagnostics</li>
+                  <li className="flex items-center gap-2 text-slate-400 line-through">❌ Monthly Subscription</li>
                   <li className="flex items-center gap-2 text-slate-400 line-through">❌ AI Radar Tracking</li>
-                  <li className="flex items-center gap-2 text-slate-400 line-through">❌ Lead Magnet</li>
                   <li className="flex items-center gap-2 text-slate-400 line-through">❌ Full White-Label Toolkit</li>
-                  <li className="flex items-center gap-2 text-slate-400 line-through">❌ Unlimited .DOCX Document Exports</li>
                 </ul>
               </div>
               
               <div className="mt-8">
-                <Link 
-                  href={userId ? "/dashboard" : "/sign-up"} 
-                  aria-label={userId ? "Navigate to your user dashboard" : "Sign up for a free test check account"}
-                  className="block w-full bg-slate-100 text-slate-800 hover:text-white text-center py-3 rounded-xl font-black tracking-wide hover:bg-blue-600 transition text-sm cursor-pointer shadow-sm"
-                >
-                  {userId ? "Go to Dashboard" : "Test for Free"}
-                </Link>
+                {userId ? (
+                  <CheckoutButton 
+                    productId={SINGLE_AUDIT_PRODUCT_ID}
+                    userId={userId}
+                    userEmail={userEmail}
+                    text="BUY 1 AUDIT ($5)"
+                    aria-label="Purchase single audit credit for 5 dollars"
+                    className="block w-full bg-slate-900 text-white text-center py-3 rounded-xl font-black tracking-wide hover:bg-blue-600 transition text-sm cursor-pointer shadow-md"
+                  />
+                ) : (
+                  <Link 
+                    href="/sign-up" 
+                    aria-label="Sign up to purchase a single audit credit"
+                    className="block w-full bg-slate-100 text-slate-800 hover:text-white text-center py-3 rounded-xl font-black tracking-wide hover:bg-blue-600 transition text-sm cursor-pointer shadow-sm"
+                  >
+                    GET STARTED
+                  </Link>
+                )}
               </div>
             </div>
 
@@ -231,6 +242,14 @@ export default async function PricingPage() {
                 "url": "https://aeoaudit-pro.com"
               },
               "offers": [
+                {
+                  "@type": "Offer",
+                  "name": "Single Audit Credit",
+                  "price": "5.00",
+                  "priceCurrency": "USD",
+                  "availability": "https://schema.org/InStock",
+                  "url": "https://aeoaudit-pro.com/pricing"
+                },
                 {
                   "@type": "Offer",
                   "name": "Starter Plan",

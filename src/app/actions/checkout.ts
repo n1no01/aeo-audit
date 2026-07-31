@@ -2,7 +2,8 @@
 
 import DodoPayments from "dodopayments";
 
-const ACADEMY_PRODUCT_ID = "pdt_0NipGjvEpOXk5b2pkxaVt";
+const ACADEMY_PRODUCT_ID = process.env.NEXT_PUBLIC_DODO_ACADEMY_PRODUCT_ID || "pdt_0NipGjvEpOXk5b2pkxaVt";
+const SINGLE_AUDIT_PRODUCT_ID = process.env.NEXT_PUBLIC_DODO_SINGLE_AUDIT_PRODUCT_ID;
 
 export async function getDodoCheckoutUrl(
   productId: string,
@@ -20,9 +21,14 @@ export async function getDodoCheckoutUrl(
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const environment = process.env.NODE_ENV === "production" ? "live_mode" : "test_mode";
 
-  // 🚀 Uslovno preusmjeravanje ovisno o productId
-  const redirectPath = productId === ACADEMY_PRODUCT_ID ? "/academy" : "/dashboard";
-  const returnUrl = `${appUrl}${redirectPath}?payment=success`;
+  // 🚀 Dinamička putanja povratka ovisno o proizvodu
+  let returnUrl = `${appUrl}/dashboard?payment=success`;
+
+  if (productId === ACADEMY_PRODUCT_ID) {
+    returnUrl = `${appUrl}/academy?payment=success`;
+  } else if (SINGLE_AUDIT_PRODUCT_ID && productId === SINGLE_AUDIT_PRODUCT_ID) {
+    returnUrl = `${appUrl}/dashboard?audit_credit_added=true&status=succeeded`;
+  }
 
   try {
     const client = new DodoPayments({
