@@ -167,7 +167,19 @@ export default function Navbar({ userId, userStats }: NavbarProps) {
               )}
 
               <div className="h-4 w-px bg-slate-200 hidden sm:block" />
+              {/* 🚀 INDIKATOR KREDITA DIREKTNO U NAVBARU */}
+              {userStats && (
+                <Link
+                  href="/pricing"
+                  className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 px-2.5 py-1 rounded-xl transition text-xs font-bold text-slate-700"
+                  title="Click to manage or upgrade credits"
+                >
 
+                  <span>
+                    {usedCredits}/{limitCredits} <span className="hidden md:inline text-[10px] text-slate-500 uppercase">{badgeLabel}</span>
+                  </span>
+                </Link>
+              )}
               {/* CLERK USER BUTTON SA INTEGRISANIM API KEY I LEADS OPCIJAMA */}
               <UserButton>
                 <UserButton.MenuItems>

@@ -29,7 +29,13 @@ export default async function PricingPage() {
         {/* PRICING CONTENT SECTION */}
         <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12 flex-1 flex flex-col justify-center items-center relative z-10">
           
-          <div className="text-center mb-12 sm:mb-16 px-2">
+          <div className="text-center mb-8 sm:mb-12 px-2 flex flex-col items-center">
+            {/* 🎁 FREE CREDIT BANNER */}
+            <div className="mb-6 inline-flex items-center gap-2 bg-blue-50 border border-blue-200/80 text-blue-900 px-4 py-2 rounded-full text-xs sm:text-sm font-bold shadow-sm">
+              <span className="flex h-2.5 w-2.5 rounded-full bg-blue-600 animate-pulse" />
+              <span>New here? Get <strong className="font-extrabold text-blue-600">1 FREE Audit</strong> automatically upon sign up — no credit card needed!</span>
+            </div>
+
             <h1 className="text-3xl sm:text-5xl font-black tracking-tight mb-4 leading-tight">
               Simple, Transparent <span className="text-blue-600">Pricing</span>
             </h1>
@@ -63,7 +69,7 @@ export default async function PricingPage() {
                 <ul className="space-y-3 text-sm font-medium text-slate-600 border-t border-slate-100 pt-6">
                   <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Full Single Audit Report</strong></li>
                   <li className="flex items-center gap-2 text-slate-900">✔ <strong className="font-bold">Entity Checker</strong></li>
-                  <li className="flex items-center gap-2">✔ Advanced Semantic Diagnostics</li>
+                  <li className="flex items-center gap-2 text-slate-900">✔ Advanced Semantic Diagnostics</li>
                   <li className="flex items-center gap-2 text-slate-400 line-through">❌ Monthly Subscription</li>
                   <li className="flex items-center gap-2 text-slate-400 line-through">❌ AI Radar Tracking</li>
                   <li className="flex items-center gap-2 text-slate-400 line-through">❌ Full White-Label Toolkit</li>
@@ -83,10 +89,10 @@ export default async function PricingPage() {
                 ) : (
                   <Link 
                     href="/sign-up" 
-                    aria-label="Sign up to purchase a single audit credit"
-                    className="block w-full bg-slate-100 text-slate-800 hover:text-white text-center py-3 rounded-xl font-black tracking-wide hover:bg-blue-600 transition text-sm cursor-pointer shadow-sm"
+                    aria-label="Sign up to get 1 free audit credit"
+                    className="block w-full bg-blue-600 text-white hover:bg-slate-900 text-center py-3 rounded-xl font-black tracking-wide transition text-sm cursor-pointer shadow-md"
                   >
-                    GET STARTED
+                    CLAIM FREE AUDIT
                   </Link>
                 )}
               </div>
@@ -223,61 +229,61 @@ export default async function PricingPage() {
           </div>
 
           {/* 🚀 AI PRODUCT GRAPH SUBSETS (JSON-LD Grounding) */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "SoftwareApplication",
-              "@id": "https://aeoaudit-pro.com/pricing#application",
-              "name": "AEO Audit Pro",
-              "applicationCategory": "BusinessApplication",
-              "operatingSystem": "Web",
-              "url": "https://aeoaudit-pro.com",
-              "description":
-                "AEO Audit Pro helps businesses and agencies improve visibility in AI search engines through semantic diagnostics, entity analysis, AI crawler audits, and knowledge graph optimization.",
-              "provider": {
-                "@type": "Organization",
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "SoftwareApplication",
+                "@id": "https://aeoaudit-pro.com/pricing#application",
                 "name": "AEO Audit Pro",
-                "url": "https://aeoaudit-pro.com"
-              },
-              "offers": [
-                {
-                  "@type": "Offer",
-                  "name": "Single Audit Credit",
-                  "price": "5.00",
-                  "priceCurrency": "USD",
-                  "availability": "https://schema.org/InStock",
-                  "url": "https://aeoaudit-pro.com/pricing"
+                "applicationCategory": "BusinessApplication",
+                "operatingSystem": "Web",
+                "url": "https://aeoaudit-pro.com",
+                "description":
+                  "AEO Audit Pro helps businesses and agencies improve visibility in AI search engines through semantic diagnostics, entity analysis, AI crawler audits, and knowledge graph optimization.",
+                "provider": {
+                  "@type": "Organization",
+                  "name": "AEO Audit Pro",
+                  "url": "https://aeoaudit-pro.com"
                 },
-                {
-                  "@type": "Offer",
-                  "name": "Starter Plan",
-                  "price": "59.00",
-                  "priceCurrency": "USD",
-                  "availability": "https://schema.org/InStock",
-                  "url": "https://aeoaudit-pro.com/pricing"
-                },
-                {
-                  "@type": "Offer",
-                  "name": "Agency Plan",
-                  "price": "159.00",
-                  "priceCurrency": "USD",
-                  "availability": "https://schema.org/InStock",
-                  "url": "https://aeoaudit-pro.com/pricing"
-                }
-              ],
-              "featureList": [
-                "Entity Checker",
-                "AI Radar Tracking",
-                "Lead Magnet",
-                "Advanced Semantic Diagnostics",
-                "White-Label Toolkit",
-                "DOCX Report Exports"
-              ]
-            })
-          }}
-        />
+                "offers": [
+                  {
+                    "@type": "Offer",
+                    "name": "Single Audit Credit",
+                    "price": "5.00",
+                    "priceCurrency": "USD",
+                    "availability": "https://schema.org/InStock",
+                    "url": "https://aeoaudit-pro.com/pricing"
+                  },
+                  {
+                    "@type": "Offer",
+                    "name": "Starter Plan",
+                    "price": "59.00",
+                    "priceCurrency": "USD",
+                    "availability": "https://schema.org/InStock",
+                    "url": "https://aeoaudit-pro.com/pricing"
+                  },
+                  {
+                    "@type": "Offer",
+                    "name": "Agency Plan",
+                    "price": "159.00",
+                    "priceCurrency": "USD",
+                    "availability": "https://schema.org/InStock",
+                    "url": "https://aeoaudit-pro.com/pricing"
+                  }
+                ],
+                "featureList": [
+                  "Entity Checker",
+                  "AI Radar Tracking",
+                  "Lead Magnet",
+                  "Advanced Semantic Diagnostics",
+                  "White-Label Toolkit",
+                  "DOCX Report Exports"
+                ]
+              })
+            }}
+          />
         </main>
 
         {/* FOOTER */}
