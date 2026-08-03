@@ -47,6 +47,8 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
     sampledPages,
     domainStats,
     website_url,
+    // 🚀 NOVI KEYWORDS DATA
+    keywordsData,
   } = data;
 
   const { agencyName, brandColor, authorName, logoBase64 } = brandKit;
@@ -100,7 +102,7 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
     new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 500 }, children: [new TextRun({ text: `${isDomainAudit ? "Overall Domain Avg Score" : "Overall Visibility Score"}: ${score}/100`, bold: true, size: 26, color: cleanHexColor })] })
   );
 
-  // 3. SEKCIJA ZA MULTI-PAGE DOMAIN STATISTIKU (Ako je bio Domain Audit)
+  // 3. SEKCIJA ZA MULTI-PAGE DOMAIN STATISTIKU
   if (isDomainAudit && domainStats) {
     documentChildren.push(
       new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "Multi-Page Domain Coverage & Health", color: "0f172a", bold: true, size: 24 })] }),
@@ -114,7 +116,6 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
       new Paragraph({ text: `• Table & List Structures (RAG): ${domainStats.tablesOrListsCoveragePercent || 0}% of sampled pages` })
     );
 
-    // Discovered Schemas
     if (domainStats.detectedSchemaTypes && domainStats.detectedSchemaTypes.length > 0) {
       const schemasStr = domainStats.detectedSchemaTypes
         .map(s => `${s.type} (${s.count})`)
@@ -124,7 +125,6 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
       );
     }
 
-    // Sampled Pages List
     if (sampledPages && sampledPages.length > 0) {
       documentChildren.push(
         new Paragraph({ heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 100 }, children: [new TextRun({ text: "Sampled Domain Routes Audit Breakdown", color: "1e293b", bold: true, size: 18 })] })
@@ -137,7 +137,6 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
       });
     }
 
-    // Deficits List
     if ((domainStats.missingSchemaPages && domainStats.missingSchemaPages.length > 0) || (domainStats.missingH1Pages && domainStats.missingH1Pages.length > 0)) {
       documentChildren.push(
         new Paragraph({ heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 100 }, children: [new TextRun({ text: "Route Deficits & Missing Elements", color: "b91c1c", bold: true, size: 18 })] })
@@ -159,7 +158,7 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
     }
   }
 
-  // 4. EXECUTIVE SUMMARY (Root/Homepage Specifics)
+  // 4. EXECUTIVE SUMMARY
   documentChildren.push(
     new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: isDomainAudit ? "Primary Route Executive Summary (Homepage / Root)" : "Executive Summary", color: "0f172a", bold: true, size: 24 })] }),
     new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: "Target Title: ", bold: true }), new TextRun({ text: title || "N/A" })] }),
@@ -171,8 +170,51 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
     new Paragraph({ text: `• LLM Chunking Readiness (Atomic Structure): ${atomicStructureScore || 5}/10` }),
     new Paragraph({ text: `• Entity Density (vs Generic Fluff): ${entityDensityScore || 5}/10` }),
     new Paragraph({ text: `• Syntactic Simplicity (Declarative Writing): ${sentenceSimplicityScore || 5}/10` }),
-    new Paragraph({ text: `• Google Non-Commodity Score (Content Authenticity): ${commodityContentScore || 5}/10` }),
+    new Paragraph({ text: `• Google Non-Commodity Score (Content Authenticity): ${commodityContentScore || 5}/10` })
+  );
 
+  // 🚀 5. NOVA SEKCIJA: KEYWORD & SEMANTIC ENTITY ANALYSIS (DODATO)
+  if (keywordsData) {
+    documentChildren.push(
+      new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "AEO Keyword & Semantic Entity Analysis", color: "0f172a", bold: true, size: 24 })] }),
+      new Paragraph({ text: `• Primary Detected Topic: ${keywordsData.primaryTopic || "N/A"}` }),
+      new Paragraph({ text: `• AEO Keyword Score: ${keywordsData.aeoKeywordScore || 0}/100` }),
+      
+      // Extracted Keywords
+      new Paragraph({ heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 100 }, children: [new TextRun({ text: "Extracted Target Keywords", color: "1e293b", bold: true, size: 18 })] })
+    );
+
+    if (keywordsData.extractedKeywords && keywordsData.extractedKeywords.length > 0) {
+      keywordsData.extractedKeywords.forEach(kw => {
+        documentChildren.push(
+          new Paragraph({ text: `• ${kw.keyword} [Relevance: ${kw.aeoRelevance}] ${kw.foundInH1OrTitle ? "(In H1/Title)" : "(In Body)"}` })
+        );
+      });
+    }
+
+    // Missing Entities
+    if (keywordsData.missingSemanticEntities && keywordsData.missingSemanticEntities.length > 0) {
+      documentChildren.push(
+        new Paragraph({ heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 100 }, children: [new TextRun({ text: "Missing Semantic Entities (Expected by LLMs)", color: "b91c1c", bold: true, size: 18 })] })
+      );
+      keywordsData.missingSemanticEntities.forEach(entity => {
+        documentChildren.push(new Paragraph({ text: `• ❌ ${entity}` }));
+      });
+    }
+
+    // Recommended AI Questions
+    if (keywordsData.recommendedAeoQuestions && keywordsData.recommendedAeoQuestions.length > 0) {
+      documentChildren.push(
+        new Paragraph({ heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 100 }, children: [new TextRun({ text: "Target Conversational AI Intent Questions", color: "2563eb", bold: true, size: 18 })] })
+      );
+      keywordsData.recommendedAeoQuestions.forEach((q, idx) => {
+        documentChildren.push(new Paragraph({ text: `• Q${idx + 1}: "${q}"` }));
+      });
+    }
+  }
+
+  // 6. TECHNICAL ACCESS & ENTITY MAP
+  documentChildren.push(
     new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "AI Crawler Access & Entity Token Map", color: "0f172a", bold: true, size: 24 })] }),
     new Paragraph({ text: `• Googlebot Engine Clearance: ${aiBotsStatus?.googlebot || "Allowed"}` }),
     new Paragraph({ text: `• OpenAI SearchBot Clearance: ${aiBotsStatus?.oaiSearchBot || "Allowed"}` }),
@@ -183,7 +225,6 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
     new Paragraph({ text: `• Meta AI Engine Clearance: ${aiBotsStatus?.metaExternalAgent || "Allowed"}` }),
     new Paragraph({ text: `• Grok AI Engine Status: ${aiBotsStatus?.grokBot || "Allowed"}` }),
     
-    // Directives i Discovery sekcija
     new Paragraph({ text: `• Master Robots.txt Directives: ${robotsRawContent ? "Valid Instructions Parsed" : "Missing / Public Access Active"}` }),
     new Paragraph({ text: `• LLMs.txt Context File Discovery: ${llmsRawContent && llmsRawContent.trim() ? "Discovered (Raw Text Content Parsed)" : "Missing / Not Found"}` }),
 
@@ -197,26 +238,23 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
     new Paragraph({ text: `• Autonomous AI Agent Readiness (ARIA Tree): ${semanticLayoutMap?.hasAriaLabels ? "Agent Ready (Structure Optimized)" : "Optimization Required (Interactive Fields Blind)"}` })
   );
 
-  // Google Merchant Graph (Samo ako je Commercial)
   if (pageType === "Commercial") {
     documentChildren.push(
       new Paragraph({ text: `• Google Merchant & AI Product Graph Connectivity: ${entityTrustMap?.hasDeepProductSchema ? "Merchant Graph Active (Offers & Brand Verified)" : "Trust Properties Missing (Schema Deficit)"}` })
     );
   }
 
-  // Local Business AI Coordinates (Samo ako je Homepage + sadrži LocalBusiness šemu)
   if (pageType === "Homepage" && detectedSchemas?.includes("LocalBusiness")) {
     documentChildren.push(
       new Paragraph({ text: `• Local Business AI Coordinates Mapping: ${entityTrustMap?.hasDeepLocalBusinessSchema ? "Local Graph Optimal (NAP Array Verified)" : "Critical Missing Data (Phone/Address/Hours Deficit)"}` })
     );
   }
 
-  // Tactical Playbook Section
+  // 7. PLAYBOOK SECTION
   documentChildren.push(
     new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 200 }, children: [new TextRun({ text: "Prioritized Tactical Optimization Playbook", color: "0f172a", bold: true, size: 24 })] }),
     
     ...(recommendations as Recommendation[]).flatMap((item: Recommendation, idx: number) => [
-      // 1. Title sa težinom greške
       new Paragraph({
         spacing: { before: 150, after: 60 },
         children: [
@@ -228,7 +266,6 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
           })
         ]
       }),
-      // 2. Opis
       new Paragraph({
         spacing: { after: 60 },
         children: [
@@ -236,7 +273,6 @@ export async function exportAuditToDocx(data: AuditData, brandKit: BrandKit) {
           new TextRun({ text: item.description, size: 16 })
         ]
       }),
-      // 3. AEO Uticaj
       new Paragraph({
         spacing: { after: 150 },
         children: [

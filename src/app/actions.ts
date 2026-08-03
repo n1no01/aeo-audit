@@ -211,7 +211,7 @@ export async function analyzeUrl(formData: FormData) {
           entityDensityScore: aiData.entityDensityScore || 5,
           sentenceSimplicityScore: aiData.sentenceSimplicityScore || 5,
           commodityContentScore: aiData.commodityContentScore || 5,
-          
+          keywordsData: aiData.keywordsData,
           isDomainAudit: true,
           pagesAuditedCount: validResults.length,
           sampledPages: sampledPagesList,
@@ -236,6 +236,7 @@ export async function analyzeUrl(formData: FormData) {
           entityDensityScore: aiData.entityDensityScore || 5,
           sentenceSimplicityScore: aiData.sentenceSimplicityScore || 5,
           commodityContentScore: aiData.commodityContentScore || 5,
+          keywordsData: aiData.keywordsData,
         };
       }
     } catch (apiError) {

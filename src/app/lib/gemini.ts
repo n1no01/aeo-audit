@@ -25,6 +25,19 @@ export async function generateAiAnalysis(
   entityDensityScore: number;
   sentenceSimplicityScore: number;
   commodityContentScore: number;
+  // 🚀 NOVO POLJE DODATO U RETURN TYPE
+  keywordsData: {
+    primaryTopic: string;
+    aeoKeywordScore: number;
+    extractedKeywords: {
+      keyword: string;
+      foundInH1OrTitle: boolean;
+      aeoRelevance: "High" | "Medium" | "Low";
+    }[];
+    missingSemanticEntities: string[];
+    recommendedAeoQuestions: string[];
+    optimizationTips: string[];
+  };
 }> {
   const genAI = new GoogleGenerativeAI(geminiApiKey);
 
@@ -67,6 +80,57 @@ export async function generateAiAnalysis(
         type: "INTEGER", 
         description: "Score 1-10. Strictly 1-3 for pure AI fluff/definitions; 4-7 for basic custom text; 8-10 for deep original research or proprietary data." 
       },
+      // 🚀 NOVI DEO ŠEME: KEYWORDS & SEMANTIC ENTITY ANALYSIS
+      keywordsData: {
+        type: "OBJECT",
+        description: "In-depth semantic keyword analysis, extracted concepts, missing entities, and conversational AI intent questions.",
+        properties: {
+          primaryTopic: { 
+            type: "STRING", 
+            description: "The core entity or topic detected on the page (e.g., 'AEO Audit SaaS', 'Basketball Vertical Jump Training')." 
+          },
+          aeoKeywordScore: { 
+            type: "INTEGER", 
+            description: "Score 0-100 indicating how well keywords are contextualized for direct conversational AI answers." 
+          },
+          extractedKeywords: {
+            type: "ARRAY",
+            description: "List of 4 to 6 main keywords extracted from the DOM with their presence in H1/Title and relevance.",
+            items: {
+              type: "OBJECT",
+              properties: {
+                keyword: { type: "STRING" },
+                foundInH1OrTitle: { type: "BOOLEAN" },
+                aeoRelevance: { type: "STRING", enum: ["High", "Medium", "Low"] }
+              },
+              required: ["keyword", "foundInH1OrTitle", "aeoRelevance"]
+            }
+          },
+          missingSemanticEntities: {
+            type: "ARRAY",
+            items: { type: "STRING" },
+            description: "List of 3 to 5 crucial topical concepts or entities expected by LLMs for this niche that are missing from the content."
+          },
+          recommendedAeoQuestions: {
+            type: "ARRAY",
+            items: { type: "STRING" },
+            description: "Exactly 3 conversational questions that users ask ChatGPT/Perplexity about this topic that this page SHOULD directly answer."
+          },
+          optimizationTips: {
+            type: "ARRAY",
+            items: { type: "STRING" },
+            description: "2 to 3 practical, concise recommendations to improve keyword/entity contextualization for answer engines."
+          }
+        },
+        required: [
+          "primaryTopic",
+          "aeoKeywordScore",
+          "extractedKeywords",
+          "missingSemanticEntities",
+          "recommendedAeoQuestions",
+          "optimizationTips"
+        ]
+      },
       recommendations: {
         type: "ARRAY",
         description: "List of exactly 5 highly specific, tactical adjustments needed to rank across modern answer engines, prioritized by severity.",
@@ -99,6 +163,7 @@ export async function generateAiAnalysis(
       "entityDensityScore", 
       "sentenceSimplicityScore", 
       "commodityContentScore",
+      "keywordsData", // 🚀 DODATO U REQUIRED
       "recommendations"
     ],
   };
@@ -127,7 +192,7 @@ export async function generateAiAnalysis(
     ? `DETECTED — ${botSeverity} block (${botAccessStatus})`
     : "None detected";
 
-  // 📝 UNAPREĐENI PROMPT ZA SINGLE URL I DOMAIN-WIDE AUDIT
+  // 📝 UNAPREĐENI PROMPT SA KEYWORD I AEO INTENT INSTRUKCIJAMA
   const prompt = `
 You are an expert Senior Answer Engine Optimisation (AEO) strategist operating as a deterministic evaluator.
 Analyze the target website data context provided and perform a highly specific structural alignment audit.
@@ -191,6 +256,13 @@ You MUST calculate commodityContentScore using these mathematical threshold trig
 - Rate 4 to 7: Content contains basic custom branding, clear value propositions, or structured sections, but lacks explicit first-party case studies or unique statistical data points.
 - Rate 8 to 10: Content contains explicit unique statistical metrics, proprietary research data, or first-person case studies ("In our study of X...").
 
+KEYWORD & SEMANTIC ENTITY AUDIT DIRECTIVE:
+1. Extract the main relational entity/topic of the page into 'primaryTopic'.
+2. Identify 4-6 key terms extracted from Title, H1, or content and assess if they are present in H1/Title and their AEO relevance.
+3. Identify 3-5 missing semantic entities that LLMs (ChatGPT, Perplexity, Claude) expect for this specific niche.
+4. Formulate exactly 3 conversational AI questions that users would ask ChatGPT/Perplexity related to this page's content.
+5. Provide 2-3 concise optimization tips on keyword contextualization for AEO.
+
 DETERMINISTIC EVALUATION GUARANTEE:
 Apply objective, rigid mathematical boundaries. Do NOT randomly fluctuate scores between runs for the exact same input text.
 
@@ -198,8 +270,9 @@ INSTRUCTIONS:
 1. Evaluate the context and determine the exact "pageCategory".
 2. Confirm the final "score" respecting the scoring rules above.
 3. Rigidly score the content sample against the 5 core pillars.
-4. Write a 3-paragraph "aiAnalysis".
-5. Generate exactly 5 prioritized, tactical objects inside the "recommendations" array.
+4. Populate keywordsData object thoroughly.
+5. Write a 3-paragraph "aiAnalysis".
+6. Generate exactly 5 prioritized, tactical objects inside the "recommendations" array.
 
    ANTI-HALLUCINATION RULES:
    - Do NOT recommend schemas that are ALREADY in DETECTED SCHEMA ENTITIES (${data.detectedSchemas?.join(", ") || "None"}).

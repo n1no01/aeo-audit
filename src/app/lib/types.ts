@@ -100,6 +100,7 @@ export interface AuditData extends ScrapedData {
   isDomainAudit?: boolean;
   sampledPages?: Array<{ url: string; score: number }>;
   domainStats?: DomainAggregatedStats;
+  keywordsData?: KeywordsData;
 }
 
 export interface SampledPage {
@@ -165,4 +166,19 @@ export interface GlobalAEOStats {
   llmsTxtAdoptionPct: number;
   categoryStats: CategoryStat[];
   updatedAt: string;
+}
+
+export interface KeywordItem {
+  keyword: string;
+  foundInH1OrTitle: boolean;
+  aeoRelevance: "High" | "Medium" | "Low";
+}
+
+export interface KeywordsData {
+  primaryTopic: string;
+  aeoKeywordScore: number;
+  extractedKeywords: KeywordItem[];
+  missingSemanticEntities: string[];
+  recommendedAeoQuestions: string[];
+  optimizationTips: string[];
 }

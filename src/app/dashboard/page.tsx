@@ -12,6 +12,7 @@ import DomainMetricsPanel from "../components/dashboard/DomainMetricsPanel";
 // Uvoz izdvojenih panela i white-label forme
 import WhiteLabelForm from "../components/dashboard/WhiteLabelForm";
 import MetricsPanel from "../components/dashboard/MetricsPanel";
+import KeywordsPanel from "../components/dashboard/KeywordsPanel"; // 🚀 Uvezen KeywordsPanel
 import InsightsPanel from "../components/dashboard/InsightsPanel";
 import RecommendationsPanel from "../components/dashboard/RecommendationsPanel";
 import SimulatorPanel from "../components/dashboard/SimulatorPanel";
@@ -55,7 +56,7 @@ interface AuditHistoryItem {
   result_data: AuditData;
 }
 
-type ActiveTabType = TabId | "simulator" | "speed" | "llms";
+type ActiveTabType = TabId | "simulator" | "speed" | "llms" | "keywords"; // 🚀 Dodat "keywords"
 
 export default function Home() {
   const [result, setResult] = useState<{ success?: boolean; error?: string; data?: AuditData } | null>(null);
@@ -209,7 +210,7 @@ export default function Home() {
         <div className="bg-white border border-slate-200 rounded-[24px] sm:rounded-[32px] p-4 sm:p-6 shadow-xl shadow-blue-900/5 mb-12">
           <form action={handleAuditSubmit} className="space-y-4">
             
-        {/* 🚀 AUDIT SCOPE SWITCHER (Locked while isPending) */}
+        {/* 🚀 AUDIT SCOPE SWITCHER */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-200/80">
           <span className="text-xs font-extrabold uppercase tracking-wider text-slate-600 px-2">
             Audit Scope
@@ -245,7 +246,6 @@ export default function Home() {
           </div>
         </div>
 
-            {/* Skriveni input koji prosljeđuje mod u formData server akciji */}
             <input type="hidden" name="mode" value={auditMode} />
 
             <div className="flex flex-col md:flex-row gap-3">
@@ -328,7 +328,7 @@ export default function Home() {
               <button onClick={shareOnX} disabled={!currentAuditId} className="w-full bg-black text-white hover:bg-slate-900 py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg disabled:bg-slate-200 disabled:text-slate-400 flex items-center justify-center gap-2 cursor-pointer"><svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>SHARE ON X</button>
             </div>
 
-            {/* 🚀 KARTICA ZA MULTI-PAGE DOMAIN AUDIT (Sa klikabilnim linkovima) */}
+            {/* KARTICA ZA MULTI-PAGE DOMAIN AUDIT */}
             {(result.data.isDomainAudit || (result.data.pagesAuditedCount && result.data.pagesAuditedCount > 0)) && (
               <div className="bg-slate-900 text-white p-6 sm:p-8 rounded-[24px] sm:rounded-[32px] border border-slate-800 shadow-2xl">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -401,6 +401,7 @@ export default function Home() {
               <div className="w-full border-b border-slate-100 bg-slate-50/50 p-1.5 sm:p-2 overflow-x-auto flex flex-nowrap md:flex-wrap gap-1.5 scrollbar-none">
                 {[
                   { id: "metrics", label: "Score Breakdown & Metrics" },
+                  { id: "keywords", label: "Keywords & Entities" }, // 🚀 NOVI TAB DUGME
                   { id: "analysis", label: "AI Semantic Insights" },
                   { id: "recommendations", label: "Strategic Actions" },
                   { id: "simulator", label: "AI SERP Simulator" }, 
@@ -415,28 +416,37 @@ export default function Home() {
               <div className="p-4 sm:p-8 md:p-12">
                 {/* 1. METRICS TAB */}
                 {activeTab === "metrics" && (
-                <div className="space-y-8">
-                  {/* Prikazujemo bogati agregirani Domain Panel ako je bio Domain Audit */}
-                  {result.data.isDomainAudit && result.data.domainStats && (
-                    <DomainMetricsPanel data={result.data} />
-                  )}
-                  
-                  {/* Prikazujemo detaljni profil primarne/landing stranice */}
-                  <div>
+                  <div className="space-y-8">
+                    {result.data.isDomainAudit && result.data.domainStats && (
+                      <DomainMetricsPanel data={result.data} />
+                    )}
+                    <div>
+                      {result.data.isDomainAudit && (
+                        <div className="flex items-center gap-3 mb-4 pt-4 border-t border-slate-100">
+                          <div className="w-2 h-6 bg-slate-900 rounded-full" />
+                          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
+                            Primary Route Detail Analysis (Homepage / Root)
+                          </h3>
+                        </div>
+                      )}
+                      <MetricsPanel data={result.data} />
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. KEYWORDS & ENTITIES TAB (🚀 RENDERUJEMO NOVI PANEL) */}
+                {activeTab === "keywords" && (
+                  <div className="space-y-4">
                     {result.data.isDomainAudit && (
-                      <div className="flex items-center gap-3 mb-4 pt-4 border-t border-slate-100">
-                        <div className="w-2 h-6 bg-slate-900 rounded-full" />
-                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
-                          Primary Route Detail Analysis (Homepage / Root)
-                        </h3>
+                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between text-xs font-bold text-blue-800">
+                        <span>🌐 Primary Route Semantic Scope: Keyword breakdown for the main domain entity.</span>
                       </div>
                     )}
-                    <MetricsPanel data={result.data} />
+                    <KeywordsPanel data={result.data} />
                   </div>
-                </div>
-              )}
+                )}
 
-                {/* 2. AI SEMANTIC INSIGHTS TAB */}
+                {/* 3. AI SEMANTIC INSIGHTS TAB */}
                 {activeTab === "analysis" && (
                   <div className="space-y-4">
                     {result.data.isDomainAudit && (
@@ -448,7 +458,7 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* 3. STRATEGIC ACTIONS TAB */}
+                {/* 4. STRATEGIC ACTIONS TAB */}
                 {activeTab === "recommendations" && (
                   <div className="space-y-4">
                     {result.data.isDomainAudit && (
@@ -460,12 +470,12 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* 4. AI SERP SIMULATOR TAB */}
+                {/* 5. AI SERP SIMULATOR TAB */}
                 {activeTab === "simulator" && (
                   <SimulatorPanel data={result.data} cleanHostname={getCleanHostname()} />
                 )}
 
-                {/* 5. PAGE SPEED TAB */}
+                {/* 6. PAGE SPEED TAB */}
                 {activeTab === "speed" && result.data.website_url && (
                   <div className="space-y-4">
                     {result.data.isDomainAudit && (
@@ -477,7 +487,7 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* 6. ROBOTS.TXT TAB */}
+                {/* 7. ROBOTS.TXT TAB */}
                 {activeTab === "robots" && (
                   <div className="space-y-6 animate-in fade-in duration-300">
                     <div className="flex items-center gap-3 mb-2">
@@ -492,7 +502,7 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* 7. LLMS.TXT TAB */}
+                {/* 8. LLMS.TXT TAB */}
                 {activeTab === "llms" && <LlmsPanel data={result.data} />}
               </div>
             </div>
@@ -525,7 +535,6 @@ export default function Home() {
                       <span>Score: <span className="text-blue-600 font-black">{audit.result_data?.score ?? 0}/100</span></span>
                       <span className="text-slate-200">|</span>
                       
-                      {/* 🚀 BEDŽ U LOGOVIMA: Pokazuje da li je Single ili Full Domain Audit */}
                       <span className="font-bold text-slate-600">
                         {audit.result_data?.pagesAuditedCount && audit.result_data.pagesAuditedCount > 1 
                           ? `🌐 Domain (${audit.result_data.pagesAuditedCount} pages)` 
