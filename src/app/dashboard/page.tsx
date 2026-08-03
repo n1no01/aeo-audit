@@ -12,14 +12,13 @@ import DomainMetricsPanel from "../components/dashboard/DomainMetricsPanel";
 // Uvoz izdvojenih panela i white-label forme
 import WhiteLabelForm from "../components/dashboard/WhiteLabelForm";
 import MetricsPanel from "../components/dashboard/MetricsPanel";
-import KeywordsPanel from "../components/dashboard/KeywordsPanel"; // 🚀 Uvezen KeywordsPanel
+import KeywordsPanel from "../components/dashboard/KeywordsPanel";
 import InsightsPanel from "../components/dashboard/InsightsPanel";
 import RecommendationsPanel from "../components/dashboard/RecommendationsPanel";
 import SimulatorPanel from "../components/dashboard/SimulatorPanel";
 import LlmsPanel from "../components/dashboard/LlmsPanel";
-import WidgetEmbedCard from "../components/dashboard/WidgetEmbedCard";
 
-import { AuditData, TabId, AEO_EXPLANATIONS, BotStatus } from "../lib/types"; 
+import { AuditData, TabId } from "../lib/types"; 
 import { exportAuditToDocx } from "../lib/docxExport";
 
 const singleLoadingSteps = [
@@ -56,7 +55,7 @@ interface AuditHistoryItem {
   result_data: AuditData;
 }
 
-type ActiveTabType = TabId | "simulator" | "speed" | "llms" | "keywords"; // 🚀 Dodat "keywords"
+type ActiveTabType = TabId | "simulator" | "speed" | "llms" | "keywords";
 
 export default function Home() {
   const [result, setResult] = useState<{ success?: boolean; error?: string; data?: AuditData } | null>(null);
@@ -174,7 +173,7 @@ export default function Home() {
       console.error(err);
     }
   };
-  
+
   const shareOnLinkedIn = () => {
     if (!currentAuditId || !result?.data) return;
     const shareUrl = `${window.location.origin}/share/${currentAuditId}`;
@@ -190,61 +189,63 @@ export default function Home() {
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(shareUrl)}`, "_blank", "width=600,height=450,scrollbars=yes,resizable=yes");
   };
 
+  const navTabs = [
+    { id: "metrics", label: "Overview & Metrics" },
+    { id: "keywords", label: "Keywords & Entities" },
+    { id: "analysis", label: "AI Insights" },
+    { id: "recommendations", label: "Actions" },
+    { id: "simulator", label: "SERP Simulator" },
+    { id: "speed", label: "PageSpeed" },
+    { id: "robots", label: "Robots.txt" },
+    { id: "llms", label: "LLMs.txt" },
+  ];
+
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between selection:bg-blue-500 selection:text-white relative overflow-x-hidden">
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_0.75px,transparent_0.75px),linear-gradient(to_bottom,#e2e8f0_0.75px,transparent_0.75px)] bg-[size:4rem_4rem] pointer-events-none opacity-40 z-0" />
       <Navbar userStats={userStats} />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-8 md:px-12 flex-1 w-full mt-6 relative z-10">
+      {/* PROŠIREN KONTEJNER (max-w-7xl) ZBOG NOVOG PROSTRANOG DASHBOARDA */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-1 w-full mt-6 relative z-10">
         
-        {/* HEADER */}
-        <header className="text-center mb-10 sm:mb-14 md:mb-16 px-2">
-          <div className="inline-block px-4 py-2 mb-5 rounded-full bg-blue-50 border border-blue-100 max-w-full">
-            <span className="text-[9px] sm:text-[10px] font-black tracking-[0.2em] uppercase text-blue-600 block truncate">AI Answer Engine Optimization</span>
-          </div>
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight italic">AEO<span className="text-blue-600"> Audit</span> Pro</h1>
-          <p className="text-slate-500 mt-4 sm:mt-5 text-sm sm:text-lg max-w-2xl mx-auto font-medium">Enterprise-grade Answer Engine Optimization auditing platform powered by AI semantic analysis.</p>
-        </header>
-
-        {/* FORM */}
-        <div className="bg-white border border-slate-200 rounded-[24px] sm:rounded-[32px] p-4 sm:p-6 shadow-xl shadow-blue-900/5 mb-12">
+        {/* VELIKA PROŠIRENA FORMA (BEZ NASLOVA I SUBHEADINGA) */}
+        <div className="bg-white border border-slate-200 rounded-[24px] sm:rounded-[32px] p-5 sm:p-8 shadow-xl shadow-blue-900/5 mb-10">
           <form action={handleAuditSubmit} className="space-y-4">
             
-        {/* 🚀 AUDIT SCOPE SWITCHER */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-200/80">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-slate-600 px-2">
-            Audit Scope
-          </span>
-          <div className="inline-flex rounded-xl bg-slate-200/70 p-1 w-full sm:w-auto">
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={() => setAuditMode("single")}
-              className={`flex-1 sm:flex-none px-4 py-2 text-xs font-black rounded-lg transition-all ${
-                auditMode === "single"
-                  ? "bg-white text-blue-600 shadow-sm"
-                  : "text-slate-500 hover:text-slate-900"
-              } ${isPending ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              Single Path Audit
-            </button>
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={() => setAuditMode("domain")}
-              className={`flex-1 sm:flex-none px-4 py-2 text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                auditMode === "domain"
-                  ? "bg-white text-blue-600 shadow-sm"
-                  : "text-slate-500 hover:text-slate-900"
-              } ${isPending ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              <span>Full Domain Audit</span>
-              <span className="text-[9px] bg-blue-100 text-blue-700 font-extrabold px-1.5 py-0.5 rounded-md">
-                Sample 15
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-slate-600 px-2">
+                Audit Scope
               </span>
-            </button>
-          </div>
-        </div>
+              <div className="inline-flex rounded-xl bg-slate-200/70 p-1 w-full sm:w-auto">
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => setAuditMode("single")}
+                  className={`flex-1 sm:flex-none px-5 py-2 text-xs font-black rounded-lg transition-all ${
+                    auditMode === "single"
+                      ? "bg-white text-blue-600 shadow-sm"
+                      : "text-slate-500 hover:text-slate-900"
+                  } ${isPending ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  Single Path Audit
+                </button>
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => setAuditMode("domain")}
+                  className={`flex-1 sm:flex-none px-5 py-2 text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                    auditMode === "domain"
+                      ? "bg-white text-blue-600 shadow-sm"
+                      : "text-slate-500 hover:text-slate-900"
+                  } ${isPending ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  <span>Full Domain Audit</span>
+                  <span className="text-[9px] bg-blue-100 text-blue-700 font-extrabold px-1.5 py-0.5 rounded-md">
+                    Sample 15
+                  </span>
+                </button>
+              </div>
+            </div>
 
             <input type="hidden" name="mode" value={auditMode} />
 
@@ -254,18 +255,18 @@ export default function Home() {
                 type="text" 
                 required 
                 placeholder={auditMode === "domain" ? "Enter root domain (e.g. acme.com)" : "Enter a domain or specific URL to audit"} 
-                className="flex-1 px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50 border border-slate-200/60 rounded-[16px] sm:rounded-[20px] outline-none font-semibold text-sm focus:border-blue-500 focus:bg-white transition" 
+                className="flex-1 px-5 sm:px-6 py-3.5 sm:py-4 bg-slate-50 border border-slate-200/60 rounded-[16px] sm:rounded-[20px] outline-none font-semibold text-sm focus:border-blue-500 focus:bg-white transition" 
               />
-             <button
-              disabled={isPending}
-              className="w-full sm:w-[220px] bg-slate-900 text-white px-6 py-3.5 sm:py-4 rounded-[16px] sm:rounded-[20px] text-sm sm:text-base font-black hover:bg-blue-600 transition disabled:bg-slate-300 shrink-0 text-center flex items-center justify-center"
-            >
-              {isPending ? "GENERATING AUDIT..." : auditMode === "domain" ? "ANALYZE DOMAIN" : "ANALYZE PATH"}
-            </button>
+              <button
+                disabled={isPending}
+                className="w-full sm:w-[240px] bg-slate-900 text-white px-6 py-3.5 sm:py-4 rounded-[16px] sm:rounded-[20px] text-sm sm:text-base font-black hover:bg-blue-600 transition disabled:bg-slate-300 shrink-0 text-center flex items-center justify-center cursor-pointer"
+              >
+                {isPending ? "GENERATING AUDIT..." : auditMode === "domain" ? "ANALYZE DOMAIN" : "ANALYZE PATH"}
+              </button>
             </div>
             
             <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <button type="button" onClick={() => setShowBranding(!showBranding)} className="text-xs font-bold text-slate-500 hover:text-blue-600 flex items-center gap-2 transition">
+              <button type="button" onClick={() => setShowBranding(!showBranding)} className="text-xs font-bold text-slate-500 hover:text-blue-600 flex items-center gap-2 transition cursor-pointer">
                 <span className={`transform transition duration-200 ${showBranding ? "rotate-90" : ""}`}>▶</span>
                 {showBranding ? "Hide Agency Branding Options" : "Show Agency White-Label Options"}
               </button>
@@ -317,199 +318,135 @@ export default function Home() {
           </div>
         )}
 
-        {result?.error && <div className="bg-rose-50 border border-rose-200 text-rose-600 rounded-[20px] p-5 sm:p-6 font-bold text-center text-sm sm:text-base">{result.error}</div>}
+        {result?.error && <div className="bg-rose-50 border border-rose-200 text-rose-600 rounded-[20px] p-5 sm:p-6 font-bold text-center text-sm sm:text-base mb-8">{result.error}</div>}
 
+        {/* 🚀 MODERN SAAS DASHBOARD VIEW FOR AUDIT RESULTS */}
         {result?.data && (
-          <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-700">
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-              <button onClick={async () => { if (isFreePlan) { alert("🔒 Premium Feature"); return; } await exportAuditToDocx(result.data!, { agencyName, brandColor, authorName, logoBase64 }); }} className={`w-full py-4 rounded-[16px] sm:rounded-[24px] text-xs font-black tracking-wider transition shadow-lg flex items-center justify-center gap-1.5 cursor-pointer ${isFreePlan ? "bg-slate-700 text-slate-300 hover:bg-slate-800" : "bg-slate-900 text-white hover:bg-slate-800"}`}>{isFreePlan ? "🔒 EXPORT .DOCX" : "EXPORT .DOCX"}</button>
-              <button onClick={copyShareLink} disabled={!currentAuditId} className={`w-full py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg border cursor-pointer ${copied ? "bg-emerald-500 text-white border-emerald-500" : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200"}`}>{copied ? "LINK COPIED!" : "COPY SHARE LINK"}</button>
-              <button onClick={shareOnLinkedIn} disabled={!currentAuditId} className="w-full bg-blue-600 text-white hover:bg-blue-700 py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg disabled:bg-slate-200 disabled:text-slate-400 font-sans flex items-center justify-center gap-2 cursor-pointer"><span className="font-serif lowercase font-bold text-sm tracking-tighter">in</span> SHARE ON LINKEDIN</button>
-              <button onClick={shareOnX} disabled={!currentAuditId} className="w-full bg-black text-white hover:bg-slate-900 py-4 rounded-[16px] sm:rounded-[24px] text-xs sm:text-sm font-black tracking-wider transition shadow-lg disabled:bg-slate-200 disabled:text-slate-400 flex items-center justify-center gap-2 cursor-pointer"><svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>SHARE ON X</button>
+          <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
+            
+            {/* HERO SUMMARY BAR */}
+            <div className="bg-slate-900 text-white rounded-2xl p-5 sm:p-6 border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-xl">
+              
+              <div className="flex items-center gap-5">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white text-slate-900 flex flex-col items-center justify-center shrink-0 shadow-lg">
+                  <span className="text-2xl sm:text-3xl font-black">{result.data.score}</span>
+                  <span className="text-[8px] uppercase tracking-widest text-slate-400 font-bold">SCORE</span>
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">
+                      {result.data.pageCategory || "General"}
+                    </span>
+                    {result.data.isDomainAudit && (
+                      <span className="text-[10px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">
+                        Domain Audit ({result.data.pagesAuditedCount} Pages)
+                      </span>
+                    )}
+                  </div>
+                  <h2 className="text-lg sm:text-2xl font-black truncate max-w-xl">{getCleanHostname()}</h2>
+                  <p className="text-xs text-slate-400 truncate max-w-md">{result.data.title}</p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                <button 
+                  onClick={async () => { if (isFreePlan) { alert("🔒 Premium Feature"); return; } await exportAuditToDocx(result.data!, { agencyName, brandColor, authorName, logoBase64 }); }}
+                  className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition cursor-pointer"
+                >
+                  {isFreePlan ? "🔒 .DOCX" : "Export .DOCX"}
+                </button>
+                <button 
+                  onClick={copyShareLink} 
+                  disabled={!currentAuditId}
+                  className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition cursor-pointer border border-slate-700"
+                >
+                  {copied ? "Copied!" : "Copy Link"}
+                </button>
+                <button 
+                  onClick={shareOnLinkedIn} 
+                  disabled={!currentAuditId}
+                  className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <span className="font-serif lowercase font-bold text-xs">in</span>
+                  <span>Share on LinkedIn</span>
+                </button>
+                <button 
+                  onClick={shareOnX} 
+                  disabled={!currentAuditId}
+                  className="px-3.5 py-2 bg-black hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer border border-slate-700 disabled:opacity-50"
+                >
+                  <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                  <span>Share on X</span>
+                </button>
+              </div>
+
             </div>
 
-            {/* KARTICA ZA MULTI-PAGE DOMAIN AUDIT */}
-            {(result.data.isDomainAudit || (result.data.pagesAuditedCount && result.data.pagesAuditedCount > 0)) && (
-              <div className="bg-slate-900 text-white p-6 sm:p-8 rounded-[24px] sm:rounded-[32px] border border-slate-800 shadow-2xl">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                  <div>
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider mb-2">
-                      🌐 Multi-Page Domain Audit
-                    </div>
-                    <h3 className="text-xl font-black">
-                      Sampled Domain Routes ({result.data.pagesAuditedCount || 1} {result.data.pagesAuditedCount === 1 ? "Page" : "Pages"} Analyzed)
-                    </h3>
-                    <p className="text-slate-400 text-xs mt-1">
-                      The overall score represents the weighted average AEO health across key routes discovered in the sitemap.
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-3xl font-black text-blue-400">{result.data.score}</span>
-                    <span className="text-xs text-slate-400 block font-bold">Domain Avg</span>
-                  </div>
-                </div>
-
-                {result.data.sampledPages && result.data.sampledPages.length > 0 && (
-                  <div className="space-y-2 max-h-60 overflow-y-auto pr-2 scrollbar-thin">
-                    {result.data.sampledPages.map((page, idx) => (
-                      <div key={idx} className="flex items-center justify-between bg-slate-800/60 p-3 rounded-xl border border-slate-700/50 text-xs">
-                        <div className="flex items-center gap-2 truncate max-w-[70%]">
-                          <span className="text-slate-500 font-mono text-[10px]">#{idx + 1}</span>
-                          <a 
-                            href={page.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="font-mono text-slate-300 hover:text-blue-400 underline decoration-slate-600 truncate"
-                          >
-                            {page.url}
-                          </a>
-                        </div>
-                        <span className={`font-black px-2.5 py-1 rounded-md shrink-0 ${
-                          page.score >= 75 ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" :
-                          page.score >= 50 ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" :
-                          "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                        }`}>
-                          {page.score} / 100
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="bg-white rounded-[24px] md:rounded-[48px] overflow-hidden border border-slate-100 shadow-2xl">
-              <div className="bg-slate-900 text-white p-5 sm:p-8 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 md:gap-8">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 md:gap-8 w-full md:w-auto">
-                  <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-[16px] sm:rounded-[20px] bg-white text-slate-900 flex flex-col items-center justify-center shrink-0 shadow-lg mx-auto sm:mx-0">
-                    <span className="text-3xl sm:text-5xl font-black">{result.data.score}</span>
-                    <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-slate-400 font-bold mt-0.5 sm:mt-1">Score</span>
-                  </div>
-                  <div className="text-center sm:text-left w-full sm:w-auto overflow-hidden">
-                    {result.data.pageCategory && <div className="inline-flex items-center px-2.5 py-1 mb-2 rounded-md bg-blue-500/10 border border-blue-500/20"><span className="text-[9px] sm:text-[10px] font-black tracking-wider uppercase text-blue-400">Niche: {result.data.pageCategory}</span></div>}
-                    <h2 className="text-xl sm:text-3xl font-black tracking-tight">AEO Performance Audit</h2>
-                    <p className="text-slate-400 mt-1.5 text-xs sm:text-sm truncate max-w-full">{result.data.title}</p>
-                  </div>
-                </div>
-                <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl px-4 py-3 sm:px-6 sm:py-4 w-full md:w-auto text-center">
-                  <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-blue-400 font-black mb-0.5 sm:mb-1">OPTIMIZATION STATE</div>
-                  <div className="text-lg sm:text-2xl font-black italic uppercase text-white">{result.data.score >= 75 ? "Strong" : result.data.score >= 50 ? "Moderate" : "Weak"}</div>
-                </div>
+            {/* 🚀 INTEGRATED TABS + CONTENT CARD (ODVOJENI TAB DUGMIĆI SA JASNUM BORDERIMA) */}
+            <div className="bg-white border border-slate-200/90 rounded-2xl md:rounded-3xl shadow-xl shadow-slate-900/5 overflow-hidden">
+              
+              {/* TABS HEADER - FLEX WRAP SA BORDERIMA OKO SVAKOG TABA */}
+              <div className="bg-slate-100/80 border-b border-slate-200 p-3 sm:p-4 flex flex-wrap items-center gap-2">
+                {navTabs.map((tab) => {
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as ActiveTabType)}
+                      className={`px-4 py-2.5 text-xs font-black rounded-xl transition-all duration-150 flex items-center gap-2 whitespace-nowrap cursor-pointer shrink-0 border relative ${
+                        isActive
+                          ? "bg-white text-blue-600 border-blue-600 shadow-sm shadow-blue-600/10 ring-2 ring-blue-600/20 z-10"
+                          : "bg-slate-50 hover:bg-white text-slate-600 hover:text-slate-900 border-slate-200 hover:border-slate-300"
+                      }`}
+                    >
+                      <span>{tab.label}</span>
+                      
+                      {/* Akcentna plava linija na vrhu aktivnog taba */}
+                      {isActive && (
+                        <div className="absolute top-0 left-2 right-2 h-[2px] bg-blue-600 rounded-full" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* TABS HEADER */}
-              <div className="w-full border-b border-slate-100 bg-slate-50/50 p-1.5 sm:p-2 overflow-x-auto flex flex-nowrap md:flex-wrap gap-1.5 scrollbar-none">
-                {[
-                  { id: "metrics", label: "Score Breakdown & Metrics" },
-                  { id: "keywords", label: "Keywords & Entities" }, // 🚀 NOVI TAB DUGME
-                  { id: "analysis", label: "AI Semantic Insights" },
-                  { id: "recommendations", label: "Strategic Actions" },
-                  { id: "simulator", label: "AI SERP Simulator" }, 
-                  { id: "speed", label: "Page Speed & UX" },
-                  { id: "robots", label: "Robots.txt" },
-                  { id: "llms", label: "LLMs.txt" },
-                ].map((tab) => (
-                  <button key={tab.id} onClick={() => setActiveTab(tab.id as ActiveTabType)} className={`flex-1 md:flex-none whitespace-nowrap px-4 py-2.5 sm:py-3 text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-xl transition ${activeTab === tab.id ? "bg-white text-blue-600 shadow-sm border border-slate-200/60" : "text-slate-400 hover:text-slate-600"}`}>{tab.label}</button>
-                ))}
-              </div>
-
-              <div className="p-4 sm:p-8 md:p-12">
-                {/* 1. METRICS TAB */}
+              {/* TAB CONTENT PANEL */}
+              <div className="p-4 sm:p-8 md:p-10">
                 {activeTab === "metrics" && (
-                  <div className="space-y-8">
+                  <div className="space-y-6">
                     {result.data.isDomainAudit && result.data.domainStats && (
                       <DomainMetricsPanel data={result.data} />
                     )}
-                    <div>
-                      {result.data.isDomainAudit && (
-                        <div className="flex items-center gap-3 mb-4 pt-4 border-t border-slate-100">
-                          <div className="w-2 h-6 bg-slate-900 rounded-full" />
-                          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
-                            Primary Route Detail Analysis (Homepage / Root)
-                          </h3>
-                        </div>
-                      )}
-                      <MetricsPanel data={result.data} />
-                    </div>
+                    <MetricsPanel data={result.data} />
                   </div>
                 )}
 
-                {/* 2. KEYWORDS & ENTITIES TAB (🚀 RENDERUJEMO NOVI PANEL) */}
-                {activeTab === "keywords" && (
-                  <div className="space-y-4">
-                    {result.data.isDomainAudit && (
-                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between text-xs font-bold text-blue-800">
-                        <span>🌐 Primary Route Semantic Scope: Keyword breakdown for the main domain entity.</span>
-                      </div>
-                    )}
-                    <KeywordsPanel data={result.data} />
-                  </div>
-                )}
-
-                {/* 3. AI SEMANTIC INSIGHTS TAB */}
-                {activeTab === "analysis" && (
-                  <div className="space-y-4">
-                    {result.data.isDomainAudit && (
-                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between text-xs font-bold text-blue-800">
-                        <span>🌐 Multi-Page Synthesis: Analysis reflects site-wide entity authority & domain architecture.</span>
-                      </div>
-                    )}
-                    <InsightsPanel data={result.data} />
-                  </div>
-                )}
-
-                {/* 4. STRATEGIC ACTIONS TAB */}
-                {activeTab === "recommendations" && (
-                  <div className="space-y-4">
-                    {result.data.isDomainAudit && (
-                      <div className="p-4 bg-slate-900 text-white rounded-2xl flex items-center justify-between text-xs font-bold border border-slate-800">
-                        <span>🎯 Global Domain Actions: Prioritized fixes for site-wide AEO architecture.</span>
-                      </div>
-                    )}
-                    <RecommendationsPanel data={result.data} />
-                  </div>
-                )}
-
-                {/* 5. AI SERP SIMULATOR TAB */}
-                {activeTab === "simulator" && (
-                  <SimulatorPanel data={result.data} cleanHostname={getCleanHostname()} />
-                )}
-
-                {/* 6. PAGE SPEED TAB */}
-                {activeTab === "speed" && result.data.website_url && (
-                  <div className="space-y-4">
-                    {result.data.isDomainAudit && (
-                      <div className="text-xs font-extrabold text-slate-500 uppercase tracking-wider px-1">
-                        Performance Benchmark for Primary Domain Route
-                      </div>
-                    )}
-                    <PageSpeedCard url={result.data.website_url} />
-                  </div>
-                )}
-
-                {/* 7. ROBOTS.TXT TAB */}
+                {activeTab === "keywords" && <KeywordsPanel data={result.data} />}
+                {activeTab === "analysis" && <InsightsPanel data={result.data} />}
+                {activeTab === "recommendations" && <RecommendationsPanel data={result.data} />}
+                {activeTab === "simulator" && <SimulatorPanel data={result.data} cleanHostname={getCleanHostname()} />}
+                {activeTab === "speed" && result.data.website_url && <PageSpeedCard url={result.data.website_url} />}
+                
                 {activeTab === "robots" && (
-                  <div className="space-y-6 animate-in fade-in duration-300">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-2 h-6 bg-slate-700 rounded-full" />
-                      <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
-                        {result.data.isDomainAudit ? "Global Domain Crawl Directives" : "Raw Crawl Directives Content Mapping"}
-                      </h3>
-                    </div>
-                    <div className="bg-slate-900 text-slate-300 rounded-2xl p-4 sm:p-5 font-mono text-[11px] sm:text-xs shadow-inner overflow-x-auto whitespace-pre leading-relaxed">
-                      {result.data.robotsRawContent || "No crawling instructions discovered during standard sweeps."}
+                  <div className="space-y-3">
+                    <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider">Raw Robots.txt Directives</h3>
+                    <div className="bg-slate-900 text-slate-300 p-4 rounded-xl font-mono text-xs overflow-x-auto whitespace-pre">
+                      {result.data.robotsRawContent || "No directives found."}
                     </div>
                   </div>
                 )}
 
-                {/* 8. LLMS.TXT TAB */}
                 {activeTab === "llms" && <LlmsPanel data={result.data} />}
               </div>
+
             </div>
+
           </div>
         )}
 
-        {/* RECENT AUDIT LOGS */}
+        {/* ORIGINAL RECENT AUDIT LOGS */}
         <div className="bg-white border border-slate-200 rounded-[24px] sm:rounded-[32px] p-5 sm:p-8 shadow-xl shadow-blue-900/5 mt-12 mb-12">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
@@ -554,14 +491,15 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <button onClick={async () => { await navigator.clipboard.writeText(`${window.location.origin}/share/${audit.share_token}`); alert("🔗 Share link copied for: " + audit.website_url); }} className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold rounded-xl text-xs transition shadow-sm">Copy Link</button>
-                    <button onClick={() => { setCurrentAuditId(audit.share_token); setResult({ success: true, data: audit.result_data }); window.scrollTo({ top: 400, behavior: "smooth" }); }} className="px-4 py-2 bg-slate-900 hover:bg-blue-600 text-white font-black rounded-xl text-xs transition shadow-md">Load Report ↗</button>
+                    <button onClick={async () => { await navigator.clipboard.writeText(`${window.location.origin}/share/${audit.share_token}`); alert("🔗 Share link copied for: " + audit.website_url); }} className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold rounded-xl text-xs transition shadow-sm cursor-pointer">Copy Link</button>
+                    <button onClick={() => { setCurrentAuditId(audit.share_token); setResult({ success: true, data: audit.result_data }); window.scrollTo({ top: 150, behavior: "smooth" }); }} className="px-4 py-2 bg-slate-900 hover:bg-blue-600 text-white font-black rounded-xl text-xs transition shadow-md cursor-pointer">Load Report ↗</button>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
+
       </div>
       <Footer />
     </div>
