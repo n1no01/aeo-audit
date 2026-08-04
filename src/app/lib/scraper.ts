@@ -822,9 +822,8 @@ export async function scrapeWebsite(
 
   const wordCount = bodyText.split(/\s+/).filter(Boolean).length;
 
-  // Detekcija tipa stranice
-  let pageType: "Homepage" | "Article" | "FAQ" | "About" | "Commercial" | "General" =
-    "General";
+// Detekcija tehničkog tipa stranice
+  let pageType: ScrapedData["pageType"] = "General";
   const pathname = parsedUrl.pathname.toLowerCase();
   const cleanPath = pathname
     .replace(/\/$/, "")
@@ -832,34 +831,28 @@ export async function scrapeWebsite(
 
   if (cleanPath === "" || cleanPath === "/" || cleanPath === "/index.html") {
     pageType = "Homepage";
-  } else if (
-    cleanPath.includes("faq") ||
-    cleanPath.includes("question") ||
-    detectedSchemas.includes("FAQPage")
-  ) {
+  } else if (cleanPath.includes("faq") || cleanPath.includes("question") || detectedSchemas.includes("FAQPage")) {
     pageType = "FAQ";
-  } else if (
-    /(\b)(about|contact|team|legal|info|imprint|contact-us|profile)(\b)/.test(cleanPath) ||
-    detectedSchemas.includes("AboutPage") ||
-    detectedSchemas.includes("ContactPage")
-  ) {
+  } else if (cleanPath.includes("pricing") || cleanPath.includes("price")) {
+    pageType = "Pricing";
+  } else if (cleanPath.includes("contact") || detectedSchemas.includes("ContactPage")) {
+    pageType = "Contact";
+  } else if (cleanPath.includes("about") || cleanPath.includes("team") || cleanPath.includes("imprint") || detectedSchemas.includes("AboutPage")) {
     pageType = "About";
-  } else if (
-    /(\b)(shop|product|service|pricing|store|cart|checkout|item|p)(\b)/.test(cleanPath) ||
-    detectedSchemas.includes("Product") ||
-    detectedSchemas.includes("Service")
-  ) {
-    pageType = "Commercial";
-  } else if (
-    $("article").length > 0 ||
-    /(\b)(blog|article|news|post|story|insights)(\b)/.test(cleanPath) ||
-    detectedSchemas.includes("BlogPosting") ||
-    detectedSchemas.includes("TechArticle") ||
-    detectedSchemas.includes("Article")
-  ) {
+  } else if (cleanPath.includes("product") || cleanPath.includes("item") || detectedSchemas.includes("Product")) {
+    pageType = "Product";
+  } else if (cleanPath.includes("category") || cleanPath.includes("collection") || cleanPath.includes("shop") || cleanPath.includes("store") || detectedSchemas.includes("CollectionPage") || detectedSchemas.includes("ItemList")) {
+    pageType = "Category";
+  } else if (cleanPath.includes("blog") || cleanPath.includes("insights")) {
+    pageType = "Blog";
+  } else if (cleanPath.includes("landing") || cleanPath.includes("lp")) {
+    pageType = "Landing";
+  } else if ($("article").length > 0 || cleanPath.includes("article") || cleanPath.includes("news") || cleanPath.includes("post") || detectedSchemas.includes("BlogPosting") || detectedSchemas.includes("TechArticle") || detectedSchemas.includes("Article")) {
     pageType = "Article";
+  } else if (cleanPath.includes("service") || cleanPath.includes("commercial") || detectedSchemas.includes("Service")) {
+    pageType = "Commercial";
   }
-
+  
   return {
     title,
     metaDescription,

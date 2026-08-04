@@ -343,8 +343,8 @@ export default function MetricsPanel({ data }: MetricsPanelProps) {
         </div>
         <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col justify-between shadow-sm">
           <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-black text-slate-400 mb-2">JS Rendering Index</div>
-          <div className="text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-2">
-            Engine State: <span className={`font-bold ${data?.javascriptDependency === "Low" ? "text-emerald-700" : "text-amber-700"}`}>{data?.javascriptDependency === "Low" ? "SSR Optimized" : "CSR Dependency"}</span>
+         <div className="text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-2">
+            Engine State: <span className={`font-bold ${data?.javascriptDependency === "Low" ? "text-emerald-700" : "text-amber-700"}`}>{data?.javascriptDependency === "Low" ? "AI Crawl Ready (HTML First)" : "JS Heavy / Render Risk"}</span>
           </div>
         </div>
       </div>

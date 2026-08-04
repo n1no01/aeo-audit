@@ -52,9 +52,9 @@ export async function generateAiAnalysis(
         type: "INTEGER",
         description: "The finalized AEO visibility score from 0 to 100, refining the initial seed score based on industry standards."
       },
-      pageCategory: {
+     pageCategory: {
         type: "STRING",
-        description: "The exact classification of the website (e.g., 'Domain-Wide Audit', 'Personal Portfolio', 'Local Business', 'E-commerce', 'SaaS Platform', 'Niche Content Blog')."
+        description: "The exact specific niche/business classification of the website (e.g., 'Sports Performance & Training', 'SaaS Platform', 'E-commerce', 'Local Business', 'Niche Content Blog', 'Personal Portfolio'). Never return generic terms like 'Homepage'."
       },
       aiAnalysis: {
         type: "STRING",
@@ -267,7 +267,7 @@ DETERMINISTIC EVALUATION GUARANTEE:
 Apply objective, rigid mathematical boundaries. Do NOT randomly fluctuate scores between runs for the exact same input text.
 
 INSTRUCTIONS:
-1. Evaluate the context and determine the exact "pageCategory".
+1. Evaluate the context and determine the exact industry/niche "pageCategory" (e.g., 'Sports Performance', 'SaaS', 'E-commerce' — NEVER output just 'Homepage').
 2. Confirm the final "score" respecting the scoring rules above.
 3. Rigidly score the content sample against the 5 core pillars.
 4. Populate keywordsData object thoroughly.

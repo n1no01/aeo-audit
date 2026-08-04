@@ -1,6 +1,6 @@
 import { ScrapedData, BotStatus } from "./types";
 
-interface ExtendedScrapedData extends Omit<ScrapedData, "bodyText" | "aiAccessibility"> {
+export interface ExtendedScrapedData extends Omit<ScrapedData, "bodyText" | "aiAccessibility"> {
   commodityContentScore?: number;
   semanticLayoutMap: ScrapedData["semanticLayoutMap"] & {
     hasAriaLabels?: boolean;
@@ -12,58 +12,71 @@ interface ExtendedScrapedData extends Omit<ScrapedData, "bodyText" | "aiAccessib
   };
 }
 
-export function calculateScore(data: ExtendedScrapedData): number {
-  let score = 0;
+export interface ScoreBreakdownResult {
+  totalScore: number;
+  breakdown: {
+    metaAndCore: { scored: number; max: number };
+    aiBlueprint: { scored: number; max: number };
+    botAccess: { scored: number; max: number };
+    structuredData: { scored: number; max: number };
+    entityTrust: { scored: number; max: number };
+    semanticCode: { scored: number; max: number };
+  };
+}
 
+export function calculateScoreBreakdown(data: ExtendedScrapedData): ScoreBreakdownResult {
   // ==========================================
   // 1. META & CORE TAGOVI (Max 25 bodova)
   // ==========================================
-  if (data.title.length >= 30 && data.title.length <= 65) score += 10;
-  if (data.metaDescription.length >= 120 && data.metaDescription.length <= 160) score += 5;
-  if (data.h1 && data.h1 !== "No H1 Found") score += 10;
+  let metaScore = 0;
+  if (data.title.length >= 30 && data.title.length <= 65) metaScore += 10;
+  if (data.metaDescription.length >= 120 && data.metaDescription.length <= 160) metaScore += 5;
+  if (data.h1 && data.h1 !== "No H1 Found") metaScore += 10;
+  const metaAndCore = { scored: Math.max(0, Math.min(metaScore, 25)), max: 25 };
 
   // ==========================================
-  // 2. AI CONTENT BLUEPRINT & AGENT READINESS (Max 25 bodova)
+  // 2. AI CONTENT BLUEPRINT (Max 25 bodova)
   // ==========================================
+  let blueprintScore = 0;
   const commodityScore = data.commodityContentScore ?? 5;
   if (commodityScore >= 8) {
-    score += 10;
+    blueprintScore += 10;
   } else if (commodityScore >= 5) {
-    score += 5;
+    blueprintScore += 5;
   } else {
-    score -= 5;
+    blueprintScore -= 5;
   }
 
-  if (data.hasTablesOrLists) score += 5;
+  if (data.hasTablesOrLists) blueprintScore += 5;
 
   if (data.qaBlocksCount >= 2) {
-    score += 5;
+    blueprintScore += 5;
   } else if (data.qaBlocksCount === 1) {
-    score += 2;
+    blueprintScore += 2;
   } else {
     if (data.pageType === "Homepage" || data.pageType === "Commercial") {
-      score += 2;
+      blueprintScore += 2;
     }
   }
 
   if (data.semanticLayoutMap.hasAriaLabels) {
-    score += 5;
+    blueprintScore += 5;
   } else if (data.pageType === "Commercial") {
-    score -= 3;
+    blueprintScore -= 3;
   }
+  const aiBlueprint = { scored: Math.max(0, Math.min(blueprintScore, 25)), max: 25 };
 
   // ==========================================
   // 3. ROBOTS, BOT ACCESS & RENDERING (Max 15 bodova)
   // ==========================================
+  let botScore = 0;
   const botSeverity = data.aiAccessibility?.cloudflareSeverity ?? "None";
   const botDetected = data.aiAccessibility?.cloudflareDetected ?? false;
 
-  // Analiza pojedinačnih AEO Search botova
   const botStatuses = Object.values(data.aiBotsStatus ?? {}) as string[];
   const totalBotsCount = botStatuses.length;
   const blockedBotsCount = botStatuses.filter((s) => s === "Blocked").length;
 
-  // Primarni Search & AEO botovi (Uključeni svi novi AEO pretraživači)
   const isCoreSearchBlocked =
     data.aiBotsStatus?.googlebot === "Blocked" ||
     data.aiBotsStatus?.oaiSearchBot === "Blocked" ||
@@ -80,38 +93,43 @@ export function calculateScore(data: ExtendedScrapedData): number {
     (blockedBotsCount > 0 || isCoreSearchBlocked || (botDetected && botSeverity === "Soft"));
 
   if (completelyBlocked) {
-    // Sajt je potpuno blokiran za AI crawlere — primjenjuje se jaka penalizacija
-    score -= 60;
+    botScore -= 60;
   } else if (partiallyBlocked) {
-    // Delimična blokada: blokiran je neki od AEO search botova ili postoji Cloudflare Soft block
-    score -= 15;
+    botScore -= 15;
   } else if (data.robotsStatus === "Valid" || data.robotsStatus === "Missing") {
-    // Svi AEO botovi imaju nesmetan pristup
-    score += 10;
+    botScore += 10;
   }
 
-  // JS rendering zavisnost
   if (data.javascriptDependency === "Low") {
-    score += 5;
+    botScore += 5;
   } else if (data.javascriptDependency === "Critical") {
-    score -= 10;
+    botScore -= 10;
   }
+  const botAccess = { scored: Math.max(0, Math.min(botScore, 15)), max: 15 };
 
   // ==========================================
-  // 4. STRUKTURIRANI PODACI & KONTEKSTUALNE ŠEME (Max 15 bodova)
+  // 4. STRUKTURIRANI PODACI & ŠEME (Max 15 bodova)
   // ==========================================
-  if (data.detectedSchemas.length > 0) score += 5;
+  let schemaScore = 0;
+  if (data.detectedSchemas.length > 0) schemaScore += 5;
 
   const schemaValidationMap: Record<string, string[]> = {
     Homepage: ["Organization", "LocalBusiness", "SoftwareApplication", "Brand", "WebSite"],
     Commercial: ["Product", "SoftwareApplication", "Service", "Offer", "OfferCatalog"],
+    Product: ["Product", "Offer", "AggregateRating", "Brand"],
+    Category: ["CollectionPage", "ItemList", "BreadcrumbList"],
     Article: ["Article", "TechArticle", "BlogPosting", "NewsArticle"],
+    Blog: ["Blog", "CollectionPage", "BlogPosting"],
     FAQ: ["FAQPage", "Question", "Answer"],
     About: ["Organization", "Person", "ProfilePage", "AboutPage", "ContactPage"],
+    Contact: ["ContactPage", "LocalBusiness", "Organization"],
+    Landing: ["WebPage", "Product", "Service", "Offer"],
   };
 
   const expectedSchemas = schemaValidationMap[data.pageType] || [];
-  const hasContextualHighValueSchema = data.detectedSchemas.some((schema) => {
+  
+  // Eksplicitno tipiziran parametar (schema: string) rešava implicit any grešku
+  const hasContextualHighValueSchema = data.detectedSchemas.some((schema: string) => {
     if (expectedSchemas.includes(schema)) return true;
     if (data.pageType === "Article" && (schema.endsWith("Article") || schema.endsWith("Posting"))) return true;
     if (data.pageType === "FAQ" && schema.endsWith("Page")) return true;
@@ -122,55 +140,99 @@ export function calculateScore(data: ExtendedScrapedData): number {
     return false;
   });
 
-  if (hasContextualHighValueSchema) score += 10;
+  if (hasContextualHighValueSchema) schemaScore += 10;
+  const structuredData = { scored: Math.max(0, Math.min(schemaScore, 15)), max: 15 };
 
   // ==========================================
   // 5. ENTITETI I BREND DISAMBIGUATION (Max 10 bodova)
   // ==========================================
-  if (data.entityTrustMap.hasWikidataOrWikipedia) score += 2;
+  let entityScore = 0;
+  if (data.entityTrustMap.hasWikidataOrWikipedia) {
+    entityScore += 3;
+  }
 
-  if (data.pageType === "Homepage" || data.pageType === "About") {
-    if (data.entityTrustMap.hasLinkedIn) {
-      score += 2;
+  let socialScore = 0;
+  if (data.entityTrustMap.hasLinkedIn) socialScore += 2;
+  if (data.entityTrustMap.hasXAccount) socialScore += 1;
+  
+  const socialRequiredTypes = ["Homepage", "About", "Contact"];
+  if (socialRequiredTypes.includes(data.pageType)) {
+    if (socialScore === 0) {
+      entityScore -= 1; 
     } else {
-      score -= 4;
-    }
-    if (data.entityTrustMap.hasXAccount) {
-      score += 1;
-    } else {
-      score -= 2;
+      entityScore += socialScore;
     }
   } else {
-    score += 3;
+    entityScore += 2;
   }
 
+  const hasStrongSchema = 
+    data.detectedSchemas.includes("Organization") || 
+    data.detectedSchemas.includes("Brand") || 
+    data.detectedSchemas.includes("LocalBusiness");
+
   if (data.entityTrustMap.brandDisambiguationStatus === "Optimal") {
-    score += 5;
+    entityScore += 5;
   } else if (data.entityTrustMap.brandDisambiguationStatus === "Inconsistent") {
-    score -= 5;
+    entityScore -= 2;
   } else if (data.entityTrustMap.brandDisambiguationStatus === "Critical Missing") {
-    if (data.pageType === "Article" || data.pageType === "FAQ") {
-      score -= 3;
+    if (hasStrongSchema) {
+      entityScore += 2;
+    } else if (data.pageType === "Article" || data.pageType === "FAQ") {
+      entityScore -= 2;
     } else {
-      score -= 10;
+      entityScore -= 4;
     }
   }
+  const entityTrust = { scored: Math.max(0, Math.min(entityScore, 10)), max: 10 };
 
   // ==========================================
   // 6. SEMANTIČKI KÔD & VISUAL RAG (Max 10 bodova)
   // ==========================================
-  if (data.semanticLayoutMap.hasMainTag) score += 2;
-  if (data.semanticLayoutMap.hasArticleTag) score += 1;
-  if (!data.semanticLayoutMap.hasHeadingLeap) score += 2;
+  let semanticScore = 0;
+  if (data.semanticLayoutMap.hasMainTag) semanticScore += 2;
+  if (data.semanticLayoutMap.hasArticleTag) semanticScore += 1;
+  if (!data.semanticLayoutMap.hasHeadingLeap) semanticScore += 2;
 
   if (data.semanticLayoutMap.totalImages > 0) {
     const missingRatio = data.semanticLayoutMap.missingAltCount / data.semanticLayoutMap.totalImages;
-    if (missingRatio <= 0.2) score += 3;
+    if (missingRatio <= 0.2) semanticScore += 3;
   } else {
-    score += 3;
+    semanticScore += 3;
   }
 
-  if (data.hasVideoElements) score += 2;
+  if (data.hasVideoElements) semanticScore += 2;
+  const semanticCode = { scored: Math.max(0, Math.min(semanticScore, 10)), max: 10 };
 
-  return Math.max(0, Math.min(score, 100));
+  // ==========================================
+  // UKUPAN SKOR
+  // ==========================================
+  const totalScore = Math.max(
+    0,
+    Math.min(
+      metaAndCore.scored +
+        aiBlueprint.scored +
+        botAccess.scored +
+        structuredData.scored +
+        entityTrust.scored +
+        semanticCode.scored,
+      100
+    )
+  );
+
+  return {
+    totalScore,
+    breakdown: {
+      metaAndCore,
+      aiBlueprint,
+      botAccess,
+      structuredData,
+      entityTrust,
+      semanticCode,
+    },
+  };
+}
+
+export function calculateScore(data: ExtendedScrapedData): number {
+  return calculateScoreBreakdown(data).totalScore;
 }

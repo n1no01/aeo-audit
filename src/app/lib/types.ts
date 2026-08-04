@@ -15,8 +15,6 @@ export interface DomainAggregatedStats {
   hasH1CoveragePercent: number;
   hasMetaDescriptionPercent: number;
   avgWordCount: number;
-  
-  // 🚀 NOVE AEO & RAG METRIKE
   qaBlocksCoveragePercent: number;
   tablesOrListsCoveragePercent: number;
   openGraphCoveragePercent: number;
@@ -74,7 +72,7 @@ export interface ScrapedData {
   aiBotsStatus: BotStatus;
   entityTrustMap: EntityTrustMap;
   semanticLayoutMap: SemanticLayoutMap;
-  pageType: "Homepage" | "Article" | "FAQ" | "About" | "Commercial" | "General";
+  pageType: "Homepage" | "Article" | "FAQ" | "About" | "Commercial" | "Product" | "Category" | "Blog" | "Contact" | "Landing" | "Pricing" | "Documentation" | "CaseStudy" | "Author" | "General";
   aiAccessibility: AIAccessibilityResult;
   llmsRawContent: string;
   jsonLd?: unknown[];
