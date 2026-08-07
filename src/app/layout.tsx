@@ -59,7 +59,19 @@ export default function RootLayout({
         "name": "AEO Audit Pro",
         "url": "https://aeoaudit-pro.com",
         "logo": "https://aeoaudit-pro.com/logo.png",
-        "founder": "Nino Herenda",
+        "founder": {
+          "@type": "Person",
+          "name": "Nino Herenda"
+        },
+        "sameAs": [
+          "https://x.com/aeoauditpro",
+          "https://www.linkedin.com/company/aeo-audit-pro/"
+        ],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "customer service",
+          "email": "hello@aeoaudit-pro.com"
+        }
       },
       {
         "@type": "WebSite",
@@ -89,10 +101,12 @@ export default function RootLayout({
           "https://www.wikidata.org/wiki/Q140136146"
         ],
         "featureList": [
-          "AI Visibility Radar",
-          "Knowledge Graph Entity Checker",
+          "AI Radar",
+          "Entity Checker",
           "Semantic Diagnostics",
-          "White Label Reports"
+          "White Label Reports",
+          "Lead Magnet Widget",
+          "AEO Certification Academy"
         ],
         "offers": [
           {
@@ -106,16 +120,30 @@ export default function RootLayout({
           {
             "@type": "Offer",
             "name": "Starter Plan",
-            "price" : "59.00",
+            "price": "59.00",
             "priceCurrency": "USD",
             "description": "Designed for solo entrepreneurs and bloggers."
           },
           {
             "@type": "Offer",
             "name": "Agency Plan",
-            "price" : "159.00",
+            "price": "159.00",
             "priceCurrency": "USD",
             "description": "Designed for agencies and businesses looking for comprehensive AI Search auditing."
+          },
+          {
+            "@type": "Offer",
+            "name": "Pay-as-you-go",
+            "price": "5.00",
+            "priceCurrency": "USD",
+            "description": "Flexible auditing. 1 credit per AI search audit."
+          },
+          {
+            "@type": "Offer",
+            "name": "Enterprise Plan",
+            "price": "0.00",
+            "priceCurrency": "USD",
+            "description": "Custom enterprise solutions. Contact hello@aeoaudit-pro.com for inquiry."
           }
         ]
       }
