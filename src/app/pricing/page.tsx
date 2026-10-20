@@ -102,11 +102,10 @@ export default async function PricingPage() {
             <div 
               role="region" 
               aria-label="Starter Plan - For Solopreneurs and Bloggers at 59 dollars per month"
-              className="bg-white border border-slate-200 rounded-[24px] p-6 shadow-xl shadow-blue-900/5 flex flex-col justify-between relative overflow-hidden"
-            >
+              className="bg-white border border-slate-200 rounded-[24px] p-6 shadow-xl shadow-blue-900/5 flex flex-col justify-between relative overflow-hidden">
               <div>
                 <h3 className="text-xl font-black tracking-tight mb-1">Starter</h3>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-6">For Solopreneurs & Bloggers</p>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-6">For Freelancers & Small Agencies</p>
                 
                 <div className="flex items-baseline mb-2">
                   <span className="text-4xl font-black tracking-tight">$59</span>
@@ -180,7 +179,7 @@ export default async function PricingPage() {
                   productId={AGENCY_PRODUCT_ID}
                   userId={userId}
                   userEmail={userEmail}
-                  text="UPGRADE TO PRO"
+                  text="CHOOSE AGENCY"
                   aria-label="Purchase Agency Pro subscription plan for 159 dollars per month"
                   className="block w-full bg-blue-600 text-white text-center py-3 rounded-xl font-black tracking-wide hover:bg-slate-900 transition text-sm cursor-pointer shadow-lg"
                 />
