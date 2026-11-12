@@ -122,7 +122,7 @@ export default function RootLayout({
             "name": "Starter Plan",
             "price": "59.00",
             "priceCurrency": "USD",
-            "description": "Designed for solo entrepreneurs and bloggers."
+            "description": "Designed for freelancers and small agencies."
           },
           {
             "@type": "Offer",

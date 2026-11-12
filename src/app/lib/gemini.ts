@@ -169,7 +169,7 @@ export async function generateAiAnalysis(
   };
 
   const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash-lite",
+    model: "gemini-3.5-flash-lite",
     generationConfig: {
       temperature: 0.0, // 🚀 POSTAVLJENO NA 0 ZADRŽAVANJE DETERMINIZMA I IDENTIČNIH BODOVA
       topP: 0.1,
