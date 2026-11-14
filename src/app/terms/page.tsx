@@ -1,5 +1,14 @@
 import Link from "next/link";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: 'Terms of Service | AEO Audit Pro',
+  description: 'The terms that apply when you use AEO Audit Pro.',
+  alternates: { canonical: '/terms' },
+  openGraph: { title: 'Terms of Service | AEO Audit Pro', description: 'The terms that apply when you use AEO Audit Pro.', url: '/terms', type: 'website' },
+};
+
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 py-12 px-4 sm:px-6 relative overflow-x-hidden">

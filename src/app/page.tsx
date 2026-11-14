@@ -11,6 +11,12 @@ import Footer from "./components/Footer";
 import WhiteLabelSection from "./components/WhiteLabelSection";
 import Testimonials from "./components/Testimonials";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
+
 export default async function LandingPage() {
   // Ako je korisnik već prijavljen, automatski ga prebaci na dashboard
   const { userId } = await auth();

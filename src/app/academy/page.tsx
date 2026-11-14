@@ -7,6 +7,15 @@ import AcademyDashboardClient from "./certification/AcademyDashboardClient";
 import { CheckoutButton } from "../pricing/CheckoutButton"; // 🚀 Uvozimo tvoje postojeće dugme
 import { createClient } from "@supabase/supabase-js"; // Potrebno za admin fallback bypass
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: 'AEO Academy | Become a Certified AEO Technical Specialist',
+  description: 'Learn Answer Engine Optimization with the AEO Technical Playbook and earn a verifiable AEO Specialist certification.',
+  alternates: { canonical: '/academy' },
+  openGraph: { title: 'AEO Academy | Become a Certified AEO Technical Specialist', description: 'Learn Answer Engine Optimization with the AEO Technical Playbook and earn a verifiable AEO Specialist certification.', url: '/academy', type: 'website' },
+};
+
 interface PageProps {
   searchParams: Promise<{ payment?: string }>;
 }

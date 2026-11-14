@@ -4,6 +4,15 @@ import Footer from "../components/Footer";
 import { GlobalAEOStats } from "../lib/types";
 import { supabase } from "../lib/supabase";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: 'State of AEO | Live AI Search Readiness Benchmarks',
+  description: 'Live benchmarks from real audits: average AEO score, most common failures, llms.txt adoption and AI crawler blocking across the web.',
+  alternates: { canonical: '/state-of-aeo' },
+  openGraph: { title: 'State of AEO | Live AI Search Readiness Benchmarks', description: 'Live benchmarks from real audits: average AEO score, most common failures, llms.txt adoption and AI crawler blocking across the web.', url: '/state-of-aeo', type: 'website' },
+};
+
 export const revalidate = 0;
 export const dynamic = "force-dynamic";
 

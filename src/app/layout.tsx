@@ -15,9 +15,6 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://aeoaudit-pro.com'),
-  alternates: {
-    canonical: '/',
-  },
   title: 'AEO Audit Pro | Answer Engine Optimization Auditing',
   description: 'Enterprise-grade Answer Engine Optimization auditing platform powered by AI semantic analysis.',
   openGraph: {
@@ -27,7 +24,7 @@ export const metadata: Metadata = {
     siteName: 'AEO Audit Pro',
     images: [
       {
-        url: 'https://aeoaudit-pro.com/assets/twitter-preview-image.png',
+        url: 'https://aeoaudit-pro.com/screenshot.jpg',
         width: 1200,
         height: 628,
         alt: 'AEO Audit Pro Preview',

@@ -4,6 +4,15 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer"; 
 import Image from "next/image";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: 'About AEO Audit Pro | AI Search Readiness Platform',
+  description: 'Learn who builds AEO Audit Pro and why we help websites get found, understood and cited by ChatGPT, Gemini, Claude and Perplexity.',
+  alternates: { canonical: '/about' },
+  openGraph: { title: 'About AEO Audit Pro | AI Search Readiness Platform', description: 'Learn who builds AEO Audit Pro and why we help websites get found, understood and cited by ChatGPT, Gemini, Claude and Perplexity.', url: '/about', type: 'website' },
+};
+
 export default async function AboutPage() {
   const { userId } = await auth();
 

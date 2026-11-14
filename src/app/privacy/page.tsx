@@ -1,5 +1,14 @@
 import Link from "next/link";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy | AEO Audit Pro',
+  description: 'How AEO Audit Pro collects, uses and protects your data.',
+  alternates: { canonical: '/privacy' },
+  openGraph: { title: 'Privacy Policy | AEO Audit Pro', description: 'How AEO Audit Pro collects, uses and protects your data.', url: '/privacy', type: 'website' },
+};
+
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 py-12 px-4 sm:px-6 relative overflow-x-hidden">

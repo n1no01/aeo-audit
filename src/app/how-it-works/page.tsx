@@ -4,6 +4,15 @@ import { auth } from "@clerk/nextjs/server";
 import Navbar from "../components/Navbar"; 
 import Footer from "../components/Footer"; 
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: 'How AEO Audit Pro Works | Score Your Site for AI Search',
+  description: 'See how we scan your site, check AI crawler access, structured data and entity trust, and turn it into a clear AEO score with fixes.',
+  alternates: { canonical: '/how-it-works' },
+  openGraph: { title: 'How AEO Audit Pro Works | Score Your Site for AI Search', description: 'See how we scan your site, check AI crawler access, structured data and entity trust, and turn it into a clear AEO score with fixes.', url: '/how-it-works', type: 'website' },
+};
+
 export default async function HowItWorksPage() {
   const { userId } = await auth();
 

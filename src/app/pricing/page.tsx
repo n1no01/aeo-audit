@@ -4,6 +4,15 @@ import { CheckoutButton } from "./CheckoutButton";
 import Navbar from "../components/Navbar"; 
 import Footer from "../components/Footer"; 
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: 'Pricing | AEO Audit Pro Plans for Freelancers & Agencies',
+  description: 'Compare AEO Audit Pro plans: single audits, Starter and Agency tiers with AI Radar, white-label reports and a lead-generation widget.',
+  alternates: { canonical: '/pricing' },
+  openGraph: { title: 'Pricing | AEO Audit Pro Plans for Freelancers & Agencies', description: 'Compare AEO Audit Pro plans: single audits, Starter and Agency tiers with AI Radar, white-label reports and a lead-generation widget.', url: '/pricing', type: 'website' },
+};
+
 export default async function PricingPage() {
   const { userId } = await auth();
   const user = await currentUser();
