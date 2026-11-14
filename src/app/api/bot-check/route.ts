@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server';
+import { formatUrl } from '../../lib/utils';
+import { isPublicHttpUrl } from '../../lib/urlSafety';
+import { rateLimit, clientIp } from '../../lib/rateLimit';
 
 export async function POST(request: Request) {
   try {
@@ -8,10 +11,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'URL is required' }, { status: 400 });
     }
 
-    // Standardizacija URL-a (dodavanje https:// ako fali)
-    let targetUrl = url;
-    if (!/^https?:\/\//i.test(targetUrl)) {
-      targetUrl = `https://${targetUrl}`;
+    if (!rateLimit(`botcheck:${clientIp(request.headers)}`, 10, 60_000).ok) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
+    // Validates scheme/length and blocks private/internal targets (this endpoint used to fetch ANY address = SSRF).
+    const targetUrl = typeof url === 'string' ? formatUrl(url) : '';
+    if (!targetUrl || !(await isPublicHttpUrl(targetUrl))) {
+      return NextResponse.json({ error: 'Invalid or non-public URL' }, { status: 400 });
     }
 
     const chromeAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';

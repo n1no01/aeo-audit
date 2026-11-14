@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getOrCreateApiKey } from "../../actions";
+import { getOrCreateWidgetKey } from "../../actions";
 
 export default function WidgetEmbedCard() {
   const [apiKey, setApiKey] = useState<string | null>(null);
@@ -32,9 +32,10 @@ export default function WidgetEmbedCard() {
   useEffect(() => {
     async function loadKey() {
       try {
-        const res = await getOrCreateApiKey();
-        if (res && "apiKey" in res && res.apiKey) {
-          setApiKey(res.apiKey);
+        // Public widget key (NOT the secret extension API key, which spends credits).
+        const res = await getOrCreateWidgetKey();
+        if (res && "widgetKey" in res && res.widgetKey) {
+          setApiKey(res.widgetKey);
         }
       } catch (err) {
         console.error("Error loading API key:", err);
@@ -48,7 +49,7 @@ export default function WidgetEmbedCard() {
   const embedCode = `<div id="aeo-audit-widget"></div>
 <script>
 (function() {
-  const API_KEY = "${apiKey || "YOUR_API_KEY"}";
+  const API_KEY = "${apiKey || "YOUR_WIDGET_KEY"}";
   const API_URL = "${appUrl}/api/widget";
   const container = document.getElementById("aeo-audit-widget");
   if (!container) return;

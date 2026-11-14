@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit, clientIp } from '../../lib/rateLimit';
 
 export async function GET(request: NextRequest) {
   // 1. Izvlačenje brenda iz query parametara
   const { searchParams } = new URL(request.url);
   const brandName = searchParams.get('brand');
 
-  if (!brandName) {
+  if (!rateLimit(`entity:${clientIp(request.headers)}`, 10, 60_000).ok) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+
+  if (!brandName || brandName.length > 120) {
     return NextResponse.json({ error: 'Parametar "brand" je obavezan.' }, { status: 400 });
   }
 

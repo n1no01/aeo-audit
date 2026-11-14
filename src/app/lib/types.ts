@@ -7,6 +7,25 @@ export interface BotStatus {
   bingbot: "Allowed" | "Blocked";
   metaExternalAgent: "Allowed" | "Blocked";
   grokBot: "Allowed" | "Blocked";
+  // Training-only crawlers. Optional so audits stored before this field existed still type-check.
+  gptBot?: "Allowed" | "Blocked";
+  claudeBot?: "Allowed" | "Blocked";
+  googleExtended?: "Allowed" | "Blocked";
+  ccBot?: "Allowed" | "Blocked";
+}
+
+export interface ScoreCategory {
+  scored: number;
+  max: number;
+}
+
+export interface ScoreBreakdownData {
+  metaAndCore: ScoreCategory;
+  aiBlueprint: ScoreCategory;
+  botAccess: ScoreCategory;
+  structuredData: ScoreCategory;
+  entityTrust: ScoreCategory;
+  semanticCode: ScoreCategory;
 }
 
 export interface DomainAggregatedStats {
@@ -43,6 +62,9 @@ export interface EntityTrustMap {
   detectedBrandVariants: string[];
   hasDeepLocalBusinessSchema: boolean; 
   hasDeepProductSchema: boolean;
+  /** True when the brand's own JSON-LD `sameAs` points to Wikipedia/Wikidata (stronger than a random outbound link). */
+  hasSameAsWikidata?: boolean;
+  sameAsCount?: number;
 }
 
 export interface SemanticLayoutMap {
@@ -75,12 +97,20 @@ export interface ScrapedData {
   pageType: "Homepage" | "Article" | "FAQ" | "About" | "Commercial" | "Product" | "Category" | "Blog" | "Contact" | "Landing" | "Pricing" | "Documentation" | "CaseStudy" | "Author" | "General";
   aiAccessibility: AIAccessibilityResult;
   llmsRawContent: string;
+  llmsTxtStatus?: "Present" | "Missing";
+  hasOpenGraph?: boolean;
   jsonLd?: unknown[];
   pageCategory?: string;
 }
 
 export interface AuditData extends ScrapedData {
   score: number;
+  /** Score before any access-based cap was applied. */
+  rawScore?: number;
+  /** Human readable reason when the score was capped (e.g. AI crawlers blocked). */
+  scoreCapReason?: string;
+  /** Single source of truth for the score breakdown shown in the UI. */
+  scoreBreakdown?: ScoreBreakdownData;
   pageCategory: string; // npr. "Personal Portfolio" ili preslikan gornji pageType
   aiAnalysis: string;
   recommendations: Recommendation[];

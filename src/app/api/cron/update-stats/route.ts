@@ -13,14 +13,28 @@ interface AuditRow {
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  // Fail CLOSED: without a configured secret the endpoint is public (and /api/cron is a public path in proxy.ts).
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
   try {
-    const { data: rawAudits, error: fetchError } = await supabase
+    // Last 30 days only (the response used to say "sampleSize30Days" while reading the whole table),
+    // newest first so that one URL audited many times counts once.
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: allRows, error: fetchError } = await supabase
       .from("audits")
-      .select("website_url, result_data");
+      .select("website_url, result_data")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(5000);
+
+    const seenUrls = new Set<string>();
+    const rawAudits = (allRows ?? []).filter((r: { website_url: string }) => {
+      if (seenUrls.has(r.website_url)) return false;
+      seenUrls.add(r.website_url);
+      return true;
+    });
 
     if (fetchError) {
       throw new Error(`Supabase fetch error: ${fetchError.message}`);

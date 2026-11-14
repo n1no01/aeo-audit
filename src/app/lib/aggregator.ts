@@ -1,66 +1,47 @@
-import { ScrapedData } from "./types";
+import { ScrapedData, DomainAggregatedStats } from "./types";
 
-export interface DomainAggregatedStats {
-  totalPagesAudited: number;
-  schemaCoveragePercent: number;
-  hasH1CoveragePercent: number;
-  hasMetaDescriptionPercent: number;
-  avgWordCount: number;
-  
-  // 🚀 NOVE AEO & RAG METRIKE
-  qaBlocksCoveragePercent: number;
-  tablesOrListsCoveragePercent: number;
-  openGraphCoveragePercent: number;
-  detectedSchemaTypes: { type: string; count: number }[];
-  
-  // Brand & Social Footprint
-  hasSocialAnchorsPercent: number;
-  hasWikiLinksPercent: number;
-  
-  // Bot & Crawlability Directives
-  robotsStatus: string;
-  hasLlmsTxt: boolean;
-  botProtectionDetected: boolean;
+export type { DomainAggregatedStats };
 
-  missingSchemaPages: string[];
-  missingH1Pages: string[];
+const NO_H1 = "No H1 Found";
+const NO_META = "No meta description";
+
+function pct(count: number, total: number): number {
+  return total === 0 ? 0 : Math.round((count / total) * 100);
 }
 
-function isNonEmptyArray(val: unknown): boolean {
-  return Array.isArray(val) && val.length > 0;
+function emptyStats(): DomainAggregatedStats {
+  return {
+    totalPagesAudited: 0,
+    schemaCoveragePercent: 0,
+    hasH1CoveragePercent: 0,
+    hasMetaDescriptionPercent: 0,
+    avgWordCount: 0,
+    qaBlocksCoveragePercent: 0,
+    tablesOrListsCoveragePercent: 0,
+    openGraphCoveragePercent: 0,
+    detectedSchemaTypes: [],
+    hasSocialAnchorsPercent: 0,
+    hasWikiLinksPercent: 0,
+    robotsStatus: "Unknown",
+    hasLlmsTxt: false,
+    botProtectionDetected: false,
+    missingSchemaPages: [],
+    missingH1Pages: [],
+  };
 }
 
 export function aggregateDomainResults(
   scrapedResults: { pageUrl: string; scraped: ScrapedData; score: number }[]
 ): DomainAggregatedStats {
   const total = scrapedResults.length;
-  if (total === 0) {
-    return {
-      totalPagesAudited: 0,
-      schemaCoveragePercent: 0,
-      hasH1CoveragePercent: 0,
-      hasMetaDescriptionPercent: 0,
-      avgWordCount: 0,
-      qaBlocksCoveragePercent: 0,
-      tablesOrListsCoveragePercent: 0,
-      openGraphCoveragePercent: 0,
-      detectedSchemaTypes: [],
-      hasSocialAnchorsPercent: 0,
-      hasWikiLinksPercent: 0,
-      robotsStatus: "Unknown",
-      hasLlmsTxt: false,
-      botProtectionDetected: false,
-      missingSchemaPages: [],
-      missingH1Pages: [],
-    };
-  }
+  if (total === 0) return emptyStats();
 
   let schemaCount = 0;
   let h1Count = 0;
   let metaDescCount = 0;
   let totalWords = 0;
-  let qaBlocksCount = 0;
-  let tablesOrListsCount = 0;
+  let qaPages = 0;
+  let tablesOrListsPages = 0;
   let ogCount = 0;
   let socialAnchorsCount = 0;
   let wikiLinksCount = 0;
@@ -69,112 +50,59 @@ export function aggregateDomainResults(
   const missingSchemaPages: string[] = [];
   const missingH1Pages: string[] = [];
 
-  for (const item of scrapedResults) {
-    const { pageUrl, scraped } = item;
-    const rec = (scraped as unknown) as Record<string, unknown>;
+  for (const { pageUrl, scraped } of scrapedResults) {
+    const schemas = Array.isArray(scraped.detectedSchemas) ? scraped.detectedSchemas : [];
+    if (schemas.length > 0) schemaCount++;
+    else missingSchemaPages.push(pageUrl);
 
-    // 🚀 1. ISPRAVLJEN SCHEMA CHECK: Čitamo detectedSchemas iz scraper.ts
-    const detectedSchemas = (Array.isArray(rec.detectedSchemas) ? rec.detectedSchemas : []) as string[];
-    const hasSchema = detectedSchemas.length > 0;
-
-    if (hasSchema) {
-      schemaCount++;
-    } else {
-      missingSchemaPages.push(pageUrl);
+    for (const name of schemas) {
+      if (typeof name === "string" && name.trim()) schemaMap[name] = (schemaMap[name] || 0) + 1;
     }
 
-    // Aggregacija tipova šema
-    for (const schemaName of detectedSchemas) {
-      if (typeof schemaName === "string" && schemaName.trim().length > 0) {
-        schemaMap[schemaName] = (schemaMap[schemaName] || 0) + 1;
-      }
-    }
+    // The scraper stores placeholder strings for missing values, so "non-empty" is NOT "present".
+    const h1 = (scraped.h1 ?? "").trim();
+    if (h1 && h1 !== NO_H1) h1Count++;
+    else missingH1Pages.push(pageUrl);
 
-    // 2. H1 Check
-    const headingsObj = (typeof rec.headings === "object" && rec.headings !== null)
-      ? (rec.headings as Record<string, unknown>)
-      : null;
+    const meta = (scraped.metaDescription ?? "").trim();
+    if (meta && meta !== NO_META) metaDescCount++;
 
-    const hasH1 = Boolean(
-      (headingsObj && isNonEmptyArray(headingsObj.h1)) ||
-      isNonEmptyArray(rec.h1) ||
-      isNonEmptyArray(rec.h1s) ||
-      (typeof rec.h1 === "string" && rec.h1.trim().length > 0) ||
-      rec.hasH1 === true
-    );
+    if (scraped.hasOpenGraph) ogCount++;
 
-    if (hasH1) {
-      h1Count++;
-    } else {
-      missingH1Pages.push(pageUrl);
-    }
+    totalWords += Number(scraped.wordCount) || 0;
+    if ((scraped.qaBlocksCount ?? 0) > 0) qaPages++;
+    if (scraped.hasTablesOrLists) tablesOrListsPages++;
 
-    // 3. Meta opis & OG
-    const metaDesc = (typeof rec.metaDescription === "string" ? rec.metaDescription : "") ||
-                     (typeof rec.description === "string" ? rec.description : "");
-    if (metaDesc.trim().length > 0) metaDescCount++;
-
-    const ogTitle = typeof rec.ogTitle === "string" ? rec.ogTitle : "";
-    if (ogTitle.trim().length > 0) ogCount++;
-
-    // 4. Broj riječi
-    const words = typeof rec.wordCount === "number" ? rec.wordCount :
-                  typeof rec.wordsCount === "number" ? rec.wordsCount : 0;
-    totalWords += words;
-
-    // 5. Q&A i Tabele/Liste za RAG
-    const qaNum = typeof rec.qaBlocksCount === "number" ? rec.qaBlocksCount : 0;
-    if (qaNum > 0) qaBlocksCount++;
-
-    if (rec.hasTablesOrLists === true) tablesOrListsCount++;
-
-    // 6. Social & Wiki Anchors
-    const entityTrustMap = (typeof rec.entityTrustMap === "object" && rec.entityTrustMap !== null)
-      ? (rec.entityTrustMap as Record<string, unknown>)
-      : {};
-
-    if (entityTrustMap.hasLinkedIn || entityTrustMap.hasXAccount || entityTrustMap.hasFacebookAccount) {
-      socialAnchorsCount++;
-    }
-
-    if (entityTrustMap.hasWikidataOrWikipedia) {
-      wikiLinksCount++;
-    }
+    const trust = scraped.entityTrustMap;
+    if (trust?.hasLinkedIn || trust?.hasXAccount || trust?.hasFacebookAccount) socialAnchorsCount++;
+    if (trust?.hasWikidataOrWikipedia) wikiLinksCount++;
   }
 
-  // Formatiranje mape šema u sortiran niz
   const detectedSchemaTypes = Object.entries(schemaMap)
     .map(([type, count]) => ({ type, count }))
     .sort((a, b) => b.count - a.count);
 
-  const primaryScraped = (scrapedResults[0]?.scraped as unknown) as Record<string, unknown>;
-  const primaryAiAccess = (typeof primaryScraped.aiAccessibility === "object" && primaryScraped.aiAccessibility !== null)
-    ? (primaryScraped.aiAccessibility as Record<string, unknown>)
-    : {};
-
-  // Ako postoji bar jedna globalna schema (npr. Organization / WebSite na početnoj), 
-  // osiguravamo da ukupna ocjena pokrivenosti uračuna to prisustvo
-  const rawSchemaPercent = Math.round((schemaCount / total) * 100);
+  // robots.txt / llms.txt / bot protection are domain-level facts: take them from ANY page, not just the first.
+  const robotsStatus =
+    scrapedResults.map((r) => r.scraped.robotsStatus).find((s) => s === "Blocking AI") ??
+    scrapedResults[0].scraped.robotsStatus ??
+    "Unknown";
 
   return {
     totalPagesAudited: total,
-    schemaCoveragePercent: rawSchemaPercent,
-    hasH1CoveragePercent: Math.round((h1Count / total) * 100),
-    hasMetaDescriptionPercent: Math.round((metaDescCount / total) * 100),
+    schemaCoveragePercent: pct(schemaCount, total),
+    hasH1CoveragePercent: pct(h1Count, total),
+    hasMetaDescriptionPercent: pct(metaDescCount, total),
     avgWordCount: Math.round(totalWords / total),
-
-    qaBlocksCoveragePercent: Math.round((qaBlocksCount / total) * 100),
-    tablesOrListsCoveragePercent: Math.round((tablesOrListsCount / total) * 100),
-    openGraphCoveragePercent: Math.round((ogCount / total) * 100),
+    qaBlocksCoveragePercent: pct(qaPages, total),
+    tablesOrListsCoveragePercent: pct(tablesOrListsPages, total),
+    openGraphCoveragePercent: pct(ogCount, total),
     detectedSchemaTypes,
-
-    hasSocialAnchorsPercent: Math.round((socialAnchorsCount / total) * 100),
-    hasWikiLinksPercent: Math.round((wikiLinksCount / total) * 100),
-
-    robotsStatus: typeof primaryScraped.robotsStatus === "string" ? primaryScraped.robotsStatus : "Allowed",
-    hasLlmsTxt: Boolean(primaryScraped.llmsRawContent),
-    botProtectionDetected: Boolean(primaryAiAccess.cloudflareDetected),
-
+    hasSocialAnchorsPercent: pct(socialAnchorsCount, total),
+    hasWikiLinksPercent: pct(wikiLinksCount, total),
+    robotsStatus,
+    hasLlmsTxt: scrapedResults.some((r) => r.scraped.llmsTxtStatus === "Present" || Boolean(r.scraped.llmsRawContent?.trim())),
+    botProtectionDetected: scrapedResults.some((r) => Boolean(r.scraped.aiAccessibility?.cloudflareDetected)),
     missingSchemaPages,
     missingH1Pages,
   };

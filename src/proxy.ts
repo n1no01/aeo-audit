@@ -21,6 +21,9 @@ const publicPaths = [
   '/api/webhook',
   '/api/cron',
   "/api/widget",
+  "/api/extension-audit", // authenticated by its own API key + CORS, no Clerk session
+  "/share",               // public shareable audit reports
+  "/share-radar",         // public shareable radar reports
 ];
 
 export default clerkMiddleware(async (auth, request) => {

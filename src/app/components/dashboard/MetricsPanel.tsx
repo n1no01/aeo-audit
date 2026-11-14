@@ -1,6 +1,7 @@
 import ScoreBreakdown from "../ScoreBreakdown";
 import Tooltip from "../Tooltip";
 import { AuditData, AEO_EXPLANATIONS, BotStatus } from "../../lib/types";
+import { calculateScoreBreakdown } from "../../lib/scorer";
 
 interface MetricsPanelProps {
   data: AuditData;
@@ -16,112 +17,32 @@ function MetricCard({ label, value }: { label: string; value: string }) {
 }
 
 export default function MetricsPanel({ data }: MetricsPanelProps) {
-  const titleLen = data?.title?.length ?? 0;
-  const descLen = data?.metaDescription?.length ?? 0;
-  const hasH1 = data?.h1 && data?.h1 !== "No H1 Found" && data?.h1.trim() !== "";
-  
-  let metaAndCoreScored = 0;
-  if (titleLen >= 30 && titleLen <= 65) metaAndCoreScored += 10;
-  else if ((titleLen >= 20 && titleLen < 30) || (titleLen > 65 && titleLen <= 75)) metaAndCoreScored += 5;
-  if (descLen >= 120 && descLen <= 160) metaAndCoreScored += 5;
-  else if ((descLen >= 90 && descLen < 120) || (descLen > 160 && descLen <= 180)) metaAndCoreScored += 2;
-  if (hasH1) metaAndCoreScored += 10;
-
-  const commodityScore = data?.commodityContentScore ?? 5;
-  const hasTablesOrLists = data?.hasTablesOrLists ?? false;
-  const qaCount = data?.qaBlocksCount ?? 0;
-  const pageType = data?.pageType ?? "Homepage";
-  const hasAria = data?.semanticLayoutMap?.hasAriaLabels ?? false;
-
-  let aiBlueprintScored = 0;
-  if (commodityScore >= 8) aiBlueprintScored += 10;
-  else if (commodityScore >= 5) aiBlueprintScored += 5;
-  else aiBlueprintScored -= 5;
-  if (hasTablesOrLists) aiBlueprintScored += 5;
-  if (qaCount >= 2) aiBlueprintScored += 5;
-  else if (qaCount === 1) aiBlueprintScored += 2;
-  else if (pageType === "Homepage" || pageType === "Commercial") aiBlueprintScored += 2;
-  if (hasAria) aiBlueprintScored += 5;
-  else if (pageType === "Commercial") aiBlueprintScored -= 3;
+  // Single source of truth: the breakdown computed server-side by lib/scorer.ts and stored with the audit.
+  // Old audits (saved before this change) are re-scored with the same function, so the UI can never
+  // disagree with the headline score again (it used to carry a divergent copy of the scoring rules).
+  const computed = data.scoreBreakdown ? null : calculateScoreBreakdown(data);
+  const breakdownData = data.scoreBreakdown ?? computed!.breakdown;
+  const totalScore = data.score ?? computed?.totalScore ?? 0;
+  const capReason = data.scoreCapReason ?? computed?.capReason;
+  const rawScore = data.rawScore ?? computed?.rawScore;
 
   const botSeverity = data?.aiAccessibility?.cloudflareSeverity ?? "None";
   const botDetected = data?.aiAccessibility?.cloudflareDetected ?? false;
-  const robotsBlockingAI = data?.robotsStatus === "Blocking AI";
-  const completelyBlocked = robotsBlockingAI || (botDetected && botSeverity === "Hard");
-  const partiallyBlocked = !completelyBlocked && (botDetected && botSeverity === "Soft");
-  const jsDep = data?.javascriptDependency ?? "Low";
-
-  let botAccessScored = 0;
-  if (completelyBlocked) botAccessScored -= 60;
-  else if (partiallyBlocked) botAccessScored -= 15;
-  else if (data?.robotsStatus === "Valid" || data?.robotsStatus === "Missing") botAccessScored += 10;
-  if (jsDep === "Low") botAccessScored += 5;
-  else if (jsDep === "Critical") botAccessScored -= 10;
-  botAccessScored = Math.max(0, botAccessScored);
-
   const detectedSchemas = data?.detectedSchemas ?? [];
-  let structuredDataScored = 0;
-  if (detectedSchemas.length > 0) structuredDataScored += 5;
-  const schemaValidationMap: Record<string, string[]> = {
-    Homepage: ["Organization", "LocalBusiness", "SoftwareApplication", "Brand", "WebSite"],
-    Commercial: ["Product", "SoftwareApplication", "Service", "Offer", "OfferCatalog"],
-    Article: ["Article", "TechArticle", "BlogPosting", "NewsArticle"],
-    FAQ: ["FAQPage", "Question", "Answer"],
-    About: ["Organization", "Person", "ProfilePage", "AboutPage", "ContactPage"],
-  };
-  const expectedSchemas = schemaValidationMap[pageType] || [];
-  const hasContextualSchema = detectedSchemas.some((schema) => {
-    if (expectedSchemas.includes(schema)) return true;
-    if (pageType === "Article" && (schema.endsWith("Article") || schema.endsWith("Posting"))) return true;
-    if (pageType === "FAQ" && schema.endsWith("Page")) return true;
-    return false;
-  });
-  if (hasContextualSchema) structuredDataScored += 10;
-
+  const pageType = data?.pageType ?? "Homepage";
+  const hasTablesOrLists = data?.hasTablesOrLists ?? false;
   const brandStatus = data?.entityTrustMap?.brandDisambiguationStatus ?? "None";
-  let entityTrustScored = 0;
-  if (data?.entityTrustMap?.hasWikidataOrWikipedia) entityTrustScored += 2;
-  if (pageType === "Homepage" || pageType === "About") {
-    if (data?.entityTrustMap?.hasLinkedIn) entityTrustScored += 2; else entityTrustScored -= 4;
-    if (data?.entityTrustMap?.hasXAccount) entityTrustScored += 1; else entityTrustScored -= 2;
-  }
-  if (brandStatus === "Optimal") entityTrustScored += 5;
-  else if (brandStatus === "Inconsistent") entityTrustScored -= 4;
-  else if (brandStatus === "Critical Missing") {
-    if (pageType === "Article" || pageType === "FAQ") entityTrustScored -= 3; else entityTrustScored -= 10;
-  }
-  entityTrustScored = Math.max(0, entityTrustScored);
-
-  const hasMain = data?.semanticLayoutMap?.hasMainTag ?? false;
-  const hasArticle = data?.semanticLayoutMap?.hasArticleTag ?? false;
   const hasHeadingLeap = data?.semanticLayoutMap?.hasHeadingLeap ?? false;
   const totalImages = data?.semanticLayoutMap?.totalImages ?? 0;
-  const missingAlt = data?.semanticLayoutMap?.missingAltCount ?? 0;
-
-  let semanticCodeScored = 0;
-  if (hasMain) semanticCodeScored += 2;
-  if (hasArticle) semanticCodeScored += 1;
-  if (!hasHeadingLeap) semanticCodeScored += 2;
-  if (totalImages > 0) {
-    if (missingAlt / totalImages <= 0.2) semanticCodeScored += 3;
-  } else {
-    semanticCodeScored += 3;
-  }
-  if (data?.hasVideoElements) semanticCodeScored += 2;
-
-  const totalScore = data?.score ?? 0;
-
-  const breakdownData = {
-    metaAndCore: { scored: metaAndCoreScored, max: 25 },
-    aiBlueprint: { scored: aiBlueprintScored, max: 25 },
-    botAccess: { scored: botAccessScored, max: 15 },
-    structuredData: { scored: structuredDataScored, max: 15 },
-    entityTrust: { scored: entityTrustScored, max: 10 },
-    semanticCode: { scored: semanticCodeScored, max: 10 },
-  };
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+      {capReason && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs sm:text-sm text-amber-900">
+          <span className="font-black">Score capped{typeof rawScore === "number" ? ` (${rawScore} → ${totalScore})` : ""}: </span>
+          {capReason}
+        </div>
+      )}
       <ScoreBreakdown breakdown={breakdownData} totalScore={totalScore} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">

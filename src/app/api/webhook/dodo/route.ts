@@ -32,7 +32,7 @@ export async function POST(req: Request) {
 
   if (!supabaseUrl || !supabaseServiceRole) {
     console.error("Missing Supabase configuration");
-    return NextResponse.json({ error: "Missing configuration" }, { status: 500 });
+    return failAndRelease("Missing configuration", 500);
   }
 
   const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRole);
@@ -70,29 +70,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  // Idempotency: skip if we've already processed this webhook-id
-  const { data: existing, error: alreadyErr } = await supabaseAdmin
-    .from("webhook_events")
-    .select("id")
-    .eq("webhook_id", webhookId)
-    .maybeSingle();
-
-  if (alreadyErr) {
-    console.warn("Idempotency check failed:", alreadyErr.message);
-  }
-  if (existing) {
-    console.log("Duplicate webhook detected; skipping.", webhookId);
-    return NextResponse.json({ received: true, duplicate: true });
-  }
-
-  // Store the raw event for audit trail
-  const { error: insertLogErr } = await supabaseAdmin.from("webhook_events").insert({
+  // Claim-first idempotency: the INSERT is the lock (unique index on webhook_id).
+  // The old select-then-insert let two concurrent deliveries both pass the check and apply the event twice.
+  const { error: claimErr } = await supabaseAdmin.from("webhook_events").insert({
     webhook_id: webhookId,
     event_type: evt.type,
     payload: evt as unknown as Record<string, unknown>,
   });
-  if (insertLogErr) {
-    console.warn("Failed to log webhook event:", insertLogErr.message);
+  if (claimErr) {
+    if (claimErr.code === "23505") {
+      console.log("Duplicate webhook detected; skipping.", webhookId);
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+    console.warn("Failed to claim webhook event (is webhook_events.webhook_id unique?):", claimErr.message);
+  }
+
+  // If processing fails we release the claim so the provider's retry is processed instead of skipped as a duplicate.
+  async function failAndRelease(message: string, status: number) {
+    await supabaseAdmin.from("webhook_events").delete().eq("webhook_id", webhookId!);
+    return NextResponse.json({ error: message }, { status });
   }
 
   const STARTER_ID = process.env.NEXT_PUBLIC_DODO_STARTER_PLAN_ID;
@@ -158,7 +154,7 @@ export async function POST(req: Request) {
 
     if (dbError) {
       console.error("Supabase update failed:", dbError.message);
-      return NextResponse.json({ error: "Database update failed" }, { status: 500 });
+      return failAndRelease("Database update failed", 500);
     }
     return NextResponse.json({ received: true });
   }
@@ -195,13 +191,13 @@ export async function POST(req: Request) {
         audit_limit: 1, 
         used_audits: 0,
         radar_used: 0,
-        radar_limit: 1
+        radar_limit: 0
       })
       .eq("id", clerkUserId);
 
     if (dbError) {
       console.error("Supabase update failed:", dbError.message);
-      return NextResponse.json({ error: "Database update failed" }, { status: 500 });
+      return failAndRelease("Database update failed", 500);
     }
     return NextResponse.json({ received: true });
   }
@@ -229,7 +225,7 @@ export async function POST(req: Request) {
 
       if (dbError) {
         console.error("Supabase Academy payment unlock failed:", dbError.message);
-        return NextResponse.json({ error: "Database update failed for academy node" }, { status: 500 });
+        return failAndRelease("Database update failed for academy node", 500);
       }
 
       return NextResponse.json({ received: true, academy_unlocked: true });
@@ -247,7 +243,7 @@ export async function POST(req: Request) {
 
       if (fetchErr || !user) {
         console.error("Supabase Single Audit fetch failed for user:", clerkUserId, fetchErr?.message);
-        return NextResponse.json({ error: "User not found for credit increment" }, { status: 404 });
+        return failAndRelease("User not found for credit increment", 404);
       }
 
       const currentLimit = Number(user.audit_limit) || 0;
@@ -256,11 +252,12 @@ export async function POST(req: Request) {
       const { error: updateErr } = await supabaseAdmin
         .from("users")
         .update({ audit_limit: newLimit })
-        .eq("id", clerkUserId);
+        .eq("id", clerkUserId)
+        .eq("audit_limit", currentLimit); // optimistic lock: two simultaneous purchases cannot overwrite each other
 
       if (updateErr) {
         console.error("Supabase Single Audit update failed:", updateErr.message);
-        return NextResponse.json({ error: "Failed to increment audit_limit" }, { status: 500 });
+        return failAndRelease("Failed to increment audit_limit", 500);
       }
 
       console.log(`[SUCCESS] User ${clerkUserId} audit_limit updated from ${currentLimit} to ${newLimit}`);

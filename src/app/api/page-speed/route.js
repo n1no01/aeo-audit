@@ -1,12 +1,24 @@
 import { NextResponse } from 'next/server';
+import { formatUrl } from '../../lib/utils';
+import { isPublicHttpUrl } from '../../lib/urlSafety';
+import { rateLimit, clientIp } from '../../lib/rateLimit';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const targetUrl = searchParams.get('url');
-  const strategy = searchParams.get('strategy') || 'desktop';
+  const rawUrl = searchParams.get('url');
+  const strategy = searchParams.get('strategy') === 'mobile' ? 'mobile' : 'desktop';
 
-  if (!targetUrl) {
+  if (!rawUrl) {
     return NextResponse.json({ error: 'URL je obavezan' }, { status: 400 });
+  }
+
+  // Protects the paid Google quota and rejects junk/internal URLs.
+  if (!rateLimit(`pagespeed:${clientIp(request.headers)}`, 6, 60_000).ok) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+  const targetUrl = formatUrl(rawUrl);
+  if (!targetUrl || !(await isPublicHttpUrl(targetUrl))) {
+    return NextResponse.json({ error: 'Invalid or non-public URL' }, { status: 400 });
   }
 
   const apiKey = process.env.GOOGLE_PAGESPEED_API_KEY;

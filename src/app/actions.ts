@@ -3,12 +3,12 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { supabase } from "./lib/supabase";
 import { formatUrl } from "./lib/utils";
-import { scrapeWebsite } from "./lib/scraper";
-import { calculateScore } from "./lib/scorer";
-import { generateAiAnalysis } from "./lib/gemini";
-import { getUrlsFromSitemap } from "./lib/crawler"; 
-import { aggregateDomainResults } from "./lib/aggregator";
-import { ScrapedData, AuditData } from "./lib/types";
+import { runAudit, AuditMode } from "./lib/auditPipeline";
+import { isPublicHttpUrl } from "./lib/urlSafety";
+import { reserveAuditCredit, refundAuditCredit } from "./lib/credits";
+import { generateApiKey, generateWidgetKey } from "./lib/keys";
+import { rateLimit } from "./lib/rateLimit";
+import { AuditData } from "./lib/types";
 import { PostgrestError } from "@supabase/supabase-js"; 
 import { revalidatePath } from "next/cache";
 
@@ -52,45 +52,12 @@ const ANSWER_KEY: Record<number, string> = {
 };
 
 // ===================================================================
-// POMOĆNA FUNKCIJA ZA PARALELNU OBRADU U GRUPAMA (BATCHING)
-// ===================================================================
-async function scrapePagesInBatches(
-  urls: string[], 
-  apiKey: string, 
-  batchSize = 5
-) {
-  const results = [];
-
-  for (let i = 0; i < urls.length; i += batchSize) {
-    const chunk = urls.slice(i, i + batchSize);
-    
-    // Pokreće batch od 5 stranica paralelno
-    const chunkPromises = chunk.map(async (pageUrl) => {
-      try {
-        const scraped = (await scrapeWebsite(pageUrl, apiKey)) as ScrapedData;
-        const score = calculateScore(scraped);
-        return { pageUrl, scraped, score };
-      } catch (e) {
-        console.error(`Failed to scrape ${pageUrl}:`, e);
-        return null;
-      }
-    });
-
-    const chunkResults = await Promise.all(chunkPromises);
-    results.push(...chunkResults.filter(Boolean));
-  }
-
-  return results;
-}
-
-// ===================================================================
-// CORE AEO AUDIT AKCIJE (Podrška za Single URL i Full Domain)
+// CORE AEO AUDIT ACTION (Single URL + Full Domain)
 // ===================================================================
 
 export async function analyzeUrl(formData: FormData) {
   const rawUrlInput = formData.get("url");
-  const auditMode = (formData.get("mode") as string) || "single";
-  console.log("RECEIVED AUDIT MODE:", auditMode);
+  const auditMode: AuditMode = formData.get("mode") === "domain" ? "domain" : "single";
 
   if (!rawUrlInput || typeof rawUrlInput !== "string") {
     return { error: "Please enter a valid target domain or URL." };
@@ -99,208 +66,122 @@ export async function analyzeUrl(formData: FormData) {
   const url = formatUrl(rawUrlInput);
   if (!url) return { error: "Invalid URL format." };
 
+  // Reject private/internal targets before any credit is touched.
+  if (!(await isPublicHttpUrl(url))) {
+    return { error: "This address cannot be audited. Please enter a public website URL." };
+  }
+
   const SCRAPING_API_KEY = process.env.SCRAPING_API_KEY;
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
   if (!SCRAPING_API_KEY || !GEMINI_API_KEY) {
     return { error: "Missing API configuration keys." };
   }
 
   const { userId } = await auth();
   const clerkUser = await currentUser();
-
   if (!userId || !clerkUser) {
     return { error: "You must be logged in to analyze a URL." };
   }
 
+  // Per-user burst limit (credits are the hard quota, this just stops hammering).
+  if (!rateLimit(`audit:${userId}`, 6, 60_000).ok) {
+    return { error: "Too many requests. Please wait a minute and try again." };
+  }
+
   const email = clerkUser.emailAddresses[0]?.emailAddress;
 
-  let userPlan = "FREE";
-  let userLimit = 1;
-  let currentUsedAudits = 0;
-
   try {
-    let { data: dbUser } = await supabase
-      .from("users")
-      .select("*")
-      .eq("id", userId)
-      .maybeSingle();
+    let { data: dbUser } = await supabase.from("users").select("*").eq("id", userId).maybeSingle();
 
     if (!dbUser) {
       const { data: newUser, error: insertError } = await supabase
         .from("users")
-        .insert([{ id: userId, email: email, plan: "FREE", audit_limit: 1, used_audits: 0 }])
+        .insert([{ id: userId, email, plan: "FREE", audit_limit: 1, used_audits: 0, api_key: generateApiKey() }])
         .select()
         .single();
-      
+
       if (insertError) {
-        console.error("Supabase user insert error:", insertError);
-        return { error: "Failed to initialize user profile in database." };
-      }
-      
-      dbUser = newUser;
-    }
-
-    userPlan = dbUser.plan;
-    userLimit = dbUser.audit_limit;
-    currentUsedAudits = dbUser.used_audits || 0; 
-
-    if (currentUsedAudits >= userLimit) {
-      const stats = { plan: userPlan, limit: userLimit, used: currentUsedAudits };
-      return { 
-        error: userPlan === "FREE" 
-          ? "You have exhausted your single free audit. Upgrade your plan for more audits!"
-          : `You have exceeded your monthly limit for the ${userPlan} plan (${userLimit} monthly). Upgrade your plan for more flexibility!`,
-        userStats: stats
-      };
-    }
-
-    const hasSubmittedWhiteLabel = 
-      formData.get("agencyName") || 
-      formData.get("brandColor") || 
-      formData.get("authorName");
-
-    if (userPlan === "FREE" && hasSubmittedWhiteLabel) {
-      return { 
-        error: "Custom white-label branding options are only available for Premium and Agency tiers.",
-        userStats: { plan: userPlan, limit: userLimit, used: currentUsedAudits }
-      };
-    }
-
-    let auditOutputData;
-
-    try {
-      if (auditMode === "domain") {
-        // 🚀 FULL DOMAIN AUDIT: Izvlačenje do 15 URL-ova iz sitemapa
-        const targetUrls = await getUrlsFromSitemap(url, 15);
-
-        // 🚀 Efikasno skeniranje u grupama po 5 u paraleli (Batching)
-        const validResults = (await scrapePagesInBatches(
-          targetUrls, 
-          SCRAPING_API_KEY, 
-          5
-        )) as { pageUrl: string; scraped: ScrapedData; score: number }[];
-
-        if (validResults.length === 0) {
-          throw new Error("Unable to crawl domain sample pages.");
+        // Two parallel first requests can race on the insert: re-read before failing.
+        const { data: again } = await supabase.from("users").select("*").eq("id", userId).maybeSingle();
+        if (!again) {
+          console.error("Supabase user insert error:", insertError);
+          return { error: "Failed to initialize user profile in database." };
         }
-
-        // Izračunavanje matematičkog prosjeka domene
-        const totalScoreSum = validResults.reduce((acc, curr) => acc + (curr.score || 0), 0);
-        const avgScore = Math.round(totalScoreSum / validResults.length);
-
-        const domainStats = aggregateDomainResults(validResults);
-
-        const sampledPagesList = validResults.map((r) => ({
-          url: r.pageUrl,
-          score: r.score,
-        }));
-
-        const primaryResult = validResults[0].scraped;
-        const aiData = await generateAiAnalysis(primaryResult, avgScore, url, GEMINI_API_KEY);
-
-        auditOutputData = {
-          ...primaryResult,
-          website_url: url,
-          score: avgScore,
-          pageCategory: aiData.pageCategory || primaryResult.pageCategory || "General Website",
-          aiAnalysis: `[Multi-Page Domain Audit (Sample: ${validResults.length} pages)]\n\n${aiData.aiAnalysis || "No analysis provided."}`,
-          recommendations: aiData.recommendations || [],
-          bluffScore: aiData.bluffScore || 5,
-          atomicStructureScore: aiData.atomicStructureScore || 5,
-          entityDensityScore: aiData.entityDensityScore || 5,
-          sentenceSimplicityScore: aiData.sentenceSimplicityScore || 5,
-          commodityContentScore: aiData.commodityContentScore || 5,
-          keywordsData: aiData.keywordsData,
-          isDomainAudit: true,
-          pagesAuditedCount: validResults.length,
-          sampledPages: sampledPagesList,
-          domainStats: domainStats,
-        };
-
+        dbUser = again;
       } else {
-        // 🎯 SINGLE URL AUDIT
-        const scrapedResult = (await scrapeWebsite(url, SCRAPING_API_KEY)) as ScrapedData;
-        const score = calculateScore(scrapedResult);
-        const aiData = await generateAiAnalysis(scrapedResult, score, url, GEMINI_API_KEY);
-
-        auditOutputData = {
-          ...scrapedResult,
-          website_url: url, 
-          score: score,
-          pageCategory: aiData.pageCategory || "Uncategorized",
-          aiAnalysis: aiData.aiAnalysis || "No analysis provided.",
-          recommendations: aiData.recommendations || [],
-          bluffScore: aiData.bluffScore || 5,
-          atomicStructureScore: aiData.atomicStructureScore || 5,
-          entityDensityScore: aiData.entityDensityScore || 5,
-          sentenceSimplicityScore: aiData.sentenceSimplicityScore || 5,
-          commodityContentScore: aiData.commodityContentScore || 5,
-          keywordsData: aiData.keywordsData,
-        };
+        dbUser = newUser;
       }
+    }
+
+    const snapshot = { plan: dbUser.plan, limit: dbUser.audit_limit, used: dbUser.used_audits || 0 };
+
+    const hasWhiteLabel = formData.get("agencyName") || formData.get("brandColor") || formData.get("authorName");
+    if (dbUser.plan === "FREE" && hasWhiteLabel) {
+      return {
+        error: "Custom white-label branding options are only available for Premium and Agency tiers.",
+        userStats: snapshot,
+      };
+    }
+
+    // A domain audit = up to 15 scrapes + AI call for ONE credit, so it is a paid feature.
+    if (auditMode === "domain" && dbUser.plan === "FREE" && process.env.ALLOW_FREE_DOMAIN_AUDIT !== "true") {
+      return { error: "Full-domain audits are available on paid plans. Run a single-page audit or upgrade.", userStats: snapshot };
+    }
+
+    // 1) Atomically reserve the credit BEFORE the expensive work.
+    const reservation = await reserveAuditCredit(userId);
+    if (!reservation) return { error: "Failed to verify your audit quota. Please try again.", userStats: snapshot };
+
+    if (!reservation.ok) {
+      return {
+        error:
+          reservation.plan === "FREE"
+            ? "You have exhausted your single free audit. Upgrade your plan for more audits!"
+            : `You have exceeded your monthly limit for the ${reservation.plan} plan (${reservation.limit} monthly). Upgrade your plan for more flexibility!`,
+        userStats: { plan: reservation.plan, limit: reservation.limit, used: reservation.used },
+      };
+    }
+
+    // 2) Do the work; any failure from here on refunds the credit.
+    let auditOutputData;
+    try {
+      auditOutputData = await runAudit({ url, mode: auditMode, scrapingKey: SCRAPING_API_KEY, geminiKey: GEMINI_API_KEY });
     } catch (apiError) {
       console.error("External API Error (Scraper/Gemini):", apiError);
-      return { 
-        error: "Failed to scrape or analyze the website. Please check the URL and try again.",
-        userStats: { plan: userPlan, limit: userLimit, used: currentUsedAudits }
+      await refundAuditCredit(userId);
+      return {
+        error: "Failed to scrape or analyze the website. Your credit was not used. Please check the URL and try again.",
+        userStats: { plan: reservation.plan, limit: reservation.limit, used: Math.max(0, reservation.used - 1) },
       };
     }
 
     const { data: insertedAudit, error: auditInsertError } = await supabase
       .from("audits")
-      .insert([
-        {
-          user_id: userId,
-          website_url: url,
-          result_data: auditOutputData,
-        },
-      ])
-      .select("share_token") 
+      .insert([{ user_id: userId, website_url: url, result_data: auditOutputData }])
+      .select("share_token")
       .single();
 
     if (auditInsertError) {
       console.error("Supabase audit insert error:", auditInsertError);
-      return { 
-        error: "Failed to save audit results to database.",
-        userStats: { plan: userPlan, limit: userLimit, used: currentUsedAudits }
+      await refundAuditCredit(userId);
+      return {
+        error: "Failed to save audit results to database. Your credit was not used.",
+        userStats: { plan: reservation.plan, limit: reservation.limit, used: Math.max(0, reservation.used - 1) },
       };
     }
 
     const { error: globalRpcError } = await supabase.rpc("increment_audit_counter");
-    if (globalRpcError) {
-      console.error("Supabase RPC global counter error:", globalRpcError);
-    }
-
-    const { data: updatedUsers, error: rpcError } = await supabase.rpc("increment_used_audits", {
-      row_id: userId,
-    });
-
-    if (rpcError) {
-      console.error("Supabase RPC increment error:", rpcError);
-    }
-
-    const finalUsedCount = updatedUsers && updatedUsers[0] 
-      ? updatedUsers[0].used_audits 
-      : currentUsedAudits + 1;
+    if (globalRpcError) console.error("Supabase RPC global counter error:", globalRpcError);
 
     return {
       success: true,
-      auditId: insertedAudit?.share_token, 
+      auditId: insertedAudit?.share_token,
       data: auditOutputData,
-      userStats: {
-        plan: userPlan,
-        limit: userLimit,
-        used: finalUsedCount
-      }
+      userStats: { plan: reservation.plan, limit: reservation.limit, used: reservation.used },
     };
-
   } catch (error) {
     console.error("CRITICAL AUDIT ERROR CONTROL:", error);
-    return { 
-      error: "An unexpected system error occurred. Please try again later.",
-      userStats: { plan: userPlan, limit: userLimit, used: currentUsedAudits }
-    };
+    return { error: "An unexpected system error occurred. Please try again later." };
   }
 }
 
@@ -419,37 +300,6 @@ export async function getUserAuditHistory(limit?: number): Promise<{
 // ===================================================================
 // 📡 NOVE NAMJENSKE AKCIJE ZA AI VISIBILITY RADAR POTROŠNJU I SHARE
 // ===================================================================
-
-export async function incrementRadarCount(userId: string) {
-  try {
-    const { data: user, error: fetchError } = await supabase
-      .from("users")
-      .select("radar_used")
-      .eq("id", userId)
-      .maybeSingle();
-
-    if (fetchError || !user) {
-      console.error("Supabase error prefetching radar metrics:", fetchError);
-      return false;
-    }
-
-    const currentCount = user.radar_used || 0;
-    const { error: updateError } = await supabase
-      .from("users")
-      .update({ radar_used: currentCount + 1 }) 
-      .eq("id", userId);
-
-    if (updateError) {
-      console.error("Supabase update error incrementing radar count:", updateError.message);
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Critical crash inside incrementRadarCount:", error);
-    return false;
-  }
-}
 
 export async function getUserRadarHistory(limit?: number): Promise<{ 
   success?: boolean; 
@@ -571,8 +421,8 @@ export async function submitAeoExam(answers: Record<number, string>, fullName: s
     const totalQuestions = 20;
     const requiredToPass = 18;
 
-    for (const [qId, answer] of Object.entries(answers)) {
-      if (answer === ANSWER_KEY[Number(qId)]) {
+    for (const [qId, answer] of Object.entries(answers ?? {})) {
+      if (typeof answer === "string" && answer === ANSWER_KEY[Number(qId)]) {
         correctCount++;
       }
     }
@@ -588,7 +438,8 @@ export async function submitAeoExam(answers: Record<number, string>, fullName: s
         full_name: passed ? fullName.trim() : null,
         cert_issued_at: passed ? new Date().toISOString() : null
       })
-      .eq("id", userId);
+      .eq("id", userId)
+      .eq("exam_attempts_used", userStats.exam_attempts_used || 0); // optimistic lock: parallel submits cannot buy extra attempts
 
     if (updateError) {
       console.error("Supabase update error during exam registration:", updateError.message);
@@ -643,7 +494,7 @@ export async function getOrCreateApiKey() {
 
     // Ako korisnik uopšte ne postoji u 'users' tabeli, kreiramo ga
     if (!dbUser) {
-      const newApiKey = `aeo_live_${Math.random().toString(36).substring(2)}${Date.now().toString(36)}`;
+      const newApiKey = generateApiKey();
       
       const { data: newUser, error: insertError } = await supabase
         .from("users")
@@ -674,7 +525,7 @@ export async function getOrCreateApiKey() {
     }
 
     // 3. Ako korisnik postoji ali nema ključ, generiši ga i ažuriraj red
-    const newApiKey = `aeo_live_${Math.random().toString(36).substring(2)}${Date.now().toString(36)}`;
+    const newApiKey = generateApiKey();
 
     const { error: updateError } = await supabase
       .from("users")
@@ -697,7 +548,7 @@ export async function regenerateApiKey() {
   const { userId } = await auth();
   if (!userId) return { error: "Unauthorized" };
 
-  const newApiKey = `aeo_live_${Math.random().toString(36).substring(2)}${Date.now().toString(36)}`;
+  const newApiKey = generateApiKey();
 
   const { error } = await supabase
     .from("users")
@@ -731,4 +582,37 @@ export async function getAgencyLeads() {
     console.error("Critical error in getAgencyLeads:", error);
     return { error: "An unexpected error occurred." };
   }
+}
+
+/** Public key for the embeddable lead-gen widget. Separate from the secret extension key. */
+export async function getOrCreateWidgetKey() {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized" };
+
+  try {
+    const { data: dbUser } = await supabase.from("users").select("id, widget_key").eq("id", userId).maybeSingle();
+    if (!dbUser) return { error: "User profile not found. Run an audit first." };
+    if (dbUser.widget_key) return { widgetKey: dbUser.widget_key as string };
+
+    const widgetKey = generateWidgetKey();
+    const { error } = await supabase.from("users").update({ widget_key: widgetKey }).eq("id", userId);
+    if (error) {
+      console.error("Failed to save widget key (did you run the migration?):", error.message);
+      return { error: "Failed to generate widget key." };
+    }
+    return { widgetKey };
+  } catch (err) {
+    console.error("Error in getOrCreateWidgetKey:", err);
+    return { error: "System error generating widget key." };
+  }
+}
+
+export async function regenerateWidgetKey() {
+  const { userId } = await auth();
+  if (!userId) return { error: "Unauthorized" };
+
+  const widgetKey = generateWidgetKey();
+  const { error } = await supabase.from("users").update({ widget_key: widgetKey }).eq("id", userId);
+  if (error) return { error: "Failed to regenerate widget key." };
+  return { widgetKey };
 }
