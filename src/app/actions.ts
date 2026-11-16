@@ -463,6 +463,7 @@ export async function submitAeoExam(answers: Record<number, string>, fullName: s
               studentEmail: studentEmail,
               certificateType: "Certified AEO Specialist",
               identifier: userId,
+              sendEmail: false,
               metadata: { 
                 platform: "AEO Audit Pro",
                 score: `${correctCount}/20` 
