@@ -387,7 +387,8 @@ export async function getSharedRadarScan(shareToken: string) {
 // ===================================================================
 export async function submitAeoExam(answers: Record<number, string>, fullName: string) {
   const { userId } = await auth();
-  if (!userId) return { success: false, message: "Unauthorized access." };
+  const clerkUser = await currentUser();
+  if (!userId || !clerkUser) return { success: false, message: "Unauthorized access." };
 
   if (!fullName || fullName.trim() === "") {
     return { success: false, message: "Please provide your full legal name for certification verification." };
@@ -439,11 +440,44 @@ export async function submitAeoExam(answers: Record<number, string>, fullName: s
         cert_issued_at: passed ? new Date().toISOString() : null
       })
       .eq("id", userId)
-      .eq("exam_attempts_used", userStats.exam_attempts_used || 0); // optimistic lock: parallel submits cannot buy extra attempts
+      .eq("exam_attempts_used", userStats.exam_attempts_used || 0);
 
     if (updateError) {
       console.error("Supabase update error during exam registration:", updateError.message);
       return { success: false, message: "Database communication failure during score sync." };
+    }
+
+    // Automatsko izdavanje certifikata preko diploma.ba API-ja ukoliko je ispit položen
+    if (passed) {
+      try {
+        const studentEmail = clerkUser.emailAddresses[0]?.emailAddress;
+        if (studentEmail) {
+          const diplomaRes = await fetch("https://diploma.ba/api/v1/certificates", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${process.env.DIPLOMA_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              studentName: fullName.trim(),
+              studentEmail: studentEmail,
+              certificateType: "Certified AEO Specialist",
+              identifier: userId,
+              metadata: { 
+                platform: "AEO Audit Pro",
+                score: `${correctCount}/20` 
+              }
+            }),
+          });
+
+          const diplomaData = await diplomaRes.json();
+          if (!diplomaData.success) {
+            console.error("Diploma.ba API warning:", diplomaData);
+          }
+        }
+      } catch (diplomaErr) {
+        console.error("Failed to trigger diploma.ba issuance:", diplomaErr);
+      }
     }
 
     revalidatePath("/academy/certification");
